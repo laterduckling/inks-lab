@@ -424,7 +424,7 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 // ═══════════════════════════════════════
 // CONSTANTS
 // ═══════════════════════════════════════
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = "claude-sonnet-4-6-20250627";
 const STATION_TOTAL = 30;
 
 const CREATURES = [
@@ -865,7 +865,7 @@ function handleFile(f) {
       speak(S.hw.missionBriefing);
     } catch(err) {
       console.error(err); clearInterval(aiv);
-      alert(S.lang==='FR'?'Erreur lors de l\'analyse. Vérifiez votre clé API.':'Error analyzing homework. Check your API key and try again.');
+      alert((S.lang==='FR'?'Erreur: ':'Error: ') + (err.message||err));
       show('u');
     }
   };
