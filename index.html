@@ -421,7 +421,20 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
     <h2 style="font-size:22px;font-weight:900">🔒 Parent View</h2>
     <div style="display:flex;gap:10px;align-items:center">
       <button onclick="forgetKey()" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.3);color:#ff8080;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer">🗑 Forget key</button>
+      <button onclick="forgetWebhook()" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.3);color:#ff8080;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer">🗑 Forget webhook</button>
       <button onclick="show('w')" style="background:none;border:none;color:rgba(224,240,248,.5);cursor:pointer;font-size:22px">✕</button>
+    </div>
+  </div>
+  <div class="card" id="parWebhook" style="padding:18px 20px">
+    <p style="font-size:12px;font-weight:800;color:rgba(224,240,248,.38);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">📧 Email Reports</p>
+    <div id="webhookSetup">
+      <p style="font-size:13px;color:rgba(224,240,248,.5);margin-bottom:10px;line-height:1.5">Paste your Google Apps Script URL to get email reports after each session.</p>
+      <input class="ki" id="webhookInput" type="url" placeholder="https://script.google.com/macros/s/..." autocomplete="off" spellcheck="false">
+      <button class="btn bp" style="margin-top:10px;font-size:14px;padding:10px 20px" onclick="saveWebhook()">💾 Save webhook</button>
+    </div>
+    <div id="webhookActive" style="display:none">
+      <p style="font-size:14px;color:#06d6a0">✅ Email reports active</p>
+      <button onclick="testWebhook()" style="background:rgba(0,220,200,.1);border:1px solid rgba(0,220,200,.3);color:#00dcc6;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer;margin-top:8px">📧 Send test email</button>
     </div>
   </div>
   <div class="card" id="parStats" style="padding:18px 20px"></div>
@@ -771,6 +784,7 @@ function parentLongPressStart() {
 function parentLongPressEnd() { clearTimeout(parentPressTimer); }
 
 function renderParentMode() {
+  renderWebhookUI();
   const profile = getProfile();
   const sessions = profile.sessions || [];
   const fr = false; // parent mode always in parent's UI language
@@ -1309,10 +1323,23 @@ async function afterReward() {
     profile.sessions.push({date:Date.now(),lang:S.lang,subject:S.hw.subject,minutes:mins,tasksCount:S.hw.tasks.length,totalHints:S.taskHints.reduce((a,b)=>a+b,0),avgHints:Math.round(avgHints*10)/10});
     if (profile.sessions.length > 20) profile.sessions = profile.sessions.slice(-20);
     saveProfile(profile);
+    let summary = null;
     try {
-      const summary = await generateSummary(mins, profile.sessions);
+      summary = await generateSummary(mins, profile.sessions);
       renderSummary(summary, profile);
     } catch { renderSummary(null, profile); }
+    // Send email report
+    const totalCoins = S.taskHints.reduce((h,c) => h + (c===0?15:c===1?10:5), 0);
+    sendReport({
+      date: Date.now(), lang: S.lang, subject: S.hw.subject, minutes: mins,
+      tasksCount: S.hw.tasks.length, totalHints: S.taskHints.reduce((a,b)=>a+b,0),
+      avgHints: Math.round((S.taskHints.reduce((a,b)=>a+b,0)/S.taskHints.length)*10)/10,
+      coinsEarned: totalCoins, minecoins: profile.minecoins||0,
+      blocks: profile.blocks||0, cardsCount: profile.cards?.length||0,
+      headline: summary?.headline||null, completed: summary?.completed||null,
+      shone: summary?.shone||null, struggled: summary?.struggled||null,
+      tip: summary?.tip||null, insight: summary?.insight||null
+    });
     show('s');
   } else {
     S.tIdx++; S.conv = []; S.hintCount = 0;
@@ -1359,6 +1386,45 @@ function forgetKey() {
 function resetApp() {
   S = {lang:null,hw:null,tIdx:0,done:[],conv:[],t0:null,hintCount:0,isReading:false,transcript:'',newCard:null,verifyImgB64:null,taskStartTime:null,taskHints:[]};
   renderWelcome(); show('w');
+}
+
+// ═══════════════════════════════════════
+// WEBHOOK (email reports)
+// ═══════════════════════════════════════
+function getWebhookUrl() { return localStorage.getItem('ink_webhook') || ''; }
+function saveWebhook() {
+  const url = document.getElementById('webhookInput').value.trim();
+  if (!url.startsWith('https://script.google.com/')) { alert('Please paste a valid Google Apps Script URL'); return; }
+  localStorage.setItem('ink_webhook', url);
+  renderWebhookUI();
+  alert('Webhook saved! You can send a test email to verify.');
+}
+function forgetWebhook() {
+  if (confirm('Remove webhook URL? You will stop receiving email reports.')) {
+    localStorage.removeItem('ink_webhook');
+    renderWebhookUI();
+  }
+}
+function renderWebhookUI() {
+  const url = getWebhookUrl();
+  document.getElementById('webhookSetup').style.display = url ? 'none' : 'block';
+  document.getElementById('webhookActive').style.display = url ? 'block' : 'none';
+}
+function sendReport(data) {
+  const url = getWebhookUrl();
+  if (!url) return;
+  fetch(url, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(data) }).catch(()=>{});
+}
+function testWebhook() {
+  const profile = getProfile();
+  sendReport({
+    date: Date.now(), lang:'EN', subject:'Test', minutes:0, tasksCount:0,
+    totalHints:0, avgHints:0, coinsEarned:0, minecoins:profile.minecoins||0,
+    blocks:profile.blocks||0, cardsCount:profile.cards?.length||0,
+    headline:'This is a test email from Ink\'s Lab!',
+    completed:['Test report working'], shone:null, struggled:null, tip:null, insight:null
+  });
+  alert('Test email sent! Check your inbox in a minute.');
 }
 
 // ═══════════════════════════════════════
