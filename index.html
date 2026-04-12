@@ -148,6 +148,8 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 
 /* ── Score badge ── */
 .score-badge{background:rgba(0,220,200,.12);border:1px solid rgba(0,220,200,.3);border-radius:12px;padding:6px 14px;font-size:14px;font-weight:800;color:#00dcc6}
+.coin-badge{background:rgba(255,209,102,.12);border:1px solid rgba(255,209,102,.35);border-radius:12px;padding:6px 14px;font-size:14px;font-weight:800;color:#ffd166}
+.coin-earned{background:rgba(255,209,102,.1);border:2px solid rgba(255,209,102,.3);border-radius:16px;padding:14px 20px;text-align:center}
 
 ::-webkit-scrollbar{display:none}
 </style>
@@ -198,6 +200,10 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
     <div style="padding:6px 16px 12px;display:flex;justify-content:space-between;align-items:center">
       <span style="font-size:12px;color:rgba(224,240,248,.4);font-weight:700">🎴 Collection</span>
       <div class="mini-cards" id="miniCards"></div>
+    </div>
+    <div style="padding:6px 16px 12px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(255,255,255,.06)">
+      <span style="font-size:13px;font-weight:800;color:#ffd166">⛏️ Minecoins</span>
+      <span class="coin-badge" id="coinCount">0</span>
     </div>
   </div>
 
@@ -366,6 +372,12 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
     <p style="font-size:26px;letter-spacing:2px" id="rewBlocks">🧱🧱🧱</p>
     <p id="rewBlockLabel" style="font-size:14px;font-weight:800;color:#00dcc6;margin-top:6px"></p>
   </div>
+  <!-- Minecoins earned -->
+  <div class="coin-earned" id="rewCoins">
+    <p style="font-size:28px;font-weight:900;color:#ffd166" id="rewCoinsAmount">⛏️ +15</p>
+    <p style="font-size:13px;color:rgba(255,209,102,.7);margin-top:4px" id="rewCoinsLabel">Minecoins earned!</p>
+    <p style="font-size:12px;color:rgba(224,240,248,.35);margin-top:6px" id="rewCoinsTotal">Total: 15 ⛏️</p>
+  </div>
   <!-- Creature card (conditional) -->
   <div id="cardWrap" style="display:none;width:100%">
     <p id="cardTitle" style="font-size:13px;font-weight:800;color:rgba(224,240,248,.45);text-align:center;margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px"></p>
@@ -475,8 +487,8 @@ let aiv, parentTimer, currentSpeech = null;
 // PERSISTENCE
 // ═══════════════════════════════════════
 function getProfile() {
-  try { return JSON.parse(localStorage.getItem('ink_v2') || '{"blocks":0,"cards":[],"sessions":[]}'); }
-  catch { return {blocks:0,cards:[],sessions:[]}; }
+  try { const p = JSON.parse(localStorage.getItem('ink_v2') || '{}'); return {blocks:p.blocks||0,cards:p.cards||[],sessions:p.sessions||[],minecoins:p.minecoins||0}; }
+  catch { return {blocks:0,cards:[],sessions:[],minecoins:0}; }
 }
 function saveProfile(p) {
   try { localStorage.setItem('ink_v2', JSON.stringify(p)); } catch {}
@@ -497,7 +509,7 @@ function speak(text) {
   window.speechSynthesis.speak(u);
 }
 function stopSpeaking() { if (window.speechSynthesis) window.speechSynthesis.cancel(); }
-function reSpeak(id) { const el=document.getElementById(id); if(el) speak(el.textContent); }
+function reSpeak(id) { const el=document.getElementById(id); if(el) { const mt=el.querySelector('.msg-text'); speak(mt?mt.textContent:el.textContent); } }
 function toggleMute() {
   MUTED = !MUTED;
   document.getElementById('muteBtn').textContent = MUTED ? '🔇' : '🔊';
@@ -549,6 +561,7 @@ function haptic(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch 
 // ═══════════════════════════════════════
 function show(id) {
   stopSpeaking();
+  clearIdleTimer();
   document.querySelectorAll('.screen').forEach(el => { el.classList.remove('active'); el.style.display = 'none'; });
   const el = document.getElementById('s'+id);
   el.style.display = 'flex'; el.classList.add('active');
@@ -742,6 +755,7 @@ function renderWelcome() {
   const profile = getProfile();
   const bc = Math.min(profile.blocks, STATION_TOTAL);
   document.getElementById('blockCount').textContent = `${bc} / ${STATION_TOTAL} blocks`;
+  document.getElementById('coinCount').textContent = `${profile.minecoins} ⛏️`;
   renderStationGrid('stationGrid', bc);
   renderMiniCards('miniCards');
   document.getElementById('muteBtn').style.display = 'flex';
@@ -776,6 +790,7 @@ function renderParentMode() {
       ${statCard('💡 Hints used',totalHints)}
       ${statCard('🎴 Cards',profile.cards.length+' / '+CREATURES.length)}
       ${statCard('🧱 Blocks',Math.min(profile.blocks,STATION_TOTAL)+' / '+STATION_TOTAL)}
+      ${statCard('⛏️ Minecoins',profile.minecoins||0)}
       ${statCard('📖 Top subject',topSubject?topSubject[0]:'—')}
     </div>`;
 
@@ -931,6 +946,7 @@ function startTask() {
   show('t');
 }
 
+function escHtml(s) { const t=document.createElement('span'); t.textContent=s; return t.innerHTML; }
 function addMsg(role, text, isVenk=false) {
   const cm = document.getElementById('cm');
   const d = document.createElement('div');
@@ -939,8 +955,12 @@ function addMsg(role, text, isVenk=false) {
     const label = isVenk
       ? `<span class="venk-label">💀 VENK (aka Ink) 🐙</span>`
       : `<span class="ink-label">Ink 🐙</span>`;
-    const safeText = text.replace(/'/g,"\\'").replace(/"/g,'&quot;');
-    d.innerHTML = `${label}<span class="msg-text">${text}</span> <button onclick="speak('${safeText}')" style="background:none;border:none;cursor:pointer;font-size:12px;opacity:.5;vertical-align:middle">🔊</button>`;
+    d.innerHTML = `${label}<span class="msg-text">${escHtml(text)}</span>`;
+    const btn = document.createElement('button');
+    btn.textContent = '🔊';
+    btn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:12px;opacity:.5;vertical-align:middle;margin-left:4px';
+    btn.addEventListener('click', () => speak(text));
+    d.appendChild(btn);
   } else {
     d.className = 'ubub su';
     d.textContent = text;
@@ -992,7 +1012,11 @@ async function sendMsg() {
       setMood('happy');
       speak(rep);
     }
-  } catch(e) { const ty=document.getElementById('ty'); if(ty) ty.remove(); console.error(e); }
+  } catch(e) {
+    const ty=document.getElementById('ty'); if(ty) ty.remove(); console.error(e);
+    const errMsg = S.lang==='FR' ? '🌊 Oups, une bulle a bloqué le signal ! Réessaie...' : '🌊 Oops, a bubble blocked the signal! Try again...';
+    addMsg('a', errMsg); speak(errMsg);
+  }
   finally { sb.disabled = false; startIdleTimer(); }
 }
 
@@ -1204,13 +1228,15 @@ function taskDone() {
   S.taskHints.push(S.hintCount);
   const fr = S.lang==='FR';
 
-  // Save block + maybe card
+  // Save block + maybe card + minecoins
   const profile = getProfile();
   const wasBlocks = profile.blocks;
   profile.blocks = Math.min(STATION_TOTAL, profile.blocks + 1);
   const {card, isNew} = pickCard(profile);
   S.newCard = {card, isNew};
   if (isNew) profile.cards.push(card.e);
+  const coinsEarned = S.hintCount === 0 ? 15 : S.hintCount === 1 ? 10 : 5;
+  profile.minecoins = (profile.minecoins||0) + coinsEarned;
   saveProfile(profile);
 
   const CELEBRATIONS_EN = [
@@ -1238,6 +1264,10 @@ function taskDone() {
   document.getElementById('rewBlocks').textContent = blockEmojis;
   document.getElementById('rewBlockLabel').textContent = fr ? `+1 module ajouté (${profile.blocks}/${STATION_TOTAL} total)` : `+1 module added (${profile.blocks}/${STATION_TOTAL} total)`;
   document.getElementById('rewCelebText').textContent = celeb;
+  const coinBonus = S.hintCount === 0 ? (fr?'(sans indice !)':'(no hints!)') : '';
+  document.getElementById('rewCoinsAmount').textContent = `⛏️ +${coinsEarned} ${coinBonus}`;
+  document.getElementById('rewCoinsLabel').textContent = fr ? 'Minecoins gagnés !' : 'Minecoins earned!';
+  document.getElementById('rewCoinsTotal').textContent = `Total: ${profile.minecoins} ⛏️`;
   setTimeout(() => speak(celeb), 400);
 
   const cardWrap = document.getElementById('cardWrap');
@@ -1252,7 +1282,7 @@ function taskDone() {
       : card.r.charAt(0).toUpperCase()+card.r.slice(1);
     document.getElementById('cardName').textContent = isFR ? card.nF : card.n;
     document.getElementById('cardFact').textContent = isFR ? card.fF : card.f;
-    speak((isFR ? `Nouvelle carte : ${card.nF} ! ${card.fF}` : `New card: ${card.n}! ${card.fF ? card.f : ''}`));
+    speak(isFR ? `Nouvelle carte : ${card.nF} ! ${card.fF}` : `New card: ${card.n}! ${card.f}`);
   } else {
     cardWrap.style.display = 'none';
     speak(fr ? 'Super ! Un nouveau bloc pour la station !' : 'Awesome! One more block for the station!');
