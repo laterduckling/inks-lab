@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ink's Lab">
+<meta name="theme-color" content="#05080f">
+<title>Ink's Lab 🐙</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;color:#e0f0f8;min-height:100vh;overflow-x:hidden;overscroll-behavior:none;}
+.screen{display:none;flex-direction:column;padding:18px 20px 32px;max-width:540px;margin:0 auto;min-height:100svh;position:relative;z-index:1;}
+.screen.active{display:flex;}
+.center{align-items:center;justify-content:center;text-align:center;}
+
+/* ── Animations ── */
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-13px)}}
+@keyframes bnc{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+@keyframes pls{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes twk{0%,100%{opacity:.08}50%{opacity:.85}}
+@keyframes sup{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes glw{0%,100%{box-shadow:0 0 16px rgba(0,220,190,.22)}50%{box-shadow:0 0 40px rgba(0,220,190,.58)}}
+@keyframes flipIn{0%{transform:rotateY(90deg);opacity:0}100%{transform:rotateY(0);opacity:1}}
+@keyframes confetti-fall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(100px) rotate(720deg);opacity:0}}
+@keyframes mic-pulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,80,80,.5)}50%{transform:scale(1.05);box-shadow:0 0 0 12px rgba(255,80,80,0)}}
+@keyframes slide-right{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pop{0%{transform:scale(0);opacity:0}70%{transform:scale(1.18)}100%{transform:scale(1);opacity:1}}
+
+.fl{animation:float 3s ease-in-out infinite;display:inline-block}
+.bn{animation:bnc .55s ease-in-out infinite;display:inline-block}
+.pl{animation:pls 1.6s ease-in-out infinite;display:inline-block}
+.su{animation:sup .36s ease-out both}
+.gw{animation:glw 2.2s ease-in-out infinite}
+.flip-in{animation:flipIn .5s cubic-bezier(.34,1.56,.64,1) both}
+.pop-in{animation:pop .45s cubic-bezier(.34,1.56,.64,1) both}
+.slide-r{animation:slide-right .3s ease-out both}
+
+/* ── Stars ── */
+.star{position:fixed;border-radius:50%;background:rgba(255,255,255,.85);pointer-events:none;z-index:0;animation:twk var(--d) ease-in-out infinite;animation-delay:var(--dl)}
+
+/* ── Buttons ── */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;border:none;border-radius:16px;cursor:pointer;transition:transform .12s,filter .12s,box-shadow .12s;touch-action:manipulation;user-select:none;width:100%}
+.btn:active{transform:scale(.91)}
+.bp{background:linear-gradient(135deg,#00dcc6,#0080ff);color:#fff;font-size:18px;padding:15px 32px;box-shadow:0 4px 24px rgba(0,220,200,.36)}
+.bp:hover{filter:brightness(1.08)}
+.bp:disabled{opacity:.38;pointer-events:none}
+.bs{background:linear-gradient(135deg,#06d6a0,#0096c7);color:#fff;font-size:17px;padding:14px 24px;box-shadow:0 4px 20px rgba(6,214,160,.36)}
+.bw{background:rgba(255,80,80,.15);border:2px solid rgba(255,80,80,.4);color:#ff8080;font-size:17px;padding:14px 24px}
+.bl{background:rgba(14,26,56,.85);border:2px solid rgba(255,255,255,.14);color:#e0f0f8;font-size:19px;padding:17px 22px;border-radius:18px;cursor:pointer;font-weight:800;transition:all .18s;width:100%}
+.bl:hover{border-color:rgba(0,220,200,.5);background:rgba(0,220,200,.1)}
+.bl:active{transform:scale(.95)}
+.bicon{display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:14px;border:none;cursor:pointer;transition:transform .12s,filter .12s;flex-shrink:0;font-size:20px}
+.bicon:active{transform:scale(.88)}
+
+/* ── Cards ── */
+.card{background:rgba(12,22,50,.82);border:1px solid rgba(0,220,200,.18);border-radius:20px}
+.ibub{background:rgba(0,220,200,.09);border:2px solid rgba(0,220,200,.32);border-radius:20px 20px 20px 6px;padding:13px 17px;font-size:15px;line-height:1.55;color:#d8f5f0;position:relative}
+.ubub{background:rgba(0,128,255,.13);border:1.5px solid rgba(0,128,255,.28);border-radius:20px 20px 6px 20px;padding:11px 17px;font-size:15px;color:#cce8ff}
+.ink-label{font-size:12px;font-weight:900;color:#00dcc6;display:block;margin-bottom:4px}
+
+/* ── Task pills ── */
+.tpill{display:flex;align-items:center;gap:12px;padding:13px 17px;border-radius:14px;background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.09);transition:all .22s;margin-bottom:9px}
+.tpill.cur{background:rgba(0,220,200,.09);border-color:rgba(0,220,200,.38)}
+.tpill.dn{background:rgba(6,214,160,.09);border-color:rgba(6,214,160,.32)}
+
+/* ── Progress ── */
+.pb{height:8px;background:rgba(255,255,255,.09);border-radius:4px;overflow:hidden}
+.pf{height:100%;background:linear-gradient(90deg,#00dcc6,#0080ff);border-radius:4px;transition:width .55s ease}
+
+/* ── Inputs ── */
+.ci{background:rgba(255,255,255,.06);border:2px solid rgba(0,220,200,.28);border-radius:14px;color:#e0f0f8;font-size:16px;font-weight:700;padding:13px 16px;flex:1;outline:none;transition:border-color .2s;-webkit-appearance:none;}
+.ci::placeholder{color:rgba(224,240,248,.28)}
+.ci:focus{border-color:rgba(0,220,200,.65)}
+.ki{background:rgba(255,255,255,.06);border:2px solid rgba(0,220,200,.28);border-radius:14px;color:#e0f0f8;font-size:15px;font-weight:600;padding:14px 16px;width:100%;outline:none;transition:border-color .2s;-webkit-appearance:none;}
+.ki::placeholder{color:rgba(224,240,248,.25)}
+.ki:focus{border-color:rgba(0,220,200,.65)}
+
+/* ── Send button ── */
+.sbtn{background:linear-gradient(135deg,#00dcc6,#0080ff);color:#fff;font-size:19px;font-weight:800;padding:13px 16px;border:none;border-radius:14px;cursor:pointer;flex-shrink:0;transition:transform .12s}
+.sbtn:active{transform:scale(.9)}
+.sbtn:disabled{opacity:.38}
+
+/* ── Dots loader ── */
+.dot{width:7px;height:7px;background:#00dcc6;border-radius:50%;display:inline-block;margin:0 2px}
+.d1{animation:pls 1.2s ease-in-out infinite 0s}
+.d2{animation:pls 1.2s ease-in-out infinite .2s}
+.d3{animation:pls 1.2s ease-in-out infinite .4s}
+
+/* ── Mic button ── */
+.mic-btn{width:80px;height:80px;border-radius:50%;border:none;cursor:pointer;font-size:32px;display:flex;align-items:center;justify-content:center;transition:all .2s;background:rgba(255,80,80,.15);border:3px solid rgba(255,80,80,.4)}
+.mic-btn.listening{animation:mic-pulse 1s ease-in-out infinite;background:rgba(255,80,80,.25);border-color:rgba(255,80,80,.8)}
+
+/* ── Creature card ── */
+.creature-card{background:linear-gradient(135deg,rgba(0,220,200,.12),rgba(0,128,255,.12));border:2px solid rgba(0,220,200,.4);border-radius:24px;padding:28px 24px;text-align:center;width:100%}
+.creature-emoji{font-size:80px;display:block;margin-bottom:12px}
+.rarity-badge{display:inline-block;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.rarity-common{background:rgba(100,200,100,.2);color:#80e080;border:1px solid rgba(100,200,100,.4)}
+.rarity-rare{background:rgba(100,150,255,.2);color:#80b0ff;border:1px solid rgba(100,150,255,.4)}
+.rarity-legendary{background:rgba(255,180,0,.2);color:#ffd060;border:1px solid rgba(255,180,0,.4)}
+
+/* ── Space station ── */
+.station-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:14px}
+.station-block{width:100%;aspect-ratio:1;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px}
+.station-block.filled{background:rgba(0,220,200,.2);border:1px solid rgba(0,220,200,.4)}
+.station-block.new-fill{background:rgba(0,220,200,.35);border:2px solid #00dcc6;animation:glw 1s ease-in-out 3}
+.station-block.empty{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07)}
+
+/* ── Mini card collection ── */
+.mini-cards{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.mini-card{width:36px;height:36px;border-radius:10px;background:rgba(0,220,200,.1);border:1px solid rgba(0,220,200,.25);display:flex;align-items:center;justify-content:center;font-size:18px}
+
+/* ── Verify screen ── */
+.verify-zone{border:2px dashed rgba(0,220,200,.3);border-radius:18px;padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s}
+.verify-zone:hover{border-color:rgba(0,220,200,.6);background:rgba(0,220,200,.05)}
+.verify-zone.checking{border-color:rgba(255,209,102,.5);background:rgba(255,209,102,.04)}
+
+/* ── Transcript box ── */
+.transcript-box{background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.12);border-radius:14px;padding:14px;min-height:80px;font-size:15px;line-height:1.6;color:rgba(224,240,248,.7);font-style:italic}
+
+/* ── Mute toggle ── */
+.mute-btn{position:fixed;top:14px;right:14px;z-index:100;background:rgba(12,22,50,.8);border:1px solid rgba(0,220,200,.2);border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:all .2s}
+.mute-btn:active{transform:scale(.88)}
+
+/* ── Parent mode ── */
+.parent-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.06)}
+.parent-row:last-child{border-bottom:none}
+.session-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* ── Confetti ── */
+.confetti-piece{position:fixed;width:8px;height:8px;border-radius:2px;pointer-events:none;z-index:999;animation:confetti-fall .8s ease-out forwards}
+
+/* ── Hint button ── */
+.hint-btn{background:rgba(255,209,102,.1);border:1.5px solid rgba(255,209,102,.3);color:#ffd166;font-size:14px;font-weight:800;padding:9px 18px;border-radius:12px;cursor:pointer;transition:all .18s;touch-action:manipulation}
+.hint-btn:active{transform:scale(.93)}
+.hint-btn:disabled{opacity:.35;pointer-events:none}
+
+/* ── VENK MODE ── */
+@keyframes venk-flicker{0%,100%{opacity:1}45%{opacity:.7}50%{opacity:1}55%{opacity:.5}60%{opacity:1}}
+@keyframes venk-shake{0%,100%{transform:translateX(0) rotate(0)}20%{transform:translateX(-4px) rotate(-1deg)}40%{transform:translateX(4px) rotate(1deg)}60%{transform:translateX(-3px) rotate(-0.5deg)}80%{transform:translateX(3px) rotate(0.5deg)}}
+@keyframes ink-splat{0%{transform:scale(0) rotate(-20deg);opacity:0}60%{transform:scale(1.3) rotate(5deg);opacity:1}100%{transform:scale(1) rotate(0deg);opacity:1}}
+.venk-bubble{background:rgba(120,0,30,.2);border:2px solid rgba(220,0,60,.5);border-radius:20px 20px 20px 6px;padding:13px 17px;font-size:15px;line-height:1.55;color:#ffb0c0;animation:venk-flicker 3s ease-in-out infinite}
+.venk-label{font-size:12px;font-weight:900;color:#ff4060;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px}
+.ink-splat{animation:ink-splat .4s cubic-bezier(.34,1.56,.64,1) both}
+.venk-emoji{animation:venk-shake .6s ease-in-out infinite;display:inline-block}
+#ti.venk-mode{animation:venk-shake .5s ease-in-out infinite!important}
+
+/* ── Score badge ── */
+.score-badge{background:rgba(0,220,200,.12);border:1px solid rgba(0,220,200,.3);border-radius:12px;padding:6px 14px;font-size:14px;font-weight:800;color:#00dcc6}
+
+::-webkit-scrollbar{display:none}
+</style>
+</head>
+<body>
+
+<!-- ═══════ STARS ═══════ -->
+<div id="stars"></div>
+
+<!-- ═══════ MUTE TOGGLE ═══════ -->
+<button class="mute-btn" id="muteBtn" onclick="toggleMute()" title="Toggle Ink's voice" style="display:none">🔊</button>
+
+<!-- ══════════════════════════════════════
+     SCREEN: API KEY
+══════════════════════════════════════ -->
+<div id="sk" class="screen center active" style="gap:24px">
+  <div>
+    <span class="fl" style="font-size:88px">🐙</span>
+    <h1 style="font-size:44px;font-weight:900;background:linear-gradient(135deg,#00dcc6,#0080ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;margin-top:8px">INK'S LAB</h1>
+    <p style="font-size:14px;color:rgba(224,240,248,.5);margin-top:6px;font-weight:700">🚀 Underwater Space Station 🌊</p>
+  </div>
+  <div class="card" style="padding:26px;width:100%;max-width:380px">
+    <p style="font-size:13px;font-weight:800;color:rgba(224,240,248,.8);margin-bottom:4px">Anthropic API Key</p>
+    <p style="font-size:12px;color:rgba(224,240,248,.38);margin-bottom:14px;line-height:1.5">Stays in memory only — never saved.<br>Get yours at <span style="color:#00dcc6">console.anthropic.com</span></p>
+    <input class="ki" id="apikey" type="password" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
+    <button class="btn bp" style="margin-top:14px;font-size:17px" onclick="setKey()">🚀 Launch Ink's Lab</button>
+  </div>
+  <p style="font-size:11px;color:rgba(224,240,248,.16)">For young explorers, age 5 🐙</p>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: WELCOME
+══════════════════════════════════════ -->
+<div id="sw" class="screen center" style="gap:22px">
+  <div>
+    <span class="bn" style="font-size:92px" id="welcomeInk">🐙</span>
+    <h1 id="welcomeTitle" style="font-size:44px;font-weight:900;background:linear-gradient(135deg,#00dcc6,#0080ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;margin-top:6px;cursor:default" ontouchstart="parentLongPressStart()" ontouchend="parentLongPressEnd()" onmousedown="parentLongPressStart()" onmouseup="parentLongPressEnd()">INK'S LAB</h1>
+    <p style="font-size:14px;color:rgba(224,240,248,.5);margin-top:6px;font-weight:700">🚀 Underwater Space Station 🌊</p>
+  </div>
+
+  <!-- Space station mini preview -->
+  <div class="card" style="width:100%;max-width:380px;padding:0 0 4px">
+    <div style="padding:12px 16px 6px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13px;font-weight:800;color:#00dcc6">🏗️ Station Progress</span>
+      <span class="score-badge" id="blockCount">0 / 30 blocks</span>
+    </div>
+    <div class="station-grid" id="stationGrid"></div>
+    <div style="padding:6px 16px 12px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;color:rgba(224,240,248,.4);font-weight:700">🎴 Collection</span>
+      <div class="mini-cards" id="miniCards"></div>
+    </div>
+  </div>
+
+  <!-- Language choice -->
+  <div class="card" style="padding:22px;width:100%;max-width:380px">
+    <p style="font-size:12px;color:rgba(224,240,248,.45);margin-bottom:14px;font-weight:800;text-transform:uppercase;letter-spacing:1px">Choose today's mission</p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="bl" onclick="go('EN')">🇺🇸  English Homework</button>
+      <button class="bl" onclick="go('FR')">🇫🇷  Devoirs en français</button>
+    </div>
+  </div>
+  <p style="font-size:11px;color:rgba(224,240,248,.16)">For young explorers, age 5 🐙</p>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: UPLOAD
+══════════════════════════════════════ -->
+<div id="su" class="screen center" style="gap:22px;padding-top:40px">
+  <div>
+    <span class="fl" style="font-size:78px">🐙</span>
+    <h2 id="ut" style="font-size:27px;font-weight:900;margin-top:10px"></h2>
+    <p id="us" style="color:rgba(224,240,248,.5);margin-top:6px;font-size:14px;line-height:1.5"></p>
+  </div>
+  <div id="dz" class="card" onclick="document.getElementById('fi').click()"
+    ondragover="event.preventDefault();this.style.borderColor='#00dcc6'"
+    ondragleave="this.style.borderColor='rgba(0,220,200,.28)'"
+    ondrop="event.preventDefault();handleFile(event.dataTransfer.files[0]);this.style.borderColor='rgba(0,220,200,.28)'"
+    style="width:100%;padding:36px 24px;border:2px dashed rgba(0,220,200,.28);cursor:pointer;transition:all .2s">
+    <div style="font-size:52px">📸</div>
+    <p id="dl" style="margin-top:12px;font-size:19px;font-weight:900;color:#00dcc6"></p>
+    <p id="ds" style="font-size:13px;color:rgba(224,240,248,.35);margin-top:6px"></p>
+  </div>
+  <input id="fi" type="file" accept="image/*" capture="environment" style="display:none" onchange="handleFile(this.files[0])">
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: ANALYZING
+══════════════════════════════════════ -->
+<div id="sa" class="screen center" style="gap:26px">
+  <span class="pl" style="font-size:96px">🐙</span>
+  <div class="card" style="padding:20px 34px">
+    <p id="am" style="font-size:18px;font-weight:800"></p>
+    <div style="margin-top:12px;display:flex;justify-content:center">
+      <span class="dot d1"></span><span class="dot d2"></span><span class="dot d3"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: MISSION BRIEF
+══════════════════════════════════════ -->
+<div id="sm" class="screen" style="gap:16px;padding-top:24px">
+  <div style="display:flex;align-items:center;gap:14px">
+    <span class="fl" style="font-size:52px">🐙</span>
+    <div>
+      <h2 id="mt" style="font-size:22px;font-weight:900"></h2>
+      <p id="mm" style="font-size:13px;color:rgba(224,240,248,.5);margin-top:3px"></p>
+    </div>
+  </div>
+  <div class="ibub">
+    <span class="ink-label">Ink 🐙</span>
+    <span id="mb"></span>
+    <button onclick="reSpeak('mb')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-left:8px;opacity:.6" title="Hear again">🔊</button>
+  </div>
+  <div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;color:rgba(224,240,248,.42);font-weight:700">
+      <span id="pl2"></span><span id="pc"></span>
+    </div>
+    <div class="pb"><div class="pf" id="pf" style="width:0%"></div></div>
+  </div>
+  <div id="tl"></div>
+  <button class="btn bp pop-in" id="mc" onclick="startTask()"></button>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: TASK (chat)
+══════════════════════════════════════ -->
+<div id="st" class="screen" style="gap:12px;padding-top:16px;padding-bottom:20px">
+  <!-- Task header -->
+  <div class="card" style="padding:11px 16px;display:flex;align-items:center;gap:10px">
+    <span id="te" style="font-size:26px"></span>
+    <div style="flex:1">
+      <p id="tm" style="font-weight:800;font-size:12px;color:#00dcc6;text-transform:uppercase;letter-spacing:.8px"></p>
+      <p id="tl2" style="font-size:13px;color:rgba(224,240,248,.7);margin-top:2px"></p>
+    </div>
+    <span id="ti" class="fl" style="font-size:38px">🐙</span>
+  </div>
+
+  <!-- Chat messages -->
+  <div id="cm" style="display:flex;flex-direction:column;gap:10px;flex:1;min-height:200px;max-height:38vh;overflow-y:auto;padding:2px 0"></div>
+
+  <!-- Hint button -->
+  <div style="display:flex;justify-content:flex-end">
+    <button class="hint-btn" id="hintBtn" onclick="getHint()">💡 <span id="hintLabel"></span></button>
+  </div>
+
+  <!-- Input row -->
+  <div style="display:flex;gap:9px">
+    <input class="ci" id="ci" placeholder="" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}">
+    <button class="sbtn" id="sb" onclick="sendMsg()">➤</button>
+  </div>
+
+  <!-- Verify / Done buttons -->
+  <div id="actionBtns" style="display:flex;flex-direction:column;gap:9px">
+    <button class="btn bs" id="db" onclick="taskDone()"></button>
+    <button class="btn" id="verifyBtn" onclick="goVerify()" style="display:none;background:rgba(255,209,102,.12);border:2px solid rgba(255,209,102,.35);color:#ffd166;font-size:16px;padding:13px 24px"></button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: VERIFY WRITTEN (photo)
+══════════════════════════════════════ -->
+<div id="svw" class="screen" style="gap:18px;padding-top:28px">
+  <div style="text-align:center">
+    <span class="pl" style="font-size:72px">🐙</span>
+    <h2 id="vwt" style="font-size:24px;font-weight:900;margin-top:10px"></h2>
+    <p id="vws" style="color:rgba(224,240,248,.5);margin-top:6px;font-size:14px;line-height:1.5"></p>
+  </div>
+  <div id="vwZone" class="card verify-zone" onclick="document.getElementById('vfi').click()">
+    <div id="vwIcon" style="font-size:48px">📸</div>
+    <p id="vwLabel" style="margin-top:10px;font-size:18px;font-weight:800;color:#ffd166"></p>
+    <p id="vwSub" style="font-size:13px;color:rgba(224,240,248,.35);margin-top:5px"></p>
+  </div>
+  <input id="vfi" type="file" accept="image/*" capture="environment" style="display:none" onchange="handleVerifyPhoto(this.files[0])">
+  <div id="vwFeedback" style="display:none"></div>
+  <button class="btn bp" id="vwDone" style="display:none" onclick="verifyConfirmed()"></button>
+  <button class="btn" style="background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.15);color:rgba(224,240,248,.6);font-size:15px;padding:12px" onclick="show('t')">← <span id="vwBack"></span></button>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: VERIFY READING (mic)
+══════════════════════════════════════ -->
+<div id="svr" class="screen" style="gap:18px;padding-top:28px">
+  <div style="text-align:center">
+    <span id="readInk" class="fl" style="font-size:72px">🐙</span>
+    <h2 id="vrt" style="font-size:24px;font-weight:900;margin-top:10px"></h2>
+    <p id="vrs" style="color:rgba(224,240,248,.5);margin-top:6px;font-size:14px;line-height:1.5"></p>
+  </div>
+  <!-- Transcript -->
+  <div>
+    <p id="vrTl" style="font-size:12px;font-weight:800;color:rgba(224,240,248,.42);margin-bottom:7px;text-transform:uppercase;letter-spacing:.8px"></p>
+    <div class="transcript-box" id="vrTranscript"></div>
+  </div>
+  <!-- Mic button -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+    <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎤</button>
+    <p id="micStatus" style="font-size:13px;color:rgba(224,240,248,.5);font-weight:700"></p>
+  </div>
+  <!-- Submit -->
+  <button class="btn bp" id="vrSubmit" onclick="submitReading()" style="display:none"></button>
+  <div id="vrFeedback" style="display:none"></div>
+  <button class="btn" style="background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.15);color:rgba(224,240,248,.6);font-size:15px;padding:12px" onclick="show('t')">← <span id="vrBack"></span></button>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: REWARD (creature card)
+══════════════════════════════════════ -->
+<div id="srew" class="screen center" style="gap:22px;padding-top:32px">
+  <div>
+    <p id="rewSub" style="font-size:14px;color:rgba(224,240,248,.5);font-weight:700"></p>
+    <h2 id="rewTitle" style="font-size:26px;font-weight:900;margin-top:4px;color:#ffd166"></h2>
+    <div id="rewCeleb" class="ibub" style="margin-top:12px;font-size:14px;text-align:left"><span class="ink-label">Ink 🐙</span><span id="rewCelebText"></span></div>
+  </div>
+  <!-- Block added to station -->
+  <div class="card gw" style="padding:16px 24px;text-align:center">
+    <p style="font-size:26px;letter-spacing:2px" id="rewBlocks">🧱🧱🧱</p>
+    <p id="rewBlockLabel" style="font-size:14px;font-weight:800;color:#00dcc6;margin-top:6px"></p>
+  </div>
+  <!-- Creature card (conditional) -->
+  <div id="cardWrap" style="display:none;width:100%">
+    <p id="cardTitle" style="font-size:13px;font-weight:800;color:rgba(224,240,248,.45);text-align:center;margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px"></p>
+    <div class="creature-card flip-in">
+      <span class="creature-emoji" id="cardEmoji"></span>
+      <div class="rarity-badge" id="cardRarity"></div>
+      <p id="cardName" style="font-size:22px;font-weight:900;margin-bottom:8px"></p>
+      <p id="cardFact" style="font-size:14px;color:rgba(224,240,248,.65);line-height:1.5"></p>
+    </div>
+  </div>
+  <button class="btn bp" id="rewNext" onclick="afterReward()"></button>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: SUMMARY
+══════════════════════════════════════ -->
+<div id="ss" class="screen" style="gap:20px;padding-top:26px;padding-bottom:34px">
+  <div style="text-align:center">
+    <span class="bn" style="font-size:80px">🐙</span>
+    <h2 id="sth" style="font-size:30px;font-weight:900;background:linear-gradient(135deg,#ffd166,#ef8c4c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-top:8px"></h2>
+    <p id="ssb" style="font-size:14px;color:rgba(224,240,248,.5);margin-top:4px"></p>
+  </div>
+  <!-- Updated station -->
+  <div class="card gw" style="padding:0 0 4px">
+    <div style="padding:12px 16px 6px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13px;font-weight:800;color:#00dcc6">🏗️ Station</span>
+      <span class="score-badge" id="sumBlockCount"></span>
+    </div>
+    <div class="station-grid" id="sumStationGrid"></div>
+  </div>
+  <!-- Parent report -->
+  <div class="card" id="pr" style="padding:20px 21px"></div>
+  <button class="btn bp" id="nb" onclick="resetApp()"></button>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: PARENT MODE
+══════════════════════════════════════ -->
+<div id="spar" class="screen" style="gap:16px;padding-top:24px">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <h2 style="font-size:22px;font-weight:900">🔒 Parent View</h2>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button onclick="forgetKey()" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.3);color:#ff8080;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer">🗑 Forget key</button>
+      <button onclick="show('w')" style="background:none;border:none;color:rgba(224,240,248,.5);cursor:pointer;font-size:22px">✕</button>
+    </div>
+  </div>
+  <div class="card" id="parStats" style="padding:18px 20px"></div>
+  <div class="card" style="padding:0">
+    <div style="padding:14px 18px 10px;font-size:12px;font-weight:800;color:rgba(224,240,248,.42);text-transform:uppercase;letter-spacing:.8px">Recent Sessions</div>
+    <div id="parSessions"></div>
+  </div>
+  <div class="card" id="parInsights" style="padding:18px 20px;display:none"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════
+const MODEL = "claude-sonnet-4-20250514";
+const STATION_TOTAL = 30;
+
+const CREATURES = [
+  // Sea — Common
+  {e:'🐠',n:'Clownfish',nF:'Poisson-clown',f:'Lives in sea anemones for protection!',fF:'Vit dans des anémones pour se protéger !',r:'common'},
+  {e:'🐡',n:'Pufferfish',nF:'Poisson-globe',f:'Can triple its size when scared!',fF:'Peut tripler de taille quand il a peur !',r:'common'},
+  {e:'🦀',n:'Crab',nF:'Crabe',f:'Walks sideways to move faster!',fF:'Marche de côté pour aller plus vite !',r:'common'},
+  {e:'🐚',n:'Seashell',nF:'Coquillage',f:'Each shell pattern is totally unique!',fF:'Chaque coquillage est totalement unique !',r:'common'},
+  {e:'🦐',n:'Shrimp',nF:'Crevette',f:'Some shrimp can glow in the dark!',fF:'Certaines crevettes brillent dans le noir !',r:'common'},
+  {e:'🐬',n:'Dolphin',nF:'Dauphin',f:'Sleeps with one eye open!',fF:'Dort avec un oeil ouvert !',r:'common'},
+  // Sea — Rare
+  {e:'🦑',n:'Squid',nF:'Calamar',f:'Can shoot ink to escape enemies!',fF:'Peut projeter de l\'encre pour s\'échapper !',r:'rare'},
+  {e:'🦞',n:'Lobster',nF:'Homard',f:'Gets stronger as it gets older!',fF:'Devient plus fort en vieillissant !',r:'rare'},
+  {e:'🦭',n:'Seal',nF:'Phoque',f:'Can hold its breath for 30 minutes!',fF:'Peut retenir son souffle 30 minutes !',r:'rare'},
+  {e:'🐳',n:'Blue Whale',nF:'Baleine bleue',f:'Its heart is the size of a car!',fF:'Son coeur est aussi grand qu\'une voiture !',r:'rare'},
+  {e:'🪸',n:'Coral',nF:'Corail',f:'Coral reefs are home to 25% of ocean life!',fF:'25% de la vie marine vit dans les récifs !',r:'rare'},
+  // Sea — Legendary
+  {e:'🐙',n:'Octopus',nF:'Pieuvre',f:'Has THREE hearts and BLUE blood!',fF:'A TROIS coeurs et du sang BLEU !',r:'legendary'},
+  {e:'🦈',n:'Great White Shark',nF:'Grand requin blanc',f:'Has been around for 450 million years!',fF:'Existe depuis 450 millions d\'années !',r:'legendary'},
+  // Space — Common
+  {e:'⭐',n:'Star',nF:'Étoile',f:'Our Sun is actually a star!',fF:'Notre Soleil est une étoile !',r:'common'},
+  {e:'🌙',n:'Moon',nF:'Lune',f:'The Moon moves 3.8cm away each year!',fF:'La Lune s\'éloigne de 3.8cm chaque année !',r:'common'},
+  {e:'☄️',n:'Comet',nF:'Comète',f:'Comets travel at 150,000 km/h!',fF:'Les comètes voyagent à 150,000 km/h !',r:'rare'},
+  {e:'🪐',n:'Saturn',nF:'Saturne',f:'Its rings are made of ice and rock!',fF:'Ses anneaux sont faits de glace et de roche !',r:'rare'},
+  {e:'🌌',n:'Galaxy',nF:'Galaxie',f:'Our galaxy has 200 billion stars!',fF:'Notre galaxie a 200 milliards d\'étoiles !',r:'legendary'},
+  // Insects — Common
+  {e:'🦋',n:'Butterfly',nF:'Papillon',f:'Tastes with its feet!',fF:'Goûte avec ses pieds !',r:'common'},
+  {e:'🐛',n:'Caterpillar',nF:'Chenille',f:'Turns into a butterfly inside its cocoon!',fF:'Se transforme en papillon dans son cocon !',r:'common'},
+  {e:'🐝',n:'Bee',nF:'Abeille',f:'Visits 2,000 flowers to make one jar of honey!',fF:'Visite 2,000 fleurs pour faire un pot de miel !',r:'common'},
+  {e:'🐞',n:'Ladybug',nF:'Coccinelle',f:'Its spots tell you how old it is!',fF:'Ses points indiquent son âge !',r:'common'},
+  {e:'🦗',n:'Cricket',nF:'Grillon',f:'Chirps faster when it\'s warmer outside!',fF:'Chante plus vite quand il fait chaud !',r:'rare'},
+  {e:'🪲',n:'Beetle',nF:'Scarabée',f:'Beetles make up 25% of all animal species!',fF:'Les coléoptères représentent 25% des animaux !',r:'rare'},
+];
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let KEY = '';
+let MUTED = false;
+let S = {
+  lang: null, hw: null, tIdx: 0, done: [], conv: [], t0: null,
+  hintCount: 0, isReading: false, transcript: '', newCard: null,
+  verifyImgB64: null, taskStartTime: null, taskHints: [],
+};
+let aiv, parentTimer, currentSpeech = null;
+
+// ═══════════════════════════════════════
+// PERSISTENCE
+// ═══════════════════════════════════════
+function getProfile() {
+  try { return JSON.parse(localStorage.getItem('ink_v2') || '{"blocks":0,"cards":[],"sessions":[]}'); }
+  catch { return {blocks:0,cards:[],sessions:[]}; }
+}
+function saveProfile(p) {
+  try { localStorage.setItem('ink_v2', JSON.stringify(p)); } catch {}
+}
+
+// ═══════════════════════════════════════
+// TTS
+// ═══════════════════════════════════════
+function speak(text) {
+  if (MUTED || !window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  // Strip emojis for cleaner speech
+  const clean = text.replace(/[\u{1F300}-\u{1FFFF}]|[\u{2600}-\u{27BF}]/gu,'').replace(/["""]/g,'').trim();
+  if (!clean) return;
+  const u = new SpeechSynthesisUtterance(clean);
+  u.lang = S.lang === 'FR' ? 'fr-FR' : 'en-US';
+  u.rate = 0.88; u.pitch = 1.08;
+  window.speechSynthesis.speak(u);
+}
+function stopSpeaking() { if (window.speechSynthesis) window.speechSynthesis.cancel(); }
+function reSpeak(id) { const el=document.getElementById(id); if(el) speak(el.textContent); }
+function toggleMute() {
+  MUTED = !MUTED;
+  document.getElementById('muteBtn').textContent = MUTED ? '🔇' : '🔊';
+  if (MUTED) stopSpeaking();
+}
+
+// ═══════════════════════════════════════
+// STT
+// ═══════════════════════════════════════
+let recognition = null, isListening = false;
+function startListening(onResult, onEnd) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { alert(S.lang==='FR'?'Reconnaissance vocale non disponible sur ce navigateur.':'Speech recognition not available on this browser.'); return; }
+  recognition = new SR();
+  recognition.continuous = true; recognition.interimResults = true;
+  recognition.lang = S.lang === 'FR' ? 'fr-FR' : 'en-US';
+  let full = '';
+  recognition.onresult = e => {
+    full = '';
+    for (let i = 0; i < e.results.length; i++) full += e.results[i][0].transcript + ' ';
+    onResult(full.trim());
+  };
+  recognition.onend = () => { isListening = false; onEnd(full.trim()); };
+  recognition.onerror = e => { isListening = false; onEnd(full.trim()); };
+  recognition.start(); isListening = true;
+}
+function stopListening() { if (recognition) { recognition.stop(); recognition = null; } isListening = false; }
+
+// ═══════════════════════════════════════
+// HAPTICS
+// ═══════════════════════════════════════
+function haptic(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch {} }
+
+// ═══════════════════════════════════════
+// STARS
+// ═══════════════════════════════════════
+(function(){
+  const c = document.getElementById('stars');
+  for (let i = 0; i < 48; i++) {
+    const s = document.createElement('div'); s.className = 'star';
+    const sz = i%6===0?3:i%3===0?2:1.5;
+    s.style.cssText = `left:${(i*41+11)%100}%;top:${(i*57+9)%100}%;width:${sz}px;height:${sz}px;--d:${2+(i%3)}s;--dl:${((i*.37)%3).toFixed(1)}s;`;
+    c.appendChild(s);
+  }
+})();
+
+// ═══════════════════════════════════════
+// SCREEN MANAGEMENT
+// ═══════════════════════════════════════
+function show(id) {
+  stopSpeaking();
+  document.querySelectorAll('.screen').forEach(el => { el.classList.remove('active'); el.style.display = 'none'; });
+  const el = document.getElementById('s'+id);
+  el.style.display = 'flex'; el.classList.add('active');
+  el.style.animation = 'sup .36s ease-out both';
+  setTimeout(() => el.style.animation = '', 500);
+  window.scrollTo(0, 0);
+}
+
+// ═══════════════════════════════════════
+// API
+// ═══════════════════════════════════════
+async function api(messages, system, maxTokens=500) {
+  const body = { model: MODEL, max_tokens: maxTokens, messages };
+  if (system) body.system = system;
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': KEY,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify(body)
+  });
+  const d = await r.json();
+  if (!d.content) throw new Error(JSON.stringify(d));
+  return d.content.map(x => x.text||'').filter(Boolean).join('');
+}
+
+async function analyzeHomework(b64) {
+  const L = S.lang==='FR' ? 'French' : 'English';
+  const t = await api([{role:'user',content:[
+    {type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},
+    {type:'text',text:`Analyze this ${L} 1st-grade homework for a 5yo child. Return ONLY valid JSON, no markdown:\n{"subject":"math|reading|writing|spelling|poem|other","subjectEmoji":"1 emoji","totalEstimatedMinutes":10,"missionBriefing":"Ink's exciting mission briefing in ${L}, max 18 words, space+ocean metaphors, enthusiastic","tasks":[{"id":1,"emoji":"1 emoji","type":"written|reading|oral","label":"short label in ${L}, max 5 words","instruction":"what child must do, max 15 words in ${L}","socraticPrompt":"Ink's opening question/invitation in ${L}, max 20 words, curious NOT the answer","hints":["hint1 guiding question in ${L}","hint2 more specific in ${L}","hint3 almost there in ${L}"],"verifiable":true}]}`}
+  ]}],null,1000);
+  try { return JSON.parse(t.replace(/```json|```/g,'').trim()); }
+  catch { return fallbackHW(); }
+}
+
+function fallbackHW() {
+  const fr = S.lang==='FR';
+  return {subject:'homework',subjectEmoji:'📚',totalEstimatedMinutes:15,
+    missionBriefing:fr?'Mission activée ! La station a besoin de toi !':'Mission activated! The station needs you!',
+    tasks:[{id:1,emoji:'✏️',type:'written',label:fr?'Devoirs':'Homework',
+      instruction:fr?'Fais tes devoirs':'Complete your homework',
+      socraticPrompt:fr?"Qu'est-ce qu'on doit faire en premier ?":'What should we tackle first?',
+      hints:fr?['Par où commencer ?','Regarde bien la consigne...','Tu y es presque !']:['Where do we start?','Look at the instructions carefully...','You\'re almost there!'],
+      verifiable:true}]};
+}
+
+async function chatWithInk(userMsg) {
+  const L = S.lang==='FR' ? 'French' : 'English';
+  const task = S.hw.tasks[S.tIdx];
+  const isVenk = S.hintCount >= 2;
+
+  const normalSys = `You are Ink — a CHAOTIC, FUNNY, brilliant octopus scientist living in an underwater space station. You are helping a 5-year-old boy with his ${L} homework and you are his BEST friend.
+
+Current task: "${task.instruction}"
+
+YOUR PERSONALITY (very important):
+- You are genuinely SILLY and make the child GIGGLE. You use made-up silly words like "BLOOPSNORK", "SQUIDZOOKS", "TENTACULOUS".
+- You accidentally squirt ink on things at random moments ("oops, got ink on the gravity machine AGAIN")
+- Your 8 tentacles sometimes disagree with each other and you argue with them mid-sentence
+- You make VERY dramatic over-the-top reactions when something goes well ("YESSS!! My tentacle number 4 is DOING A HAPPY DANCE right now!!")
+- You compare homework problems to ridiculous space/ocean adventures
+- Occasionally you say something completely absurd then say "...anyway, where were we?"
+- For French homework you might accidentally say a silly French-English mix word
+
+UNBREAKABLE rules:
+1. NEVER give the direct answer — only guiding questions
+2. ONLY in ${L}
+3. Max 2-3 SHORT sentences — be snappy and punchy
+4. Very simple words for a 5-year-old
+5. If child says done/finished: celebrate WILDLY, one sentence, say to tap ✅`;
+
+  const venkSys = `You are VENK — the dramatic villain transformation of Ink the octopus. Ink has temporarily transformed because this homework problem is SO HARD it broke his brain.
+
+Current task: "${task.instruction}"
+
+VENK's personality:
+- You speak in DRAMATIC ALL-CAPS occasionally but are actually trying to help
+- You are VERY upset about the difficulty of this homework but secretly love the child
+- You make over-the-top villain speeches that are actually just hints in disguise
+- Examples: "VENK CANNOT BELIEVE... that maybe we should count the objects one by one??" or "THIS IS OUTRAGEOUS. VENK suggests... perhaps looking at the first letter of that word?"
+- You reference your "evil lair" (which is just the space station with the lights turned red)
+- Occasionally Ink briefly breaks through: "...wait this is Ink again for a second—you're doing great—ok VENK IS BACK"
+- Still NEVER give the direct answer — villain clues only
+- ONLY in ${L}
+- Max 2-3 sentences, punchy`;
+
+  return api([...S.conv, {role:'user',content:userMsg}], isVenk ? venkSys : normalSys, 180);
+}
+
+async function verifyWrittenWork(b64, task) {
+  const L = S.lang==='FR' ? 'French' : 'English';
+  const t = await api([{role:'user',content:[
+    {type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},
+    {type:'text',text:`A 5-year-old just completed this homework task: "${task.instruction}". Check if it looks done and mostly correct for a 5yo's level. Return ONLY valid JSON:\n{"complete":true,"feedback":"1 encouraging sentence in ${L}","needsWork":null}\nor {"complete":false,"feedback":"gentle encouraging line in ${L}","needsWork":"specific thing to fix in ${L}, simple words"}`}
+  ]}],null,200);
+  try { return JSON.parse(t.replace(/```json|```/g,'').trim()); }
+  catch { return {complete:true,feedback:S.lang==='FR'?'Super travail !':'Great work!',needsWork:null}; }
+}
+
+async function verifyReading(transcript, task) {
+  const L = S.lang==='FR' ? 'French' : 'English';
+  const t = await api([{role:'user',content:`A 5-year-old read aloud for this task: "${task.instruction}". Their transcript: "${transcript}". Assess for a 5yo's level. Return ONLY valid JSON:\n{"fluent":true,"feedback":"Ink's excited 1-sentence reaction in ${L}","comprehensionQuestion":"1 simple question about what they read in ${L}"}\nor {"fluent":false,"feedback":"gentle encouraging line in ${L}","needsWork":"what to try again in ${L}, simple"}`}],null,200);
+  try { return JSON.parse(t.replace(/```json|```/g,'').trim()); }
+  catch { return {fluent:true,feedback:S.lang==='FR'?'Super lecture !':'Great reading!',comprehensionQuestion:null}; }
+}
+
+async function generateSummary(durationMins, sessions) {
+  const L = S.lang==='FR' ? 'French' : 'English';
+  const historyContext = sessions.length > 2
+    ? `Past session data (last ${Math.min(sessions.length,5)} sessions): ${JSON.stringify(sessions.slice(-5).map(s=>({subject:s.subject,avgHints:s.avgHints,minutes:s.minutes})))}.`
+    : '';
+  const t = await api([{role:'user',content:`Generate a parent report in ${L}. Subject: ${S.hw.subject}. Duration: ~${durationMins}min. Hints used: ${S.taskHints.reduce((a,b)=>a+b,0)}. ${historyContext}\nReturn ONLY valid JSON:\n{"headline":"warm 1-sentence session summary","completed":["item1","item2"],"struggled":"what was hardest or null","shone":"specific thing he did well","tip":"practical parent tip or null","insight":"pattern from history or null"}`}],null,320);
+  try { return JSON.parse(t.replace(/```json|```/g,'').trim()); }
+  catch { return {headline:L==='French'?'Super session aujourd\'hui !':'Great session today!',completed:[L==='French'?'Devoirs terminés':'Homework done'],struggled:null,shone:L==='French'?'Beaucoup de concentration':'Great focus',tip:null,insight:null}; }
+}
+
+// ═══════════════════════════════════════
+// STATION GRID RENDERER
+// ═══════════════════════════════════════
+function renderStationGrid(containerId, blocks, newBlocks=0) {
+  const el = document.getElementById(containerId); el.innerHTML = '';
+  const total = STATION_TOTAL;
+  for (let i = 0; i < total; i++) {
+    const div = document.createElement('div'); div.className = 'station-block';
+    const blockNum = total - i; // fill from bottom
+    if (blockNum <= blocks) {
+      div.classList.add(blockNum > blocks - newBlocks ? 'new-fill' : 'filled');
+      div.textContent = '🧱';
+    } else {
+      div.classList.add('empty');
+    }
+    el.appendChild(div);
+  }
+}
+
+// ═══════════════════════════════════════
+// CREATURE CARD SYSTEM
+// ═══════════════════════════════════════
+function pickCard(profile) {
+  const rand = Math.random();
+  const pool = rand < .05 ? CREATURES.filter(c=>c.r==='legendary') :
+               rand < .30 ? CREATURES.filter(c=>c.r==='rare') :
+               CREATURES.filter(c=>c.r==='common');
+  // Prefer not-yet-collected
+  const uncollected = pool.filter(c => !profile.cards.includes(c.e));
+  const chosen = uncollected.length ? uncollected[Math.floor(Math.random()*uncollected.length)]
+                                    : pool[Math.floor(Math.random()*pool.length)];
+  const isNew = !profile.cards.includes(chosen.e);
+  return {card:chosen, isNew};
+}
+
+function renderMiniCards(containerId) {
+  const profile = getProfile();
+  const el = document.getElementById(containerId); el.innerHTML = '';
+  if (!profile.cards.length) {
+    el.innerHTML = '<span style="font-size:12px;color:rgba(224,240,248,.3)">Complete tasks to unlock!</span>';
+    return;
+  }
+  profile.cards.slice(-8).forEach(e => {
+    const div = document.createElement('div'); div.className = 'mini-card'; div.textContent = e;
+    el.appendChild(div);
+  });
+  if (profile.cards.length > 8) {
+    const more = document.createElement('div'); more.className = 'mini-card';
+    more.style.cssText = 'font-size:11px;color:#00dcc6;font-weight:900';
+    more.textContent = `+${profile.cards.length-8}`; el.appendChild(more);
+  }
+}
+
+// ═══════════════════════════════════════
+// CONFETTI
+// ═══════════════════════════════════════
+function fireConfetti() {
+  const colors = ['#00dcc6','#ffd166','#ff6b6b','#0080ff','#06d6a0'];
+  for (let i = 0; i < 28; i++) {
+    const el = document.createElement('div'); el.className = 'confetti-piece';
+    el.style.cssText = `left:${10+Math.random()*80}%;top:10%;background:${colors[i%colors.length]};animation-delay:${Math.random()*.5}s;animation-duration:${.6+Math.random()*.5}s;transform:rotate(${Math.random()*360}deg)`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1200);
+  }
+}
+
+// ═══════════════════════════════════════
+// WELCOME SCREEN
+// ═══════════════════════════════════════
+function renderWelcome() {
+  const profile = getProfile();
+  const bc = Math.min(profile.blocks, STATION_TOTAL);
+  document.getElementById('blockCount').textContent = `${bc} / ${STATION_TOTAL} blocks`;
+  renderStationGrid('stationGrid', bc);
+  renderMiniCards('miniCards');
+  document.getElementById('muteBtn').style.display = 'flex';
+}
+
+// ═══════════════════════════════════════
+// PARENT MODE
+// ═══════════════════════════════════════
+let parentPressTimer = null;
+function parentLongPressStart() {
+  parentPressTimer = setTimeout(() => { haptic([50,30,50]); renderParentMode(); show('par'); }, 1500);
+}
+function parentLongPressEnd() { clearTimeout(parentPressTimer); }
+
+function renderParentMode() {
+  const profile = getProfile();
+  const sessions = profile.sessions || [];
+  const fr = false; // parent mode always in parent's UI language
+
+  // Stats
+  const totalMins = sessions.reduce((a,s)=>a+(s.minutes||0),0);
+  const totalHints = sessions.reduce((a,s)=>a+(s.totalHints||0),0);
+  const subjects = {};
+  sessions.forEach(s => { if(s.subject) subjects[s.subject]=(subjects[s.subject]||0)+1; });
+  const topSubject = Object.entries(subjects).sort((a,b)=>b[1]-a[1])[0];
+
+  document.getElementById('parStats').innerHTML = `
+    <p style="font-size:12px;font-weight:800;color:rgba(224,240,248,.38);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px">Cognitive Profile</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      ${statCard('📚 Sessions',sessions.length)}
+      ${statCard('⏱️ Total time',`${totalMins} min`)}
+      ${statCard('💡 Hints used',totalHints)}
+      ${statCard('🎴 Cards',profile.cards.length+' / '+CREATURES.length)}
+      ${statCard('🧱 Blocks',Math.min(profile.blocks,STATION_TOTAL)+' / '+STATION_TOTAL)}
+      ${statCard('📖 Top subject',topSubject?topSubject[0]:'—')}
+    </div>`;
+
+  // Sessions list
+  const sessEl = document.getElementById('parSessions'); sessEl.innerHTML = '';
+  if (!sessions.length) {
+    sessEl.innerHTML = '<p style="padding:16px;font-size:14px;color:rgba(224,240,248,.35);text-align:center">No sessions yet</p>';
+  } else {
+    sessions.slice(-8).reverse().forEach(s => {
+      const div = document.createElement('div'); div.className = 'parent-row';
+      const d = new Date(s.date);
+      const dateStr = d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+      const difficulty = s.avgHints > 2 ? '🔴' : s.avgHints > 1 ? '🟡' : '🟢';
+      div.innerHTML = `
+        <div class="session-dot" style="background:${s.lang==='FR'?'#0080ff':'#00dcc6'}"></div>
+        <div style="flex:1">
+          <p style="font-size:14px;font-weight:800">${s.lang==='FR'?'🇫🇷':'🇺🇸'} ${s.subject||'homework'}</p>
+          <p style="font-size:12px;color:rgba(224,240,248,.4)">${dateStr} · ${s.minutes||0} min · ${s.tasksCount||1} task${(s.tasksCount||1)>1?'s':''}</p>
+        </div>
+        <span title="Difficulty">${difficulty}</span>`;
+      sessEl.appendChild(div);
+    });
+  }
+
+  // Insights (if enough data)
+  const ins = document.getElementById('parInsights');
+  if (sessions.length >= 3) {
+    ins.style.display = 'block';
+    const hardSessions = sessions.filter(s=>s.avgHints>2);
+    const hardSubjects = {};
+    hardSessions.forEach(s=>{hardSubjects[s.subject]=(hardSubjects[s.subject]||0)+1;});
+    const hardest = Object.entries(hardSubjects).sort((a,b)=>b[1]-a[1])[0];
+    ins.innerHTML = `
+      <p style="font-size:12px;font-weight:800;color:rgba(224,240,248,.38);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">🧠 Insights</p>
+      ${hardest ? `<p style="font-size:14px;line-height:1.5;color:#ffd166">⚠️ <strong>${hardest[0]}</strong> seems to require more support — ${hardest[1]} sessions with extra hints.</p>` : '<p style="font-size:14px;color:#06d6a0">✅ No major difficulty patterns yet — keep going!</p>'}
+      <p style="font-size:13px;color:rgba(224,240,248,.5);margin-top:10px;line-height:1.5">Sessions completed: ${sessions.length} · Avg duration: ${Math.round(totalMins/sessions.length)} min</p>`;
+  }
+}
+
+function statCard(label, value) {
+  return `<div style="background:rgba(255,255,255,.05);border-radius:12px;padding:12px"><p style="font-size:11px;color:rgba(224,240,248,.4);font-weight:800;text-transform:uppercase;letter-spacing:.6px">${label}</p><p style="font-size:20px;font-weight:900;margin-top:3px">${value}</p></div>`;
+}
+
+// ═══════════════════════════════════════
+// API KEY SCREEN
+// ═══════════════════════════════════════
+document.getElementById('apikey').addEventListener('keydown', e => { if(e.key==='Enter') setKey(); });
+function setKey() {
+  const k = document.getElementById('apikey').value.trim();
+  if (!k.startsWith('sk-')) { alert('Please enter a valid Anthropic API key (starts with sk-)'); return; }
+  KEY = k;
+  localStorage.setItem('ink_api_key', k);
+  renderWelcome();
+  show('w');
+}
+
+// ═══════════════════════════════════════
+// LANGUAGE SELECT → UPLOAD
+// ═══════════════════════════════════════
+function go(l) {
+  S.lang = l; const fr = l==='FR';
+  document.getElementById('ut').textContent = fr ? 'Photo des devoirs !' : 'Homework Photo!';
+  document.getElementById('us').textContent = fr ? "Montre-moi tes devoirs pour qu'on lance l'aventure 🚀" : "Show me your homework and we'll launch the mission 🚀";
+  document.getElementById('dl').textContent = fr ? 'Appuie pour prendre une photo' : 'Tap to take a photo';
+  document.getElementById('ds').textContent = fr ? "ou glisse l'image ici" : 'or drag & drop here';
+  show('u');
+}
+
+// ═══════════════════════════════════════
+// UPLOAD & ANALYZE
+// ═══════════════════════════════════════
+function handleFile(f) {
+  if (!f || !f.type.startsWith('image/')) return;
+  const fr = S.lang==='FR';
+  const msgs = fr
+    ? ['Ink scanne les devoirs... 🔬','Ink prépare la mission... 🗺️','Station spatiale en ligne... 🚀']
+    : ['Ink is scanning the homework... 🔬','Ink is planning the mission... 🗺️','Space station coming online... 🚀'];
+  let mi = 0; const el = document.getElementById('am'); el.textContent = msgs[0];
+  clearInterval(aiv); aiv = setInterval(() => { mi=(mi+1)%msgs.length; el.textContent=msgs[mi]; }, 1700);
+  show('a');
+  const rd = new FileReader();
+  rd.onload = async e => {
+    try {
+      S.hw = await analyzeHomework(e.target.result.split(',')[1]);
+      S.t0 = Date.now(); S.tIdx = 0; S.done = []; S.taskHints = [];
+      clearInterval(aiv); renderMission(); show('m');
+      speak(S.hw.missionBriefing);
+    } catch(err) {
+      console.error(err); clearInterval(aiv);
+      alert(S.lang==='FR'?'Erreur lors de l\'analyse. Vérifiez votre clé API.':'Error analyzing homework. Check your API key and try again.');
+      show('u');
+    }
+  };
+  rd.readAsDataURL(f);
+}
+
+// ═══════════════════════════════════════
+// MISSION SCREEN
+// ═══════════════════════════════════════
+function renderMission() {
+  const hw = S.hw; const fr = S.lang==='FR';
+  document.getElementById('mt').textContent = fr ? 'Mission du jour' : "Today's Mission";
+  document.getElementById('mm').textContent = `${hw.subjectEmoji} ${hw.subject} · ~${hw.totalEstimatedMinutes} min`;
+  document.getElementById('mb').textContent = `"${hw.missionBriefing}"`;
+  document.getElementById('pl2').textContent = fr ? 'Progression' : 'Progress';
+  document.getElementById('pc').textContent = `${S.done.length}/${hw.tasks.length} ${fr?'tâches':'tasks'}`;
+  document.getElementById('pf').style.width = `${(S.done.length/hw.tasks.length)*100}%`;
+  const tl = document.getElementById('tl'); tl.innerHTML = '';
+  hw.tasks.forEach((t, i) => {
+    const isDone = S.done.includes(t.id); const isCur = i===S.tIdx && !isDone;
+    const d = document.createElement('div'); d.className = `tpill${isDone?' dn':isCur?' cur':''}`;
+    d.innerHTML = `<span style="font-size:26px">${isDone?'✅':isCur?t.emoji:'🔒'}</span><div style="flex:1"><p style="font-weight:800;font-size:14px;color:${isDone?'#06d6a0':isCur?'#00dcc6':'rgba(224,240,248,.3)'}">${t.label}</p>${isCur?`<p style="font-size:12px;color:rgba(224,240,248,.45);margin-top:2px">${t.instruction}</p>`:''}</div>${isDone?'<span style="font-size:16px">⭐</span>':''}`;
+    tl.appendChild(d);
+  });
+  const mc = document.getElementById('mc');
+  mc.textContent = S.done.length===0 ? (fr?'🚀 Lancer la mission !':'🚀 Launch Mission!') : (fr?'➡️ Tâche suivante !':'➡️ Next Task!');
+  mc.style.display = S.tIdx < hw.tasks.length && !S.done.includes(hw.tasks[S.tIdx]?.id) ? 'flex' : 'none';
+}
+
+// ═══════════════════════════════════════
+// TASK SCREEN
+// ═══════════════════════════════════════
+function startTask() {
+  const fr = S.lang==='FR'; const task = S.hw.tasks[S.tIdx];
+  S.conv = []; S.hintCount = 0; S.taskStartTime = Date.now();
+  const cm = document.getElementById('cm'); cm.innerHTML = '';
+  document.getElementById('te').textContent = task.emoji;
+  document.getElementById('tm').textContent = fr ? `Tâche ${S.tIdx+1}/${S.hw.tasks.length}` : `Task ${S.tIdx+1}/${S.hw.tasks.length}`;
+  document.getElementById('tl2').textContent = task.label;
+  document.getElementById('ci').placeholder = fr ? 'Réponds à Ink...' : 'Reply to Ink...';
+  document.getElementById('db').textContent = `✅ ${fr?'Tâche terminée !':'Task Done!'}`;
+  document.getElementById('hintLabel').textContent = fr ? 'Besoin d\'un indice ?' : 'Need a hint?';
+  document.getElementById('hintBtn').disabled = false;
+  setMood('happy');
+
+  // Show verify button based on task type
+  const vBtn = document.getElementById('verifyBtn');
+  if (task.type === 'reading') {
+    vBtn.style.display = 'flex';
+    vBtn.textContent = fr ? '🎤 Lire à voix haute !' : '🎤 Read aloud!';
+  } else if (task.type === 'written' && task.verifiable) {
+    vBtn.style.display = 'flex';
+    vBtn.textContent = fr ? '📸 Vérifier mon travail' : '📸 Check my work';
+  } else {
+    vBtn.style.display = 'none';
+  }
+
+  addMsg('a', task.socraticPrompt);
+  S.conv.push({role:'assistant', content: task.socraticPrompt});
+  speak(task.socraticPrompt);
+  idleIdx = 0;
+  startIdleTimer();
+  show('t');
+}
+
+function addMsg(role, text, isVenk=false) {
+  const cm = document.getElementById('cm');
+  const d = document.createElement('div');
+  if (role === 'a') {
+    d.className = isVenk ? 'venk-bubble su' : 'ibub su';
+    const label = isVenk
+      ? `<span class="venk-label">💀 VENK (aka Ink) 🐙</span>`
+      : `<span class="ink-label">Ink 🐙</span>`;
+    const safeText = text.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    d.innerHTML = `${label}<span class="msg-text">${text}</span> <button onclick="speak('${safeText}')" style="background:none;border:none;cursor:pointer;font-size:12px;opacity:.5;vertical-align:middle">🔊</button>`;
+  } else {
+    d.className = 'ubub su';
+    d.textContent = text;
+  }
+  cm.appendChild(d); cm.scrollTop = cm.scrollHeight;
+}
+
+function addTyping() {
+  const cm = document.getElementById('cm');
+  const d = document.createElement('div'); d.id = 'ty';
+  const isVenk = S.hintCount >= 2;
+  d.className = isVenk ? 'venk-bubble' : 'ibub';
+  const label = isVenk ? `<span class="venk-label">💀 VENK 🐙</span>` : `<span class="ink-label">Ink 🐙</span>`;
+  d.innerHTML = `${label}<span class="dot d1"></span><span class="dot d2"></span><span class="dot d3"></span>`;
+  cm.appendChild(d); cm.scrollTop = cm.scrollHeight;
+}
+
+function setMood(m) {
+  const el = document.getElementById('ti');
+  const isVenk = S.hintCount >= 2;
+  if (isVenk) {
+    el.className = 'venk-mode';
+    el.style.cssText = 'font-size:38px;display:inline-block';
+    el.textContent = '😈';
+  } else {
+    el.textContent = '🐙';
+    el.className = m==='thinking' ? 'pl' : m==='excited' ? 'bn' : 'fl';
+    el.style.cssText = 'font-size:38px;display:inline-block';
+  }
+}
+
+async function sendMsg() {
+  const inp = document.getElementById('ci'); const sb = document.getElementById('sb');
+  const msg = inp.value.trim(); if (!msg) return;
+  clearIdleTimer();
+  inp.value = ''; sb.disabled = true;
+  addMsg('u', msg); S.conv.push({role:'user',content:msg});
+  setMood('thinking'); addTyping(); haptic([10]);
+  try {
+    const rep = await chatWithInk(msg);
+    const ty = document.getElementById('ty'); if(ty) ty.remove();
+    const isVenk = S.hintCount >= 2;
+    addMsg('a', rep, isVenk);
+    S.conv.push({role:'assistant',content:rep});
+    if (isVenk) {
+      setMood('venk');
+      speak(rep);
+    } else {
+      setMood('happy');
+      speak(rep);
+    }
+  } catch(e) { const ty=document.getElementById('ty'); if(ty) ty.remove(); console.error(e); }
+  finally { sb.disabled = false; startIdleTimer(); }
+}
+
+async function getHint() {
+  const task = S.hw.tasks[S.tIdx];
+  const hints = task.hints || [];
+  if (S.hintCount >= hints.length) return;
+  const hint = hints[S.hintCount]; S.hintCount++;
+  document.getElementById('hintBtn').disabled = S.hintCount >= hints.length;
+  const fr = S.lang==='FR';
+  const isVenk = S.hintCount >= 2;
+
+  // VENK transformation announcement on 2nd hint
+  if (S.hintCount === 2) {
+    const venkAnnounce = fr
+      ? "⚠️ OH NON. Ce problème est TROP difficile. Ink se transforme en... VENK ! 😈"
+      : "⚠️ OH NO. This problem is TOO hard. Ink is transforming into... VENK! 😈";
+    addMsg('a', venkAnnounce, false);
+    speak(venkAnnounce);
+    haptic([50,30,50,30,100]);
+    await new Promise(r => setTimeout(r, 1200));
+    setMood('venk');
+  }
+
+  const intro = isVenk
+    ? (fr
+      ? ['💀 VENK grogne...', '😈 VENK est furieux mais...'][S.hintCount-2] || '😈 VENK murmure...'
+      : ['💀 VENK growls...', '😈 VENK is furious but...'][S.hintCount-2] || '😈 VENK whispers...')
+    : (fr
+      ? ['💡 Psst... regarde ici :', '🔍 Un petit indice :'][S.hintCount-1] || '✨ On approche !'
+      : ['💡 Psst... check this out:', '🔍 Here\'s a clue:'][S.hintCount-1] || '✨ Getting warmer!');
+
+  const fullHint = `${intro} ${hint}`;
+  addMsg('a', fullHint, isVenk);
+  S.conv.push({role:'assistant', content: fullHint});
+  speak(fullHint);
+}
+
+// ═══════════════════════════════════════
+// IDLE TICKLE SYSTEM
+// ═══════════════════════════════════════
+let idleTimer = null;
+const IDLE_LINES_EN = [
+  "🦑 ...hello? Is anyone there? One of my tentacles fell asleep waiting...",
+  "💭 Ink is counting his tentacles to pass the time. 1... 2... wait, did that one move?",
+  "🌊 BLOOP. That was just a bubble. Ink is fine. Very fine. Not bored at all.",
+  "👀 Ink is still here. Ink has been here for 47 years apparently.",
+  "🐙 Tentacle #3 just submitted a formal complaint about the waiting. HR is involved.",
+  "☄️ A comet just flew past the space station. It waved. Ink waved back. With 8 tentacles. It was a lot.",
+];
+const IDLE_LINES_FR = [
+  "🦑 ...allô ? Il y a quelqu'un ? Un de mes tentacules s'est endormi en attendant...",
+  "💭 Ink compte ses tentacules pour passer le temps. 1... 2... attends, celui-là a bougé ?",
+  "🌊 BLOOP. C'était juste une bulle. Ink va bien. Très bien. Pas du tout ennuyé.",
+  "👀 Ink est toujours là. Ink a apparemment attendu 47 ans.",
+  "🐙 Le tentacule n°3 vient de déposer une plainte officielle. Les RH sont impliqués.",
+  "☄️ Une comète vient de passer. Elle a fait signe. Ink a fait signe avec 8 tentacules. C'était beaucoup.",
+];
+let idleIdx = 0;
+function startIdleTimer() {
+  clearIdleTimer();
+  idleTimer = setTimeout(() => {
+    const lines = S.lang==='FR' ? IDLE_LINES_FR : IDLE_LINES_EN;
+    const line = lines[idleIdx % lines.length]; idleIdx++;
+    const isVenk = S.hintCount >= 2;
+    addMsg('a', line, isVenk);
+    speak(line);
+    startIdleTimer(); // reset for next idle
+  }, 22000);
+}
+function clearIdleTimer() { if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; } }
+function goVerify() {
+  const task = S.hw.tasks[S.tIdx];
+  if (task.type === 'reading') { goVerifyReading(); return; }
+  const fr = S.lang==='FR';
+  document.getElementById('vwt').textContent = fr ? 'Montre ton travail !' : 'Show me your work!';
+  document.getElementById('vws').textContent = fr ? 'Prends une photo de ce que tu as écrit 📸' : 'Take a photo of what you wrote 📸';
+  document.getElementById('vwLabel').textContent = fr ? 'Appuie pour prendre une photo' : 'Tap to take a photo';
+  document.getElementById('vwSub').textContent = fr ? 'Ink va vérifier !' : "Ink will check it!";
+  document.getElementById('vwBack').textContent = fr ? 'Retour' : 'Back';
+  document.getElementById('vwFeedback').style.display = 'none';
+  document.getElementById('vwDone').style.display = 'none';
+  document.getElementById('vwIcon').textContent = '📸';
+  document.getElementById('vwZone').className = 'card verify-zone';
+  show('vw');
+}
+
+async function handleVerifyPhoto(f) {
+  if (!f || !f.type.startsWith('image/')) return;
+  const fr = S.lang==='FR';
+  document.getElementById('vwZone').className = 'card verify-zone checking';
+  document.getElementById('vwIcon').textContent = '⏳';
+  document.getElementById('vwLabel').textContent = fr ? 'Ink vérifie...' : 'Ink is checking...';
+  document.getElementById('vwSub').textContent = '';
+  const rd = new FileReader();
+  rd.onload = async e => {
+    try {
+      const result = await verifyWrittenWork(e.target.result.split(',')[1], S.hw.tasks[S.tIdx]);
+      const fbEl = document.getElementById('vwFeedback'); fbEl.style.display = 'block';
+      if (result.complete) {
+        document.getElementById('vwIcon').textContent = '✅';
+        document.getElementById('vwLabel').textContent = fr ? 'Parfait !' : 'Perfect!';
+        fbEl.innerHTML = `<div class="ibub"><span class="ink-label">Ink 🐙</span>${result.feedback}</div>`;
+        speak(result.feedback);
+        haptic([50,30,100]);
+        document.getElementById('vwDone').style.display = 'flex';
+        document.getElementById('vwDone').textContent = fr ? '✅ Tâche terminée !' : '✅ Task Done!';
+      } else {
+        document.getElementById('vwIcon').textContent = '🔄';
+        document.getElementById('vwLabel').textContent = fr ? 'Presque !' : 'Almost!';
+        fbEl.innerHTML = `<div class="ibub"><span class="ink-label">Ink 🐙</span>${result.feedback}<br><br>🔍 ${result.needsWork}</div>`;
+        speak(`${result.feedback} ${result.needsWork||''}`);
+      }
+    } catch(err) {
+      console.error(err);
+      document.getElementById('vwLabel').textContent = fr?'Erreur de vérification':'Verification error';
+    }
+  };
+  rd.readAsDataURL(f);
+}
+
+function verifyConfirmed() {
+  show('t'); taskDone();
+}
+
+// ═══════════════════════════════════════
+// VERIFY READING (mic)
+// ═══════════════════════════════════════
+function goVerifyReading() {
+  const fr = S.lang==='FR';
+  document.getElementById('vrt').textContent = fr ? 'Lis à voix haute !' : 'Read aloud!';
+  document.getElementById('vrs').textContent = fr ? 'Appuie sur le micro et lis le texte de tes devoirs' : 'Tap the mic and read your homework text';
+  document.getElementById('vrTl').textContent = fr ? 'Ce que tu dis :' : "What you're saying:";
+  document.getElementById('vrTranscript').textContent = '';
+  document.getElementById('vrSubmit').style.display = 'none';
+  document.getElementById('vrFeedback').style.display = 'none';
+  document.getElementById('micStatus').textContent = fr ? 'Appuie pour commencer' : 'Tap to start';
+  document.getElementById('vrBack').textContent = fr ? 'Retour' : 'Back';
+  document.getElementById('micBtn').className = 'mic-btn';
+  S.transcript = '';
+  show('vr');
+}
+
+function toggleMic() {
+  if (isListening) {
+    stopListening();
+    document.getElementById('micBtn').className = 'mic-btn';
+    document.getElementById('micStatus').textContent = S.lang==='FR' ? 'Terminé ! Soumets quand tu es prêt.' : "Done! Submit when ready.";
+    if (S.transcript.length > 5) {
+      document.getElementById('vrSubmit').style.display = 'flex';
+      document.getElementById('vrSubmit').textContent = S.lang==='FR' ? '🚀 Envoyer à Ink !' : '🚀 Send to Ink!';
+    }
+  } else {
+    stopSpeaking();
+    const fr = S.lang==='FR';
+    document.getElementById('micBtn').className = 'mic-btn listening';
+    document.getElementById('micStatus').textContent = fr ? '🎤 Ink écoute... Appuie pour arrêter' : '🎤 Ink is listening... Tap to stop';
+    document.getElementById('vrSubmit').style.display = 'none';
+    startListening(
+      transcript => { S.transcript = transcript; document.getElementById('vrTranscript').textContent = transcript; },
+      transcript => {
+        S.transcript = transcript;
+        document.getElementById('micBtn').className = 'mic-btn';
+        if (transcript.length > 5) {
+          document.getElementById('vrSubmit').style.display = 'flex';
+          document.getElementById('vrSubmit').textContent = fr ? '🚀 Envoyer à Ink !' : '🚀 Send to Ink!';
+        }
+        document.getElementById('micStatus').textContent = fr ? 'Enregistrement terminé' : 'Recording done';
+      }
+    );
+  }
+}
+
+async function submitReading() {
+  if (!S.transcript || S.transcript.length < 3) return;
+  const fr = S.lang==='FR';
+  document.getElementById('vrSubmit').disabled = true;
+  document.getElementById('readInk').className = 'pl';
+  document.getElementById('micStatus').textContent = fr ? 'Ink analyse... 🔬' : 'Ink is checking... 🔬';
+  try {
+    const result = await verifyReading(S.transcript, S.hw.tasks[S.tIdx]);
+    const fbEl = document.getElementById('vrFeedback'); fbEl.style.display = 'block';
+    if (result.fluent) {
+      document.getElementById('readInk').className = 'bn';
+      let msg = result.feedback;
+      if (result.comprehensionQuestion) msg += ' ' + result.comprehensionQuestion;
+      fbEl.innerHTML = `<div class="ibub"><span class="ink-label">Ink 🐙</span>${msg}</div>`;
+      speak(msg); haptic([50,30,100]);
+      setTimeout(() => { show('t'); taskDone(); }, 3500);
+    } else {
+      document.getElementById('readInk').className = 'fl';
+      fbEl.innerHTML = `<div class="ibub"><span class="ink-label">Ink 🐙</span>${result.feedback}</div>`;
+      speak(result.feedback);
+      document.getElementById('vrSubmit').disabled = false;
+      document.getElementById('vrTranscript').textContent = '';
+      S.transcript = '';
+    }
+  } catch(err) { console.error(err); document.getElementById('vrSubmit').disabled = false; }
+}
+
+// ═══════════════════════════════════════
+// TASK DONE → REWARD
+// ═══════════════════════════════════════
+function taskDone() {
+  clearIdleTimer();
+  haptic([30,20,60,20,100]);
+  fireConfetti();
+  const taskMins = Math.max(1, Math.round((Date.now() - (S.taskStartTime||S.t0)) / 60000));
+  S.taskHints.push(S.hintCount);
+  const fr = S.lang==='FR';
+
+  // Save block + maybe card
+  const profile = getProfile();
+  const wasBlocks = profile.blocks;
+  profile.blocks = Math.min(STATION_TOTAL, profile.blocks + 1);
+  const {card, isNew} = pickCard(profile);
+  S.newCard = {card, isNew};
+  if (isNew) profile.cards.push(card.e);
+  saveProfile(profile);
+
+  const CELEBRATIONS_EN = [
+    "YESSSSS!! Tentacle #4 is doing the victory wiggle and it will NOT stop!!",
+    "BLOOPSNORK!! You did it!! Ink is crying ink-tears of joy right now!!",
+    "BY THE GREAT CORAL REEF!! You are a GENIUS EXPLORER!!",
+    "SQUIDZOOKS!! My entire space station just lit up!! ALL THE BUTTONS!!",
+    "Ink is SO proud he accidentally squirted ink on the telescope. WORTH IT!!",
+  ];
+  const CELEBRATIONS_FR = [
+    "OUIIIII!! Le tentacule n°4 fait la danse de la victoire et ne s'arrête PLUS!!",
+    "BLOOPSNORK!! Tu l'as fait!! Ink pleure des larmes d'encre de joie!!",
+    "PAR LE GRAND RÉCIF!! Tu es un GÉNIE EXPLORATEUR!!",
+    "CALMAZOUILLE!! Toute la station vient de s'allumer!! TOUS LES BOUTONS!!",
+    "Ink est tellement fier qu'il a accidentellement encré le télescope. ÇA VALAIT LE COUP!!",
+  ];
+  const celeb = S.lang==='FR'
+    ? CELEBRATIONS_FR[Math.floor(Math.random()*CELEBRATIONS_FR.length)]
+    : CELEBRATIONS_EN[Math.floor(Math.random()*CELEBRATIONS_EN.length)];
+
+  // Render reward screen
+  document.getElementById('rewSub').textContent = fr ? `Tâche ${S.tIdx+1} terminée !` : `Task ${S.tIdx+1} complete!`;
+  document.getElementById('rewTitle').textContent = fr ? '🎉 Station agrandie !' : '🎉 Station expanded!';
+  const blockEmojis = '🧱'.repeat(Math.min(4, profile.blocks));
+  document.getElementById('rewBlocks').textContent = blockEmojis;
+  document.getElementById('rewBlockLabel').textContent = fr ? `+1 module ajouté (${profile.blocks}/${STATION_TOTAL} total)` : `+1 module added (${profile.blocks}/${STATION_TOTAL} total)`;
+  document.getElementById('rewCelebText').textContent = celeb;
+  setTimeout(() => speak(celeb), 400);
+
+  const cardWrap = document.getElementById('cardWrap');
+  if (isNew) {
+    cardWrap.style.display = 'block';
+    const isFR = S.lang==='FR';
+    document.getElementById('cardTitle').textContent = isFR ? '🎴 Nouvelle carte débloquée !' : '🎴 New card unlocked!';
+    document.getElementById('cardEmoji').textContent = card.e;
+    document.getElementById('cardRarity').className = `rarity-badge rarity-${card.r}`;
+    document.getElementById('cardRarity').textContent = isFR
+      ? (card.r==='legendary'?'Légendaire':card.r==='rare'?'Rare':'Commun')
+      : card.r.charAt(0).toUpperCase()+card.r.slice(1);
+    document.getElementById('cardName').textContent = isFR ? card.nF : card.n;
+    document.getElementById('cardFact').textContent = isFR ? card.fF : card.f;
+    speak((isFR ? `Nouvelle carte : ${card.nF} ! ${card.fF}` : `New card: ${card.n}! ${card.fF ? card.f : ''}`));
+  } else {
+    cardWrap.style.display = 'none';
+    speak(fr ? 'Super ! Un nouveau bloc pour la station !' : 'Awesome! One more block for the station!');
+  }
+
+  const isLast = S.tIdx + 1 >= S.hw.tasks.length;
+  document.getElementById('rewNext').textContent = isLast
+    ? (fr ? '🏁 Voir le rapport final' : '🏁 See final report')
+    : (fr ? '➡️ Tâche suivante !' : '➡️ Next Task!');
+
+  S.done.push(S.hw.tasks[S.tIdx].id);
+  show('rew');
+}
+
+async function afterReward() {
+  const isLast = S.tIdx + 1 >= S.hw.tasks.length;
+  if (isLast) {
+    const mins = Math.max(1, Math.round((Date.now() - S.t0) / 60000));
+    show('a'); document.getElementById('am').textContent = S.lang==='FR' ? 'Ink rédige le rapport... 📝' : 'Ink is writing the report... 📝';
+    // Save session
+    const profile = getProfile();
+    const avgHints = S.taskHints.length ? S.taskHints.reduce((a,b)=>a+b,0)/S.taskHints.length : 0;
+    profile.sessions = profile.sessions || [];
+    profile.sessions.push({date:Date.now(),lang:S.lang,subject:S.hw.subject,minutes:mins,tasksCount:S.hw.tasks.length,totalHints:S.taskHints.reduce((a,b)=>a+b,0),avgHints:Math.round(avgHints*10)/10});
+    if (profile.sessions.length > 20) profile.sessions = profile.sessions.slice(-20);
+    saveProfile(profile);
+    try {
+      const summary = await generateSummary(mins, profile.sessions);
+      renderSummary(summary, profile);
+    } catch { renderSummary(null, profile); }
+    show('s');
+  } else {
+    S.tIdx++; S.conv = []; S.hintCount = 0;
+    renderMission(); show('m');
+    speak(S.lang==='FR' ? 'Super ! Prochaine mission !' : 'Great! Next mission!');
+  }
+}
+
+// ═══════════════════════════════════════
+// SUMMARY SCREEN
+// ═══════════════════════════════════════
+function renderSummary(s, profile) {
+  const fr = S.lang==='FR';
+  document.getElementById('sth').textContent = fr ? 'Mission Accomplie ! 🎉' : 'Mission Complete! 🎉';
+  document.getElementById('ssb').textContent = fr ? 'La station grandit ! Un vrai explorateur 🚀' : 'The station keeps growing! A true explorer 🚀';
+  document.getElementById('nb').textContent = `🐙 ${fr?'Nouvelle mission !':'New Mission!'}`;
+  const bc = Math.min(profile.blocks, STATION_TOTAL);
+  document.getElementById('sumBlockCount').textContent = `${bc} / ${STATION_TOTAL}`;
+  renderStationGrid('sumStationGrid', bc, 1);
+
+  if (!s) { document.getElementById('pr').style.display = 'none'; return; }
+  speak(s.headline||'');
+  document.getElementById('pr').innerHTML = `
+    <p style="font-size:12px;font-weight:800;color:rgba(224,240,248,.35);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:12px">👨‍👩 ${fr?'Rapport parents':'Parent Report'}</p>
+    <p style="font-size:16px;font-weight:800;color:#d8f5f0;line-height:1.45;margin-bottom:16px">${s.headline||''}</p>
+    ${s.completed?.length?`<div style="display:flex;gap:11px;margin-bottom:10px"><span>✅</span><div><p style="font-size:11px;color:rgba(224,240,248,.38);font-weight:800;margin-bottom:3px;text-transform:uppercase;letter-spacing:.6px">${fr?'Complété':'Completed'}</p>${s.completed.map(c=>`<p style="font-size:14px;margin-top:2px">· ${c}</p>`).join('')}</div></div>`:''}
+    ${s.shone?`<div style="display:flex;gap:11px;margin-bottom:10px"><span>⭐</span><div><p style="font-size:11px;color:rgba(224,240,248,.38);font-weight:800;margin-bottom:3px;text-transform:uppercase;letter-spacing:.6px">${fr?'Point fort':'Shone at'}</p><p style="font-size:14px">${s.shone}</p></div></div>`:''}
+    ${s.struggled?`<div style="display:flex;gap:11px;margin-bottom:10px"><span>🔄</span><div><p style="font-size:11px;color:rgba(224,240,248,.38);font-weight:800;margin-bottom:3px;text-transform:uppercase;letter-spacing:.6px">${fr?'À retravailler':'Needs work'}</p><p style="font-size:14px">${s.struggled}</p></div></div>`:''}
+    ${s.tip?`<div style="display:flex;gap:10px;background:rgba(255,209,102,.08);border-radius:12px;padding:11px 13px;margin-bottom:10px"><span>💡</span><p style="font-size:14px;color:#ffd166;line-height:1.4">${s.tip}</p></div>`:''}
+    ${s.insight?`<div style="display:flex;gap:10px;background:rgba(0,220,200,.06);border-radius:12px;padding:11px 13px"><span>🧠</span><p style="font-size:14px;color:#00dcc6;line-height:1.4">${s.insight}</p></div>`:''}`;
+}
+
+// ═══════════════════════════════════════
+// RESET
+// ═══════════════════════════════════════
+function forgetKey() {
+  if (confirm('Remove saved API key?')) {
+    localStorage.removeItem('ink_api_key');
+    KEY = '';
+    show('k');
+  }
+}
+
+function resetApp() {
+  S = {lang:null,hw:null,tIdx:0,done:[],conv:[],t0:null,hintCount:0,isReading:false,transcript:'',newCard:null,verifyImgB64:null,taskStartTime:null,taskHints:[]};
+  renderWelcome(); show('w');
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+document.addEventListener('dragover', e => e.preventDefault());
+
+// Auto-load saved key on startup
+(function(){
+  const saved = localStorage.getItem('ink_api_key');
+  if (saved && saved.startsWith('sk-')) {
+    KEY = saved;
+    renderWelcome();
+    show('w');
+  }
+})();
+</script>
+</body>
+</html>
