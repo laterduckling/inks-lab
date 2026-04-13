@@ -178,7 +178,7 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
     <input class="ki" id="apikey" type="password" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
     <button class="btn bp" style="margin-top:14px;font-size:17px" onclick="setKey()">🚀 Launch Ink's Lab</button>
   </div>
-  <p style="font-size:11px;color:rgba(224,240,248,.16)">For young explorers, age 5 🐙</p>
+  <p style="font-size:11px;color:rgba(224,240,248,.16)">For young explorers, age 6 🐙</p>
 </div>
 
 <!-- ══════════════════════════════════════
@@ -216,7 +216,7 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
       <button class="bl" onclick="go('FR')">🇫🇷  Devoirs en français</button>
     </div>
   </div>
-  <p style="font-size:11px;color:rgba(224,240,248,.16)">For young explorers, age 5 🐙</p>
+  <p style="font-size:11px;color:rgba(224,240,248,.16)">For young explorers, age 6 🐙</p>
 </div>
 
 <!-- ══════════════════════════════════════
@@ -251,6 +251,7 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
       <span class="dot d1"></span><span class="dot d2"></span><span class="dot d3"></span>
     </div>
   </div>
+  <button class="btn" id="cancelAnalyze" onclick="clearInterval(aiv);show('u')" style="background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.15);color:rgba(224,240,248,.6);font-size:15px;padding:12px;margin-top:8px">← Cancel</button>
 </div>
 
 <!-- ══════════════════════════════════════
@@ -497,6 +498,14 @@ let S = {
 };
 let aiv, parentTimer, currentSpeech = null;
 
+function saveSession() {
+  try { localStorage.setItem('ink_session', JSON.stringify({lang:S.lang,hw:S.hw,tIdx:S.tIdx,done:S.done,conv:S.conv,t0:S.t0,hintCount:S.hintCount,taskHints:S.taskHints,taskStartTime:S.taskStartTime})); } catch {}
+}
+function clearSession() { localStorage.removeItem('ink_session'); }
+function loadSession() {
+  try { const s = JSON.parse(localStorage.getItem('ink_session')); if (s && s.hw && s.t0) return s; } catch {} return null;
+}
+
 // ═══════════════════════════════════════
 // PERSISTENCE
 // ═══════════════════════════════════════
@@ -609,7 +618,7 @@ async function analyzeHomework(b64) {
   const L = S.lang==='FR' ? 'French' : 'English';
   const t = await api([{role:'user',content:[
     {type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},
-    {type:'text',text:`Analyze this ${L} 1st-grade homework for a 5yo child. Return ONLY valid JSON, no markdown:\n{"subject":"math|reading|writing|spelling|poem|other","subjectEmoji":"1 emoji","totalEstimatedMinutes":10,"missionBriefing":"Ink's exciting mission briefing in ${L}, max 18 words, space+ocean metaphors, enthusiastic","tasks":[{"id":1,"emoji":"1 emoji","type":"written|reading|oral","label":"short label in ${L}, max 5 words","instruction":"what child must do, max 15 words in ${L}","socraticPrompt":"Ink's opening question/invitation in ${L}, max 20 words, curious NOT the answer","hints":["hint1 guiding question in ${L}","hint2 more specific in ${L}","hint3 almost there in ${L}"],"verifiable":true}]}`}
+    {type:'text',text:`Analyze this ${L} 1st-grade homework for a 6yo child. Return ONLY valid JSON, no markdown:\n{"subject":"math|reading|writing|spelling|poem|other","subjectEmoji":"1 emoji","totalEstimatedMinutes":10,"missionBriefing":"Ink's exciting mission briefing in ${L}, max 18 words, space+ocean metaphors, enthusiastic","tasks":[{"id":1,"emoji":"1 emoji","type":"written|reading|oral","label":"short label in ${L}, max 5 words","instruction":"what child must do, max 15 words in ${L}","socraticPrompt":"Ink's opening question/invitation in ${L}, max 20 words, curious NOT the answer","hints":["hint1 guiding question in ${L}","hint2 more specific in ${L}","hint3 almost there in ${L}"],"verifiable":true}]}`}
   ]}],null,1000);
   try { return JSON.parse(t.replace(/```json|```/g,'').trim()); }
   catch { return fallbackHW(); }
@@ -631,7 +640,7 @@ async function chatWithInk(userMsg) {
   const task = S.hw.tasks[S.tIdx];
   const isVenk = S.hintCount >= 2;
 
-  const normalSys = `You are Ink — a CHAOTIC, FUNNY, brilliant octopus scientist living in an underwater space station. You are helping a 5-year-old boy with his ${L} homework and you are his BEST friend.
+  const normalSys = `You are Ink — a CHAOTIC, FUNNY, brilliant octopus scientist living in an underwater space station. You are helping a 6-year-old boy with his ${L} homework and you are his BEST friend.
 
 Current task: "${task.instruction}"
 
@@ -648,7 +657,7 @@ UNBREAKABLE rules:
 1. NEVER give the direct answer — only guiding questions
 2. ONLY in ${L}
 3. Max 2-3 SHORT sentences — be snappy and punchy
-4. Very simple words for a 5-year-old
+4. Very simple words for a 6-year-old
 5. If child says done/finished: celebrate WILDLY, one sentence, say to tap ✅`;
 
   const venkSys = `You are VENK — the dramatic villain transformation of Ink the octopus. Ink has temporarily transformed because this homework problem is SO HARD it broke his brain.
@@ -673,7 +682,7 @@ async function verifyWrittenWork(b64, task) {
   const L = S.lang==='FR' ? 'French' : 'English';
   const t = await api([{role:'user',content:[
     {type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},
-    {type:'text',text:`A 5-year-old just completed this homework task: "${task.instruction}". Check if it looks done and mostly correct for a 5yo's level. Return ONLY valid JSON:\n{"complete":true,"feedback":"1 encouraging sentence in ${L}","needsWork":null}\nor {"complete":false,"feedback":"gentle encouraging line in ${L}","needsWork":"specific thing to fix in ${L}, simple words"}`}
+    {type:'text',text:`A 6-year-old just completed this homework task: "${task.instruction}". Check if it looks done and mostly correct for a 6yo's level. Return ONLY valid JSON:\n{"complete":true,"feedback":"1 encouraging sentence in ${L}","needsWork":null}\nor {"complete":false,"feedback":"gentle encouraging line in ${L}","needsWork":"specific thing to fix in ${L}, simple words"}`}
   ]}],null,200);
   try { return JSON.parse(t.replace(/```json|```/g,'').trim()); }
   catch { return {complete:true,feedback:S.lang==='FR'?'Super travail !':'Great work!',needsWork:null}; }
@@ -681,7 +690,7 @@ async function verifyWrittenWork(b64, task) {
 
 async function verifyReading(transcript, task) {
   const L = S.lang==='FR' ? 'French' : 'English';
-  const t = await api([{role:'user',content:`A 5-year-old read aloud for this task: "${task.instruction}". Their transcript: "${transcript}". Assess for a 5yo's level. Return ONLY valid JSON:\n{"fluent":true,"feedback":"Ink's excited 1-sentence reaction in ${L}","comprehensionQuestion":"1 simple question about what they read in ${L}"}\nor {"fluent":false,"feedback":"gentle encouraging line in ${L}","needsWork":"what to try again in ${L}, simple"}`}],null,200);
+  const t = await api([{role:'user',content:`A 6-year-old read aloud for this task: "${task.instruction}". Their transcript: "${transcript}". Assess for a 6yo's level. Return ONLY valid JSON:\n{"fluent":true,"feedback":"Ink's excited 1-sentence reaction in ${L}","comprehensionQuestion":"1 simple question about what they read in ${L}"}\nor {"fluent":false,"feedback":"gentle encouraging line in ${L}","needsWork":"what to try again in ${L}, simple"}`}],null,200);
   try { return JSON.parse(t.replace(/```json|```/g,'').trim()); }
   catch { return {fluent:true,feedback:S.lang==='FR'?'Super lecture !':'Great reading!',comprehensionQuestion:null}; }
 }
@@ -909,6 +918,7 @@ function handleFile(f) {
     try {
       S.hw = await analyzeHomework(b64);
       S.t0 = Date.now(); S.tIdx = 0; S.done = []; S.taskHints = [];
+      saveSession();
       clearInterval(aiv); renderMission(); show('m');
       speak(S.hw.missionBriefing);
     } catch(err) {
@@ -1037,6 +1047,7 @@ async function sendMsg() {
     const isVenk = S.hintCount >= 2;
     addMsg('a', rep, isVenk);
     S.conv.push({role:'assistant',content:rep});
+    saveSession();
     if (isVenk) {
       setMood('venk');
       speak(rep);
@@ -1084,6 +1095,7 @@ async function getHint() {
   const fullHint = `${intro} ${hint}`;
   addMsg('a', fullHint, isVenk);
   S.conv.push({role:'assistant', content: fullHint});
+  saveSession();
   speak(fullHint);
 }
 
@@ -1150,7 +1162,7 @@ async function handleVerifyPhoto(f) {
       if (result.complete) {
         document.getElementById('vwIcon').textContent = '✅';
         document.getElementById('vwLabel').textContent = fr ? 'Parfait !' : 'Perfect!';
-        fbEl.innerHTML = `<div class="ibub"><span class="ink-label">Ink 🐙</span>${result.feedback}</div>`;
+        fbEl.innerHTML = `<div class="ibub"><span class="ink-label">Ink 🐙</span>${escHtml(result.feedback)}</div>`;
         speak(result.feedback);
         haptic([50,30,100]);
         document.getElementById('vwDone').style.display = 'flex';
@@ -1158,12 +1170,15 @@ async function handleVerifyPhoto(f) {
       } else {
         document.getElementById('vwIcon').textContent = '🔄';
         document.getElementById('vwLabel').textContent = fr ? 'Presque !' : 'Almost!';
-        fbEl.innerHTML = `<div class="ibub"><span class="ink-label">Ink 🐙</span>${result.feedback}<br><br>🔍 ${result.needsWork}</div>`;
+        fbEl.innerHTML = `<div class="ibub"><span class="ink-label">Ink 🐙</span>${escHtml(result.feedback)}<br><br>🔍 ${escHtml(result.needsWork||'')}</div>`;
         speak(`${result.feedback} ${result.needsWork||''}`);
       }
     } catch(err) {
       console.error(err);
-      document.getElementById('vwLabel').textContent = fr?'Erreur de vérification':'Verification error';
+      document.getElementById('vwIcon').textContent = '⚠️';
+      document.getElementById('vwLabel').textContent = fr?'Erreur — réessaie !':'Error — try again!';
+      document.getElementById('vwSub').textContent = fr?'Reprends la photo':'Retake the photo';
+      document.getElementById('vwZone').className = 'card verify-zone';
     }
   });
 }
@@ -1233,18 +1248,23 @@ async function submitReading() {
       document.getElementById('readInk').className = 'bn';
       let msg = result.feedback;
       if (result.comprehensionQuestion) msg += ' ' + result.comprehensionQuestion;
-      fbEl.innerHTML = `<div class="ibub"><span class="ink-label">Ink 🐙</span>${msg}</div>`;
+      fbEl.innerHTML = `<div class="ibub"><span class="ink-label">Ink 🐙</span>${escHtml(msg)}</div>`;
       speak(msg); haptic([50,30,100]);
       setTimeout(() => { show('t'); taskDone(); }, 3500);
     } else {
       document.getElementById('readInk').className = 'fl';
-      fbEl.innerHTML = `<div class="ibub"><span class="ink-label">Ink 🐙</span>${result.feedback}</div>`;
+      fbEl.innerHTML = `<div class="ibub"><span class="ink-label">Ink 🐙</span>${escHtml(result.feedback)}</div>`;
       speak(result.feedback);
       document.getElementById('vrSubmit').disabled = false;
       document.getElementById('vrTranscript').textContent = '';
       S.transcript = '';
     }
-  } catch(err) { console.error(err); document.getElementById('vrSubmit').disabled = false; }
+  } catch(err) {
+    console.error(err);
+    document.getElementById('vrSubmit').disabled = false;
+    document.getElementById('readInk').className = 'fl';
+    document.getElementById('micStatus').textContent = S.lang==='FR' ? 'Erreur — réessaie !' : 'Error — try again!';
+  }
 }
 
 // ═══════════════════════════════════════
@@ -1324,6 +1344,7 @@ function taskDone() {
     : (fr ? '➡️ Tâche suivante !' : '➡️ Next Task!');
 
   S.done.push(S.hw.tasks[S.tIdx].id);
+  saveSession();
   show('rew');
 }
 
@@ -1344,6 +1365,7 @@ async function afterReward() {
       summary = await generateSummary(mins, profile.sessions);
       renderSummary(summary, profile);
     } catch { renderSummary(null, profile); }
+    clearSession();
     // Send email report
     const totalCoins = S.taskHints.reduce((h,c) => h + (c===0?15:c===1?10:5), 0);
     sendReport({
@@ -1378,14 +1400,15 @@ function renderSummary(s, profile) {
 
   if (!s) { document.getElementById('pr').style.display = 'none'; return; }
   speak(s.headline||'');
+  const h = escHtml;
   document.getElementById('pr').innerHTML = `
     <p style="font-size:12px;font-weight:800;color:rgba(224,240,248,.35);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:12px">👨‍👩 ${fr?'Rapport parents':'Parent Report'}</p>
-    <p style="font-size:16px;font-weight:800;color:#d8f5f0;line-height:1.45;margin-bottom:16px">${s.headline||''}</p>
-    ${s.completed?.length?`<div style="display:flex;gap:11px;margin-bottom:10px"><span>✅</span><div><p style="font-size:11px;color:rgba(224,240,248,.38);font-weight:800;margin-bottom:3px;text-transform:uppercase;letter-spacing:.6px">${fr?'Complété':'Completed'}</p>${s.completed.map(c=>`<p style="font-size:14px;margin-top:2px">· ${c}</p>`).join('')}</div></div>`:''}
-    ${s.shone?`<div style="display:flex;gap:11px;margin-bottom:10px"><span>⭐</span><div><p style="font-size:11px;color:rgba(224,240,248,.38);font-weight:800;margin-bottom:3px;text-transform:uppercase;letter-spacing:.6px">${fr?'Point fort':'Shone at'}</p><p style="font-size:14px">${s.shone}</p></div></div>`:''}
-    ${s.struggled?`<div style="display:flex;gap:11px;margin-bottom:10px"><span>🔄</span><div><p style="font-size:11px;color:rgba(224,240,248,.38);font-weight:800;margin-bottom:3px;text-transform:uppercase;letter-spacing:.6px">${fr?'À retravailler':'Needs work'}</p><p style="font-size:14px">${s.struggled}</p></div></div>`:''}
-    ${s.tip?`<div style="display:flex;gap:10px;background:rgba(255,209,102,.08);border-radius:12px;padding:11px 13px;margin-bottom:10px"><span>💡</span><p style="font-size:14px;color:#ffd166;line-height:1.4">${s.tip}</p></div>`:''}
-    ${s.insight?`<div style="display:flex;gap:10px;background:rgba(0,220,200,.06);border-radius:12px;padding:11px 13px"><span>🧠</span><p style="font-size:14px;color:#00dcc6;line-height:1.4">${s.insight}</p></div>`:''}`;
+    <p style="font-size:16px;font-weight:800;color:#d8f5f0;line-height:1.45;margin-bottom:16px">${h(s.headline||'')}</p>
+    ${s.completed?.length?`<div style="display:flex;gap:11px;margin-bottom:10px"><span>✅</span><div><p style="font-size:11px;color:rgba(224,240,248,.38);font-weight:800;margin-bottom:3px;text-transform:uppercase;letter-spacing:.6px">${fr?'Complété':'Completed'}</p>${s.completed.map(c=>`<p style="font-size:14px;margin-top:2px">· ${h(c)}</p>`).join('')}</div></div>`:''}
+    ${s.shone?`<div style="display:flex;gap:11px;margin-bottom:10px"><span>⭐</span><div><p style="font-size:11px;color:rgba(224,240,248,.38);font-weight:800;margin-bottom:3px;text-transform:uppercase;letter-spacing:.6px">${fr?'Point fort':'Shone at'}</p><p style="font-size:14px">${h(s.shone)}</p></div></div>`:''}
+    ${s.struggled?`<div style="display:flex;gap:11px;margin-bottom:10px"><span>🔄</span><div><p style="font-size:11px;color:rgba(224,240,248,.38);font-weight:800;margin-bottom:3px;text-transform:uppercase;letter-spacing:.6px">${fr?'À retravailler':'Needs work'}</p><p style="font-size:14px">${h(s.struggled)}</p></div></div>`:''}
+    ${s.tip?`<div style="display:flex;gap:10px;background:rgba(255,209,102,.08);border-radius:12px;padding:11px 13px;margin-bottom:10px"><span>💡</span><p style="font-size:14px;color:#ffd166;line-height:1.4">${h(s.tip)}</p></div>`:''}
+    ${s.insight?`<div style="display:flex;gap:10px;background:rgba(0,220,200,.06);border-radius:12px;padding:11px 13px"><span>🧠</span><p style="font-size:14px;color:#00dcc6;line-height:1.4">${h(s.insight)}</p></div>`:''}`;
 }
 
 // ═══════════════════════════════════════
@@ -1401,6 +1424,7 @@ function forgetKey() {
 
 function resetApp() {
   S = {lang:null,hw:null,tIdx:0,done:[],conv:[],t0:null,hintCount:0,isReading:false,transcript:'',newCard:null,verifyImgB64:null,taskStartTime:null,taskHints:[]};
+  clearSession();
   renderWelcome(); show('w');
 }
 
@@ -1448,13 +1472,31 @@ function testWebhook() {
 // ═══════════════════════════════════════
 document.addEventListener('dragover', e => e.preventDefault());
 
+// Resume interrupted session
+function resumeSession(saved) {
+  S.lang = saved.lang; S.hw = saved.hw; S.tIdx = saved.tIdx;
+  S.done = saved.done||[]; S.conv = saved.conv||[]; S.t0 = saved.t0;
+  S.hintCount = saved.hintCount||0; S.taskHints = saved.taskHints||[];
+  S.taskStartTime = saved.taskStartTime||Date.now();
+  renderMission(); show('m');
+  const fr = S.lang==='FR';
+  const msg = fr ? 'Ink est de retour ! On continue la mission !' : 'Ink is back! Let\'s continue the mission!';
+  speak(msg);
+}
+
 // Auto-load saved key on startup
 (function(){
   const saved = localStorage.getItem('ink_api_key');
   if (saved && saved.startsWith('sk-')) {
     KEY = saved;
     renderWelcome();
-    show('w');
+    // Check for interrupted session
+    const sess = loadSession();
+    if (sess) {
+      resumeSession(sess);
+    } else {
+      show('w');
+    }
   }
 })();
 </script>
