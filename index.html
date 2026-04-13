@@ -875,6 +875,25 @@ function go(l) {
 }
 
 // ═══════════════════════════════════════
+// IMAGE COMPRESSION
+// ═══════════════════════════════════════
+function compressImage(file, maxSize=1800) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      if (w > h && w > maxSize) { h = Math.round(h * maxSize / w); w = maxSize; }
+      else if (h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; }
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(c.toDataURL('image/jpeg', 0.8).split(',')[1]);
+    };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+// ═══════════════════════════════════════
 // UPLOAD & ANALYZE
 // ═══════════════════════════════════════
 function handleFile(f) {
@@ -886,10 +905,9 @@ function handleFile(f) {
   let mi = 0; const el = document.getElementById('am'); el.textContent = msgs[0];
   clearInterval(aiv); aiv = setInterval(() => { mi=(mi+1)%msgs.length; el.textContent=msgs[mi]; }, 1700);
   show('a');
-  const rd = new FileReader();
-  rd.onload = async e => {
+  compressImage(f).then(async b64 => {
     try {
-      S.hw = await analyzeHomework(e.target.result.split(',')[1]);
+      S.hw = await analyzeHomework(b64);
       S.t0 = Date.now(); S.tIdx = 0; S.done = []; S.taskHints = [];
       clearInterval(aiv); renderMission(); show('m');
       speak(S.hw.missionBriefing);
@@ -898,8 +916,7 @@ function handleFile(f) {
       alert((S.lang==='FR'?'Erreur: ':'Error: ') + (err.message||err));
       show('u');
     }
-  };
-  rd.readAsDataURL(f);
+  });
 }
 
 // ═══════════════════════════════════════
@@ -1126,10 +1143,9 @@ async function handleVerifyPhoto(f) {
   document.getElementById('vwIcon').textContent = '⏳';
   document.getElementById('vwLabel').textContent = fr ? 'Ink vérifie...' : 'Ink is checking...';
   document.getElementById('vwSub').textContent = '';
-  const rd = new FileReader();
-  rd.onload = async e => {
+  compressImage(f).then(async b64 => {
     try {
-      const result = await verifyWrittenWork(e.target.result.split(',')[1], S.hw.tasks[S.tIdx]);
+      const result = await verifyWrittenWork(b64, S.hw.tasks[S.tIdx]);
       const fbEl = document.getElementById('vwFeedback'); fbEl.style.display = 'block';
       if (result.complete) {
         document.getElementById('vwIcon').textContent = '✅';
@@ -1149,8 +1165,7 @@ async function handleVerifyPhoto(f) {
       console.error(err);
       document.getElementById('vwLabel').textContent = fr?'Erreur de vérification':'Verification error';
     }
-  };
-  rd.readAsDataURL(f);
+  });
 }
 
 function verifyConfirmed() {
