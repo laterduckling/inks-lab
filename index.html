@@ -206,32 +206,32 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
     <p style="font-size:14px;color:rgba(224,240,248,.5);margin-top:6px;font-weight:700">🚀 Underwater Space Station 🌊</p>
   </div>
 
-  <!-- Space station mini preview -->
-  <div class="card" style="width:100%;max-width:380px;padding:0 0 4px">
-    <div style="padding:12px 16px 6px;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:13px;font-weight:800;color:#00dcc6">🏗️ Station Progress</span>
-      <span class="score-badge" id="blockCount">0 / 30 blocks</span>
-    </div>
-    <div class="station-grid" id="stationGrid"></div>
-    <div style="padding:6px 16px 12px;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:12px;color:rgba(224,240,248,.4);font-weight:700">🎴 Collection</span>
-      <div class="mini-cards" id="miniCards"></div>
-    </div>
-    <div style="padding:6px 16px 12px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(255,255,255,.06)">
-      <span style="font-size:13px;font-weight:800;color:#ffd166">⛏️ Minecoins</span>
-      <span class="coin-badge" id="coinCount">0</span>
-    </div>
+  <!-- Minecoins (prominent, what Jules cares about) -->
+  <div class="coin-earned" id="welcomeCoins" style="width:100%;max-width:380px;padding:12px 20px">
+    <p style="font-size:24px;font-weight:900;color:#ffd166">⛏️ <span id="coinCount">0</span> Minecoins</p>
   </div>
 
-  <!-- Language choice -->
+  <!-- Language choice (primary action) -->
   <div class="card" style="padding:22px;width:100%;max-width:380px">
-    <p style="font-size:12px;color:rgba(224,240,248,.45);margin-bottom:14px;font-weight:800;text-transform:uppercase;letter-spacing:1px">Choose today's mission</p>
+    <p style="font-size:14px;color:rgba(224,240,248,.6);margin-bottom:14px;font-weight:800">Choose today's mission!</p>
     <div style="display:flex;flex-direction:column;gap:10px">
       <button class="bl" onclick="go('EN')">🇺🇸  English Homework</button>
       <button class="bl" onclick="go('FR')">🇫🇷  Devoirs en français</button>
     </div>
   </div>
-  <p style="font-size:11px;color:rgba(224,240,248,.16)">For young explorers, age 6 🐙</p>
+
+  <!-- Station progress + collection (secondary, below buttons) -->
+  <div class="card" style="width:100%;max-width:380px;padding:0 0 4px;opacity:.85">
+    <div style="padding:12px 16px 6px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;font-weight:800;color:#00dcc6">🏗️ Space Station</span>
+      <span class="score-badge" id="blockCount" style="font-size:12px">0 / 30</span>
+    </div>
+    <div class="station-grid" id="stationGrid"></div>
+    <div style="padding:6px 16px 10px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:11px;color:rgba(224,240,248,.4);font-weight:700">🎴 Cards</span>
+      <div class="mini-cards" id="miniCards"></div>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════════════════════════════════
@@ -850,8 +850,8 @@ function fireConfetti() {
 function renderWelcome() {
   const profile = getProfile();
   const bc = Math.min(profile.blocks, STATION_TOTAL);
-  document.getElementById('blockCount').textContent = `${bc} / ${STATION_TOTAL} blocks`;
-  document.getElementById('coinCount').textContent = `${profile.minecoins} ⛏️`;
+  document.getElementById('blockCount').textContent = `${bc} / ${STATION_TOTAL}`;
+  document.getElementById('coinCount').textContent = profile.minecoins || 0;
   renderStationGrid('stationGrid', bc);
   renderMiniCards('miniCards');
   document.getElementById('muteBtn').style.display = 'flex';

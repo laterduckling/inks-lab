@@ -142,6 +142,69 @@ Sent automatically from Ink's Lab
   });
 }
 
+// Daily digest — runs Mon-Thu at 9pm via time trigger
+function sendDailyDigest() {
+  // Only run Mon-Thu (1=Mon, 4=Thu)
+  const today = new Date().getDay();
+  if (today === 0 || today === 5 || today === 6) return; // skip Fri/Sat/Sun
+
+  const store = PropertiesService.getScriptProperties();
+  const allSessions = JSON.parse(store.getProperty('sessions') || '[]');
+
+  // Filter to today's sessions only
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const todaySessions = allSessions.filter(s => new Date(s.receivedAt || s.date).getTime() >= startOfDay);
+
+  const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+
+  if (todaySessions.length === 0) {
+    EMAILS.forEach(email => {
+      MailApp.sendEmail({
+        to: email,
+        subject: `\ud83d\udc19 Ink's Lab \u2014 ${dateStr} (no session today)`,
+        body: `No homework session was completed today (${dateStr}).\n\nMaybe tomorrow! \ud83d\ude80`
+      });
+    });
+    return;
+  }
+
+  const totalMins = todaySessions.reduce((a, s) => a + (s.minutes || 0), 0);
+  const totalHints = todaySessions.reduce((a, s) => a + (s.totalHints || 0), 0);
+  const totalCoins = todaySessions.reduce((a, s) => a + (s.coinsEarned || 0), 0);
+  const lastSession = todaySessions[todaySessions.length - 1];
+
+  const sessionDetails = todaySessions.map((s, i) => {
+    const flag = s.lang === 'FR' ? '\ud83c\uddeb\ud83c\uddf7' : '\ud83c\uddfa\ud83c\uddf8';
+    return `${flag} ${s.subject || 'Homework'} \u2014 ${s.minutes || '?'} min, ${s.totalHints || 0} hints, +${s.coinsEarned || 0} coins${s.headline ? '\n   ' + s.headline : ''}${s.struggled ? '\n   \ud83d\udd04 Needs work: ' + s.struggled : ''}${s.shone ? '\n   \u2b50 Shone at: ' + s.shone : ''}`;
+  }).join('\n\n');
+
+  const body = `
+Ink's Lab \u2014 Daily Report (${dateStr})
+${'='.repeat(40)}
+
+Sessions today: ${todaySessions.length}
+Total time: ${totalMins} minutes
+Hints used: ${totalHints}
+Minecoins earned: +${totalCoins} (balance: ${lastSession.minecoins || '?'})
+
+${sessionDetails}
+
+\ud83e\uddf1 Station: ${lastSession.blocks || 0} / 30 blocks
+\ud83c\udccf Cards: ${lastSession.cardsCount || 0}
+${'='.repeat(40)}
+Sent automatically from Ink's Lab
+`.trim();
+
+  EMAILS.forEach(email => {
+    MailApp.sendEmail({
+      to: email,
+      subject: `\ud83d\udc19 Ink's Lab \u2014 ${dateStr} (${todaySessions.length} session${todaySessions.length > 1 ? 's' : ''})`,
+      body: body
+    });
+  });
+}
+
 // ═══════════════════════════════════════════════════════
 // SETUP INSTRUCTIONS
 // ═══════════════════════════════════════════════════════
@@ -162,10 +225,19 @@ Sent automatically from Ink's Lab
 //     https://script.google.com/macros/s/XXXXX.../exec
 // 11. That URL goes into the Ink's Lab app (I'll tell you where)
 //
-// For the weekly digest:
+// For the daily digest (Mon-Thu 9pm):
 // 12. In the Apps Script editor, click the clock icon (Triggers) on the left
 // 13. Click "+ Add Trigger"
 // 14. Set:
+//     - Function: sendDailyDigest
+//     - Event source: Time-driven
+//     - Type: Day timer
+//     - Time: 9pm to 10pm
+// 15. Click Save
+//
+// For the weekly digest:
+// 16. Click "+ Add Trigger" again
+// 17. Set:
 //     - Function: sendWeeklyDigest
 //     - Event source: Time-driven
 //     - Type: Week timer
