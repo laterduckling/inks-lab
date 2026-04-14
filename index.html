@@ -170,6 +170,10 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 .coin-badge{background:rgba(255,209,102,.12);border:1px solid rgba(255,209,102,.35);border-radius:12px;padding:6px 14px;font-size:14px;font-weight:800;color:#ffd166}
 .coin-earned{background:rgba(255,209,102,.1);border:2px solid rgba(255,209,102,.3);border-radius:16px;padding:14px 20px;text-align:center}
 
+/* ── Home button ── */
+.home-btn{position:fixed;top:14px;left:14px;z-index:100;background:rgba(12,22,50,.8);border:1px solid rgba(0,220,200,.2);border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:all .2s;display:none}
+.home-btn:active{transform:scale(.88)}
+
 ::-webkit-scrollbar{display:none}
 </style>
 </head>
@@ -179,6 +183,7 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 <div id="stars"></div>
 
 <!-- ═══════ MUTE TOGGLE ═══════ -->
+<button class="home-btn" id="homeBtn" onclick="goHome()" title="Home">🏠</button>
 <button class="mute-btn" id="muteBtn" onclick="toggleMute()" title="Toggle Ink's voice" style="display:none">🔊</button>
 
 <!-- ══════════════════════════════════════
@@ -207,6 +212,13 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
     <img src="icon-180.png" class="ink-img-xl mood-bounce" id="welcomeInk" alt="Ink">
     <h1 id="welcomeTitle" style="font-size:44px;font-weight:900;background:linear-gradient(135deg,#00dcc6,#0080ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;margin-top:6px;cursor:default" ontouchstart="parentLongPressStart()" ontouchend="parentLongPressEnd()" onmousedown="parentLongPressStart()" onmouseup="parentLongPressEnd()">INK'S LAB</h1>
     <p style="font-size:14px;color:rgba(224,240,248,.5);margin-top:6px;font-weight:700">🚀 Underwater Space Station 🌊</p>
+  </div>
+
+  <!-- Resume mission button (shown when there's a paused session) -->
+  <div id="resumeBanner" class="card" style="padding:18px 22px;width:100%;max-width:380px;display:none;background:linear-gradient(135deg,rgba(0,220,200,.08),rgba(0,128,255,.08));border:2px solid rgba(0,220,200,.35)">
+    <p style="font-size:14px;font-weight:900;color:#00dcc6;margin-bottom:10px">🚀 Mission in progress!</p>
+    <button class="bl" onclick="resumeFromHome()" style="border-color:rgba(0,220,200,.5);color:#00dcc6">➡️ Continue Mission</button>
+    <button onclick="abandonMission()" style="background:none;border:none;color:rgba(224,240,248,.3);font-size:12px;margin-top:8px;cursor:pointer;padding:4px">Abandon mission</button>
   </div>
 
   <!-- Minecoins (prominent, what Jules cares about) -->
@@ -671,6 +683,9 @@ function show(id) {
   el.style.animation = 'sup .36s ease-out both';
   setTimeout(() => el.style.animation = '', 500);
   window.scrollTo(0, 0);
+  // Show home button on all screens except welcome and API key
+  const homeBtn = document.getElementById('homeBtn');
+  homeBtn.style.display = (id === 'w' || id === 'k') ? 'none' : 'flex';
 }
 
 // ═══════════════════════════════════════
@@ -865,6 +880,9 @@ function renderWelcome() {
   renderStationGrid('stationGrid', bc);
   renderMiniCards('miniCards');
   document.getElementById('muteBtn').style.display = 'flex';
+  // Show resume banner if there's an active session
+  const sess = loadSession();
+  document.getElementById('resumeBanner').style.display = sess ? 'block' : 'none';
   // Show weekend mission on Fri(5), Sat(6), Sun(0)
   const day = new Date().getDay();
   const isWeekend = day === 0 || day === 5 || day === 6;
@@ -1593,6 +1611,30 @@ function resetApp() {
   S = {lang:null,hw:null,tIdx:0,done:[],conv:[],t0:null,hintCount:0,isReading:false,transcript:'',newCard:null,verifyImgB64:null,taskStartTime:null,taskHints:[],isWeekendMission:false};
   clearSession();
   renderWelcome(); show('w');
+}
+
+// ═══════════════════════════════════════
+// HOME / RESUME NAVIGATION
+// ═══════════════════════════════════════
+function goHome() {
+  // Save current state before going home
+  if (S.hw) saveSession();
+  renderWelcome();
+  show('w');
+}
+
+function resumeFromHome() {
+  const sess = loadSession();
+  if (sess) {
+    resumeSession(sess);
+  }
+}
+
+function abandonMission() {
+  clearSession();
+  S = {lang:null,hw:null,tIdx:0,done:[],conv:[],t0:null,hintCount:0,isReading:false,transcript:'',newCard:null,verifyImgB64:null,taskStartTime:null,taskHints:[],isWeekendMission:false};
+  renderWelcome();
+  show('w');
 }
 
 // ═══════════════════════════════════════
