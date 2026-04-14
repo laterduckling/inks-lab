@@ -211,6 +211,13 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
     <p style="font-size:24px;font-weight:900;color:#ffd166">⛏️ <span id="coinCount">0</span> Minecoins</p>
   </div>
 
+  <!-- Weekend bonus mission (Fri-Sun only) -->
+  <div id="weekendMission" class="card" style="padding:22px;width:100%;max-width:380px;display:none;background:linear-gradient(135deg,rgba(255,209,102,.08),rgba(255,130,50,.08));border:2px solid rgba(255,209,102,.3)">
+    <p style="font-size:14px;font-weight:900;color:#ffd166;margin-bottom:6px">⛏️ Weekend Bonus Mission!</p>
+    <p style="font-size:13px;color:rgba(224,240,248,.55);margin-bottom:14px;line-height:1.5">Review this week's homework with Ink and earn <strong style="color:#ffd166">25 bonus Minecoins</strong>!</p>
+    <button class="bl" onclick="startWeekendMission()" style="border-color:rgba(255,209,102,.4);color:#ffd166">⛏️ Start Weekend Mission!</button>
+  </div>
+
   <!-- Language choice (primary action) -->
   <div class="card" style="padding:22px;width:100%;max-width:380px">
     <p style="font-size:14px;color:rgba(224,240,248,.6);margin-bottom:14px;font-weight:800">Choose today's mission!</p>
@@ -531,8 +538,8 @@ function loadSession() {
 // PERSISTENCE
 // ═══════════════════════════════════════
 function getProfile() {
-  try { const p = JSON.parse(localStorage.getItem('ink_v2') || '{}'); return {blocks:p.blocks||0,cards:p.cards||[],sessions:p.sessions||[],minecoins:p.minecoins||0}; }
-  catch { return {blocks:0,cards:[],sessions:[],minecoins:0}; }
+  try { const p = JSON.parse(localStorage.getItem('ink_v2') || '{}'); return {blocks:p.blocks||0,cards:p.cards||[],sessions:p.sessions||[],minecoins:p.minecoins||0,lastWeekendMission:p.lastWeekendMission||0}; }
+  catch { return {blocks:0,cards:[],sessions:[],minecoins:0,lastWeekendMission:0}; }
 }
 function saveProfile(p) {
   try { localStorage.setItem('ink_v2', JSON.stringify(p)); } catch {}
@@ -855,6 +862,28 @@ function renderWelcome() {
   renderStationGrid('stationGrid', bc);
   renderMiniCards('miniCards');
   document.getElementById('muteBtn').style.display = 'flex';
+  // Show weekend mission on Fri(5), Sat(6), Sun(0)
+  const day = new Date().getDay();
+  const isWeekend = day === 0 || day === 5 || day === 6;
+  const weekStart = getWeekStart();
+  const alreadyDone = profile.lastWeekendMission && profile.lastWeekendMission >= weekStart;
+  const hasSessions = (profile.sessions||[]).some(s => s.date >= weekStart);
+  const wm = document.getElementById('weekendMission');
+  if (isWeekend && hasSessions && !alreadyDone) {
+    wm.style.display = 'block';
+  } else if (isWeekend && alreadyDone) {
+    wm.style.display = 'block';
+    wm.innerHTML = '<p style="font-size:14px;font-weight:900;color:#06d6a0;text-align:center">✅ Weekend mission completed! +25 ⛏️</p>';
+  } else {
+    wm.style.display = 'none';
+  }
+}
+
+function getWeekStart() {
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // Monday
+  return d.getTime();
 }
 
 // ═══════════════════════════════════════
@@ -1474,6 +1503,12 @@ async function afterReward() {
     profile.sessions = profile.sessions || [];
     profile.sessions.push({date:Date.now(),lang:S.lang,subject:S.hw.subject,minutes:mins,tasksCount:S.hw.tasks.length,totalHints:S.taskHints.reduce((a,b)=>a+b,0),avgHints:Math.round(avgHints*10)/10});
     if (profile.sessions.length > 20) profile.sessions = profile.sessions.slice(-20);
+    // Weekend bonus
+    if (S.isWeekendMission) {
+      profile.minecoins = (profile.minecoins||0) + 25;
+      profile.lastWeekendMission = Date.now();
+      S.isWeekendMission = false;
+    }
     saveProfile(profile);
     let summary = null;
     try {
@@ -1552,9 +1587,58 @@ function forgetKey() {
 }
 
 function resetApp() {
-  S = {lang:null,hw:null,tIdx:0,done:[],conv:[],t0:null,hintCount:0,isReading:false,transcript:'',newCard:null,verifyImgB64:null,taskStartTime:null,taskHints:[]};
+  S = {lang:null,hw:null,tIdx:0,done:[],conv:[],t0:null,hintCount:0,isReading:false,transcript:'',newCard:null,verifyImgB64:null,taskStartTime:null,taskHints:[],isWeekendMission:false};
   clearSession();
   renderWelcome(); show('w');
+}
+
+// ═══════════════════════════════════════
+// WEEKEND BONUS MISSION
+// ═══════════════════════════════════════
+async function startWeekendMission() {
+  const profile = getProfile();
+  const weekStart = getWeekStart();
+  const weekSessions = (profile.sessions||[]).filter(s => s.date >= weekStart);
+  if (!weekSessions.length) return;
+
+  // Build context about the week
+  const subjects = weekSessions.map(s => s.subject).filter(Boolean);
+  const hardOnes = weekSessions.filter(s => (s.avgHints||0) > 1).map(s => s.subject).filter(Boolean);
+
+  // Show analyzing screen
+  const fr = false; // weekend mission always bilingual fun
+  const msgs = ['Ink is preparing your weekend challenge... 🎮','Loading bonus mission... ⛏️','Almost ready... 🚀'];
+  let mi = 0; const el = document.getElementById('am'); el.textContent = msgs[0];
+  clearInterval(aiv); aiv = setInterval(() => { mi=(mi+1)%msgs.length; el.textContent=msgs[mi]; }, 1700);
+  show('a');
+
+  try {
+    const prompt = `Create a fun weekend review quiz for a 6-year-old who did these homework subjects this week: ${subjects.join(', ')}. ${hardOnes.length ? 'He found these harder: '+hardOnes.join(', ')+'. Focus more on those.' : ''} This is a GAME not homework — make it fun!
+
+Return ONLY valid JSON, no markdown:
+{"subject":"weekend review","subjectEmoji":"⛏️","totalEstimatedMinutes":8,"missionBriefing":"Ink's exciting weekend mission briefing, max 18 words, mention Minecoins bonus, enthusiastic","tasks":[{"id":1,"emoji":"1 emoji","type":"oral","label":"short fun label, max 5 words","instruction":"fun review question/challenge, max 15 words","socraticPrompt":"Ink's playful opening, max 20 words, game-framed not homework-framed","hints":["hint1","hint2","hint3"],"verifiable":false}]}
+
+Create 2-3 short, fun review tasks. Mix the subjects. Frame as games/challenges, NOT homework. Use both English and French if he did both.`;
+
+    const t = await api([{role:'user',content:prompt}], null, 1500);
+    let hw;
+    try { hw = JSON.parse(t.replace(/```json|```/g,'').trim()); }
+    catch { hw = {subject:'weekend review',subjectEmoji:'⛏️',totalEstimatedMinutes:8,
+      missionBriefing:'WEEKEND BONUS MISSION! Ink has a special challenge for 25 Minecoins!',
+      tasks:[{id:1,emoji:'🎮',type:'oral',label:'Quick Review',instruction:'Tell Ink what you learned this week!',
+        socraticPrompt:'Hey explorer! What was the coolest thing you learned this week?',
+        hints:['Think about your homework...','Any math or reading?','What do you remember?'],verifiable:false}]}; }
+
+    S.lang = 'EN'; S.hw = hw; S.t0 = Date.now(); S.tIdx = 0; S.done = []; S.taskHints = [];
+    S.isWeekendMission = true;
+    saveSession();
+    clearInterval(aiv); renderMission(); show('m');
+    speak(hw.missionBriefing);
+  } catch(err) {
+    console.error(err); clearInterval(aiv);
+    alert('Error: ' + (err.message||err));
+    show('w');
+  }
 }
 
 // ═══════════════════════════════════════
