@@ -147,6 +147,21 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 .venk-emoji{animation:venk-shake .6s ease-in-out infinite;display:inline-block}
 #ti.venk-mode{animation:venk-shake .5s ease-in-out infinite!important}
 
+/* ── Ink character image ── */
+.ink-img{width:80px;height:80px;border-radius:20px;object-fit:cover;display:inline-block}
+.ink-img-lg{width:120px;height:120px;border-radius:28px;object-fit:cover;display:inline-block}
+.ink-img-xl{width:160px;height:160px;border-radius:36px;object-fit:cover;display:inline-block}
+.ink-img.mood-happy{animation:float 3s ease-in-out infinite}
+.ink-img.mood-bounce{animation:bnc .55s ease-in-out infinite}
+.ink-img.mood-think{animation:pls 1.6s ease-in-out infinite}
+.ink-img.mood-venk{animation:venk-shake .6s ease-in-out infinite;filter:hue-rotate(280deg) brightness(1.2)}
+.ink-img.mood-celebrate{animation:bnc .35s ease-in-out 6}
+.ink-img-lg.mood-happy{animation:float 3s ease-in-out infinite}
+.ink-img-lg.mood-bounce{animation:bnc .55s ease-in-out infinite}
+.ink-img-xl.mood-happy{animation:float 3s ease-in-out infinite}
+.ink-img-xl.mood-bounce{animation:bnc .55s ease-in-out infinite}
+.ink-img-xl.mood-think{animation:pls 1.6s ease-in-out infinite}
+
 /* ── Score badge ── */
 .score-badge{background:rgba(0,220,200,.12);border:1px solid rgba(0,220,200,.3);border-radius:12px;padding:6px 14px;font-size:14px;font-weight:800;color:#00dcc6}
 .coin-badge{background:rgba(255,209,102,.12);border:1px solid rgba(255,209,102,.35);border-radius:12px;padding:6px 14px;font-size:14px;font-weight:800;color:#ffd166}
@@ -168,7 +183,7 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 ══════════════════════════════════════ -->
 <div id="sk" class="screen center active" style="gap:24px">
   <div>
-    <span class="fl" style="font-size:88px">🐙</span>
+    <img src="icon-180.png" class="ink-img-xl mood-happy" alt="Ink">
     <h1 style="font-size:44px;font-weight:900;background:linear-gradient(135deg,#00dcc6,#0080ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;margin-top:8px">INK'S LAB</h1>
     <p style="font-size:14px;color:rgba(224,240,248,.5);margin-top:6px;font-weight:700">🚀 Underwater Space Station 🌊</p>
   </div>
@@ -186,7 +201,7 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 ══════════════════════════════════════ -->
 <div id="sw" class="screen center" style="gap:22px">
   <div>
-    <span class="bn" style="font-size:92px" id="welcomeInk">🐙</span>
+    <img src="icon-180.png" class="ink-img-xl mood-bounce" id="welcomeInk" alt="Ink">
     <h1 id="welcomeTitle" style="font-size:44px;font-weight:900;background:linear-gradient(135deg,#00dcc6,#0080ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;margin-top:6px;cursor:default" ontouchstart="parentLongPressStart()" ontouchend="parentLongPressEnd()" onmousedown="parentLongPressStart()" onmouseup="parentLongPressEnd()">INK'S LAB</h1>
     <p style="font-size:14px;color:rgba(224,240,248,.5);margin-top:6px;font-weight:700">🚀 Underwater Space Station 🌊</p>
   </div>
@@ -224,27 +239,31 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 ══════════════════════════════════════ -->
 <div id="su" class="screen center" style="gap:22px;padding-top:40px">
   <div>
-    <span class="fl" style="font-size:78px">🐙</span>
+    <img src="icon-180.png" class="ink-img-lg mood-happy" alt="Ink">
     <h2 id="ut" style="font-size:27px;font-weight:900;margin-top:10px"></h2>
     <p id="us" style="color:rgba(224,240,248,.5);margin-top:6px;font-size:14px;line-height:1.5"></p>
   </div>
   <div id="dz" class="card" onclick="document.getElementById('fi').click()"
     ondragover="event.preventDefault();this.style.borderColor='#00dcc6'"
     ondragleave="this.style.borderColor='rgba(0,220,200,.28)'"
-    ondrop="event.preventDefault();handleFile(event.dataTransfer.files[0]);this.style.borderColor='rgba(0,220,200,.28)'"
+    ondrop="event.preventDefault();addUploadFile(event.dataTransfer.files[0]);this.style.borderColor='rgba(0,220,200,.28)'"
     style="width:100%;padding:36px 24px;border:2px dashed rgba(0,220,200,.28);cursor:pointer;transition:all .2s">
     <div style="font-size:52px">📸</div>
     <p id="dl" style="margin-top:12px;font-size:19px;font-weight:900;color:#00dcc6"></p>
     <p id="ds" style="font-size:13px;color:rgba(224,240,248,.35);margin-top:6px"></p>
   </div>
-  <input id="fi" type="file" accept="image/*" capture="environment" style="display:none" onchange="handleFile(this.files[0])">
+  <!-- Photo thumbnails -->
+  <div id="photoThumbs" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center"></div>
+  <!-- Analyze button (shown after 1+ photos) -->
+  <button class="btn bp" id="analyzeBtn" style="display:none" onclick="analyzeAllPhotos()"></button>
+  <input id="fi" type="file" accept="image/*" capture="environment" style="display:none" onchange="addUploadFile(this.files[0])">
 </div>
 
 <!-- ══════════════════════════════════════
      SCREEN: ANALYZING
 ══════════════════════════════════════ -->
 <div id="sa" class="screen center" style="gap:26px">
-  <span class="pl" style="font-size:96px">🐙</span>
+  <img src="icon-180.png" class="ink-img-xl mood-think" alt="Ink">
   <div class="card" style="padding:20px 34px">
     <p id="am" style="font-size:18px;font-weight:800"></p>
     <div style="margin-top:12px;display:flex;justify-content:center">
@@ -259,7 +278,7 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 ══════════════════════════════════════ -->
 <div id="sm" class="screen" style="gap:16px;padding-top:24px">
   <div style="display:flex;align-items:center;gap:14px">
-    <span class="fl" style="font-size:52px">🐙</span>
+    <img src="icon-180.png" class="ink-img mood-happy" alt="Ink">
     <div>
       <h2 id="mt" style="font-size:22px;font-weight:900"></h2>
       <p id="mm" style="font-size:13px;color:rgba(224,240,248,.5);margin-top:3px"></p>
@@ -291,7 +310,7 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
       <p id="tm" style="font-weight:800;font-size:12px;color:#00dcc6;text-transform:uppercase;letter-spacing:.8px"></p>
       <p id="tl2" style="font-size:13px;color:rgba(224,240,248,.7);margin-top:2px"></p>
     </div>
-    <span id="ti" class="fl" style="font-size:38px">🐙</span>
+    <img id="ti" src="icon-180.png" class="ink-img mood-happy" alt="Ink">
   </div>
 
   <!-- Chat messages -->
@@ -320,7 +339,7 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 ══════════════════════════════════════ -->
 <div id="svw" class="screen" style="gap:18px;padding-top:28px">
   <div style="text-align:center">
-    <span class="pl" style="font-size:72px">🐙</span>
+    <img src="icon-180.png" class="ink-img-lg mood-think" alt="Ink">
     <h2 id="vwt" style="font-size:24px;font-weight:900;margin-top:10px"></h2>
     <p id="vws" style="color:rgba(224,240,248,.5);margin-top:6px;font-size:14px;line-height:1.5"></p>
   </div>
@@ -340,7 +359,7 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 ══════════════════════════════════════ -->
 <div id="svr" class="screen" style="gap:18px;padding-top:28px">
   <div style="text-align:center">
-    <span id="readInk" class="fl" style="font-size:72px">🐙</span>
+    <img id="readInk" src="icon-180.png" class="ink-img-lg mood-happy" alt="Ink">
     <h2 id="vrt" style="font-size:24px;font-weight:900;margin-top:10px"></h2>
     <p id="vrs" style="color:rgba(224,240,248,.5);margin-top:6px;font-size:14px;line-height:1.5"></p>
   </div>
@@ -398,7 +417,7 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 ══════════════════════════════════════ -->
 <div id="ss" class="screen" style="gap:20px;padding-top:26px;padding-bottom:34px">
   <div style="text-align:center">
-    <span class="bn" style="font-size:80px">🐙</span>
+    <img src="icon-180.png" class="ink-img-xl mood-bounce" alt="Ink">
     <h2 id="sth" style="font-size:30px;font-weight:900;background:linear-gradient(135deg,#ffd166,#ef8c4c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-top:8px"></h2>
     <p id="ssb" style="font-size:14px;color:rgba(224,240,248,.5);margin-top:4px"></p>
   </div>
@@ -410,8 +429,10 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
     </div>
     <div class="station-grid" id="sumStationGrid"></div>
   </div>
-  <!-- Parent report -->
-  <div class="card" id="pr" style="padding:20px 21px"></div>
+  <!-- Child-friendly recap -->
+  <div class="card" id="childRecap" style="padding:20px 21px"></div>
+  <!-- Minecoins summary -->
+  <div class="coin-earned" id="sumCoins"></div>
   <button class="btn bp" id="nb" onclick="resetApp()"></button>
 </div>
 
@@ -520,6 +541,32 @@ function saveProfile(p) {
 // ═══════════════════════════════════════
 // TTS
 // ═══════════════════════════════════════
+let cachedVoices = {};
+function getBestVoice(lang) {
+  if (cachedVoices[lang]) return cachedVoices[lang];
+  const voices = window.speechSynthesis?.getVoices() || [];
+  const code = lang === 'FR' ? 'fr' : 'en';
+  // Prefer premium/enhanced voices on iOS
+  const prefs = lang === 'FR'
+    ? ['Thomas','Audrey','Amelie','Marie']
+    : ['Samantha','Karen','Daniel','Moira','Tessa'];
+  const matching = voices.filter(v => v.lang.startsWith(code));
+  // Try to find a preferred voice
+  for (const name of prefs) {
+    const v = matching.find(v => v.name.includes(name));
+    if (v) { cachedVoices[lang] = v; return v; }
+  }
+  // Fall back to any non-compact voice in that language
+  const good = matching.find(v => !v.name.includes('Compact') && !v.name.includes('compact'));
+  if (good) { cachedVoices[lang] = good; return good; }
+  return matching[0] || null;
+}
+// Preload voices (iOS needs this)
+if (window.speechSynthesis) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => { cachedVoices = {}; };
+}
+
 function speak(text) {
   if (MUTED || !window.speechSynthesis) return;
   window.speechSynthesis.cancel();
@@ -528,7 +575,9 @@ function speak(text) {
   if (!clean) return;
   const u = new SpeechSynthesisUtterance(clean);
   u.lang = S.lang === 'FR' ? 'fr-FR' : 'en-US';
-  u.rate = 0.88; u.pitch = 1.08;
+  const voice = getBestVoice(S.lang || 'EN');
+  if (voice) u.voice = voice;
+  u.rate = 0.92; u.pitch = 1.05;
   window.speechSynthesis.speak(u);
 }
 function stopSpeaking() { if (window.speechSynthesis) window.speechSynthesis.cancel(); }
@@ -542,7 +591,7 @@ function toggleMute() {
 // ═══════════════════════════════════════
 // STT
 // ═══════════════════════════════════════
-let recognition = null, isListening = false;
+let recognition = null, isListening = false, sttAutoRestart = false;
 function startListening(onResult, onEnd) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { alert(S.lang==='FR'?'Reconnaissance vocale non disponible sur ce navigateur.':'Speech recognition not available on this browser.'); return; }
@@ -550,16 +599,37 @@ function startListening(onResult, onEnd) {
   recognition.continuous = true; recognition.interimResults = true;
   recognition.lang = S.lang === 'FR' ? 'fr-FR' : 'en-US';
   let full = '';
+  sttAutoRestart = true;
   recognition.onresult = e => {
     full = '';
     for (let i = 0; i < e.results.length; i++) full += e.results[i][0].transcript + ' ';
     onResult(full.trim());
   };
-  recognition.onend = () => { isListening = false; onEnd(full.trim()); };
-  recognition.onerror = e => { isListening = false; onEnd(full.trim()); };
-  recognition.start(); isListening = true;
+  recognition.onend = () => {
+    // iOS Safari kills recognition prematurely — auto-restart if user hasn't stopped
+    if (sttAutoRestart && isListening) {
+      try { recognition.start(); } catch(e) { isListening = false; onEnd(full.trim()); }
+      return;
+    }
+    isListening = false; onEnd(full.trim());
+  };
+  recognition.onerror = e => {
+    console.error('STT error:', e.error);
+    if (e.error === 'no-speech' && sttAutoRestart && isListening) {
+      // No speech detected but user is still reading — restart
+      try { recognition.start(); } catch(err) { isListening = false; onEnd(full.trim()); }
+      return;
+    }
+    isListening = false; onEnd(full.trim());
+  };
+  try { recognition.start(); isListening = true; }
+  catch(e) { console.error('STT start error:', e); alert(S.lang==='FR'?'Erreur micro. Réessaie.':'Mic error. Try again.'); }
 }
-function stopListening() { if (recognition) { recognition.stop(); recognition = null; } isListening = false; }
+function stopListening() {
+  sttAutoRestart = false;
+  if (recognition) { try { recognition.stop(); } catch(e) {} recognition = null; }
+  isListening = false;
+}
 
 // ═══════════════════════════════════════
 // HAPTICS
@@ -614,12 +684,15 @@ async function api(messages, system, maxTokens=500) {
   return d.content.map(x => x.text||'').filter(Boolean).join('');
 }
 
-async function analyzeHomework(b64) {
+async function analyzeHomework(photos) {
   const L = S.lang==='FR' ? 'French' : 'English';
+  // Support single b64 string or array of b64 strings
+  const photoArr = Array.isArray(photos) ? photos : [photos];
+  const imageBlocks = photoArr.map(b64 => ({type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}}));
   const t = await api([{role:'user',content:[
-    {type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},
-    {type:'text',text:`Analyze this ${L} 1st-grade homework for a 6yo child. Return ONLY valid JSON, no markdown:\n{"subject":"math|reading|writing|spelling|poem|other","subjectEmoji":"1 emoji","totalEstimatedMinutes":10,"missionBriefing":"Ink's exciting mission briefing in ${L}, max 18 words, space+ocean metaphors, enthusiastic","tasks":[{"id":1,"emoji":"1 emoji","type":"written|reading|oral","label":"short label in ${L}, max 5 words","instruction":"what child must do, max 15 words in ${L}","socraticPrompt":"Ink's opening question/invitation in ${L}, max 20 words, curious NOT the answer","hints":["hint1 guiding question in ${L}","hint2 more specific in ${L}","hint3 almost there in ${L}"],"verifiable":true}]}`}
-  ]}],null,1000);
+    ...imageBlocks,
+    {type:'text',text:`Analyze ${photoArr.length > 1 ? 'these '+photoArr.length+' photos of' : 'this'} ${L} 1st-grade homework for a 6yo child. ${photoArr.length > 1 ? 'The photos may show guidelines/instructions on one page and exercises on others. Combine them into one mission.' : ''} Return ONLY valid JSON, no markdown:\n{"subject":"math|reading|writing|spelling|poem|other","subjectEmoji":"1 emoji","totalEstimatedMinutes":10,"missionBriefing":"Ink's exciting mission briefing in ${L}, max 18 words, space+ocean metaphors, enthusiastic","tasks":[{"id":1,"emoji":"1 emoji","type":"written|reading|oral","label":"short label in ${L}, max 5 words","instruction":"what child must do, max 15 words in ${L}","socraticPrompt":"Ink's opening question/invitation in ${L}, max 20 words, curious NOT the answer","hints":["hint1 guiding question in ${L}","hint2 more specific in ${L}","hint3 almost there in ${L}"],"verifiable":true}]}`}
+  ]}],null,1500);
   try { return JSON.parse(t.replace(/```json|```/g,'').trim()); }
   catch { return fallbackHW(); }
 }
@@ -876,10 +949,13 @@ function setKey() {
 // ═══════════════════════════════════════
 function go(l) {
   S.lang = l; const fr = l==='FR';
+  uploadedPhotos = [];
+  document.getElementById('photoThumbs').innerHTML = '';
+  document.getElementById('analyzeBtn').style.display = 'none';
   document.getElementById('ut').textContent = fr ? 'Photo des devoirs !' : 'Homework Photo!';
-  document.getElementById('us').textContent = fr ? "Montre-moi tes devoirs pour qu'on lance l'aventure 🚀" : "Show me your homework and we'll launch the mission 🚀";
+  document.getElementById('us').textContent = fr ? "Prends une ou plusieurs photos de tes devoirs 📸" : "Take one or more photos of your homework 📸";
   document.getElementById('dl').textContent = fr ? 'Appuie pour prendre une photo' : 'Tap to take a photo';
-  document.getElementById('ds').textContent = fr ? "ou glisse l'image ici" : 'or drag & drop here';
+  document.getElementById('ds').textContent = fr ? "tu peux en ajouter plusieurs !" : 'you can add multiple!';
   show('u');
 }
 
@@ -903,10 +979,47 @@ function compressImage(file, maxSize=1800) {
 }
 
 // ═══════════════════════════════════════
-// UPLOAD & ANALYZE
+// UPLOAD & ANALYZE (multi-photo)
 // ═══════════════════════════════════════
-function handleFile(f) {
+let uploadedPhotos = []; // array of base64 strings
+
+function addUploadFile(f) {
   if (!f || !f.type.startsWith('image/')) return;
+  const fr = S.lang==='FR';
+  compressImage(f).then(b64 => {
+    uploadedPhotos.push(b64);
+    renderPhotoThumbs();
+    // Reset file input so same file can be re-selected
+    document.getElementById('fi').value = '';
+  });
+}
+
+function renderPhotoThumbs() {
+  const fr = S.lang==='FR';
+  const el = document.getElementById('photoThumbs');
+  el.innerHTML = '';
+  uploadedPhotos.forEach((b64, i) => {
+    const thumb = document.createElement('div');
+    thumb.style.cssText = 'position:relative;width:64px;height:64px;border-radius:10px;overflow:hidden;border:2px solid rgba(0,220,200,.4)';
+    thumb.innerHTML = `<img src="data:image/jpeg;base64,${b64}" style="width:100%;height:100%;object-fit:cover">
+      <button onclick="event.stopPropagation();uploadedPhotos.splice(${i},1);renderPhotoThumbs()" style="position:absolute;top:-2px;right:-2px;background:rgba(255,80,80,.9);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:20px">✕</button>`;
+    el.appendChild(thumb);
+  });
+  // Update upload zone text
+  if (uploadedPhotos.length > 0) {
+    document.getElementById('dl').textContent = fr ? `${uploadedPhotos.length} photo${uploadedPhotos.length>1?'s':''} — ajouter une autre ?` : `${uploadedPhotos.length} photo${uploadedPhotos.length>1?'s':''} — add another?`;
+    document.getElementById('ds').textContent = fr ? 'ou appuie sur Analyser !' : 'or tap Analyze!';
+    document.getElementById('analyzeBtn').style.display = 'flex';
+    document.getElementById('analyzeBtn').textContent = fr ? `🚀 Analyser ${uploadedPhotos.length} photo${uploadedPhotos.length>1?'s':''}` : `🚀 Analyze ${uploadedPhotos.length} photo${uploadedPhotos.length>1?'s':''}`;
+  } else {
+    document.getElementById('dl').textContent = fr ? 'Appuie pour prendre une photo' : 'Tap to take a photo';
+    document.getElementById('ds').textContent = fr ? "ou glisse l'image ici" : 'or drag & drop here';
+    document.getElementById('analyzeBtn').style.display = 'none';
+  }
+}
+
+function analyzeAllPhotos() {
+  if (!uploadedPhotos.length) return;
   const fr = S.lang==='FR';
   const msgs = fr
     ? ['Ink scanne les devoirs... 🔬','Ink prépare la mission... 🗺️','Station spatiale en ligne... 🚀']
@@ -914,19 +1027,20 @@ function handleFile(f) {
   let mi = 0; const el = document.getElementById('am'); el.textContent = msgs[0];
   clearInterval(aiv); aiv = setInterval(() => { mi=(mi+1)%msgs.length; el.textContent=msgs[mi]; }, 1700);
   show('a');
-  compressImage(f).then(async b64 => {
+  (async () => {
     try {
-      S.hw = await analyzeHomework(b64);
+      S.hw = await analyzeHomework(uploadedPhotos);
       S.t0 = Date.now(); S.tIdx = 0; S.done = []; S.taskHints = [];
       saveSession();
       clearInterval(aiv); renderMission(); show('m');
       speak(S.hw.missionBriefing);
+      uploadedPhotos = []; // clear for next session
     } catch(err) {
       console.error(err); clearInterval(aiv);
       alert((S.lang==='FR'?'Erreur: ':'Error: ') + (err.message||err));
       show('u');
     }
-  });
+  })();
 }
 
 // ═══════════════════════════════════════
@@ -966,19 +1080,14 @@ function startTask() {
   document.getElementById('db').textContent = `✅ ${fr?'Tâche terminée !':'Task Done!'}`;
   document.getElementById('hintLabel').textContent = fr ? 'Besoin d\'un indice ?' : 'Need a hint?';
   document.getElementById('hintBtn').disabled = false;
+  S.userMsgCount = 0;
   setMood('happy');
 
-  // Show verify button based on task type
-  const vBtn = document.getElementById('verifyBtn');
-  if (task.type === 'reading') {
-    vBtn.style.display = 'flex';
-    vBtn.textContent = fr ? '🎤 Lire à voix haute !' : '🎤 Read aloud!';
-  } else if (task.type === 'written' && task.verifiable) {
-    vBtn.style.display = 'flex';
-    vBtn.textContent = fr ? '📸 Vérifier mon travail' : '📸 Check my work';
-  } else {
-    vBtn.style.display = 'none';
-  }
+  // Hide done/verify buttons until interaction
+  document.getElementById('db').style.display = 'none';
+  document.getElementById('verifyBtn').style.display = 'none';
+  S.taskType = task.type;
+  S.taskVerifiable = task.verifiable;
 
   addMsg('a', task.socraticPrompt);
   S.conv.push({role:'assistant', content: task.socraticPrompt});
@@ -988,6 +1097,18 @@ function startTask() {
   show('t');
 }
 
+function showTaskButtons() {
+  const fr = S.lang==='FR';
+  document.getElementById('db').style.display = 'flex';
+  const vBtn = document.getElementById('verifyBtn');
+  if (S.taskType === 'reading') {
+    vBtn.style.display = 'flex';
+    vBtn.textContent = fr ? '🎤 Lire à voix haute !' : '🎤 Read aloud!';
+  } else if (S.taskType === 'written' && S.taskVerifiable) {
+    vBtn.style.display = 'flex';
+    vBtn.textContent = fr ? '📸 Vérifier mon travail' : '📸 Check my work';
+  }
+}
 function escHtml(s) { const t=document.createElement('span'); t.textContent=s; return t.innerHTML; }
 function addMsg(role, text, isVenk=false) {
   const cm = document.getElementById('cm');
@@ -1023,15 +1144,7 @@ function addTyping() {
 function setMood(m) {
   const el = document.getElementById('ti');
   const isVenk = S.hintCount >= 2;
-  if (isVenk) {
-    el.className = 'venk-mode';
-    el.style.cssText = 'font-size:38px;display:inline-block';
-    el.textContent = '😈';
-  } else {
-    el.textContent = '🐙';
-    el.className = m==='thinking' ? 'pl' : m==='excited' ? 'bn' : 'fl';
-    el.style.cssText = 'font-size:38px;display:inline-block';
-  }
+  el.className = 'ink-img ' + (isVenk ? 'mood-venk' : m==='thinking' ? 'mood-think' : m==='excited' ? 'mood-bounce' : 'mood-happy');
 }
 
 async function sendMsg() {
@@ -1040,6 +1153,8 @@ async function sendMsg() {
   clearIdleTimer();
   inp.value = ''; sb.disabled = true;
   addMsg('u', msg); S.conv.push({role:'user',content:msg});
+  S.userMsgCount = (S.userMsgCount||0) + 1;
+  if (S.userMsgCount >= 1) showTaskButtons();
   setMood('thinking'); addTyping(); haptic([10]);
   try {
     const rep = await chatWithInk(msg);
@@ -1129,7 +1244,7 @@ function startIdleTimer() {
     addMsg('a', line, isVenk);
     speak(line);
     startIdleTimer(); // reset for next idle
-  }, 22000);
+  }, 55000);
 }
 function clearIdleTimer() { if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; } }
 function goVerify() {
@@ -1239,20 +1354,20 @@ async function submitReading() {
   if (!S.transcript || S.transcript.length < 3) return;
   const fr = S.lang==='FR';
   document.getElementById('vrSubmit').disabled = true;
-  document.getElementById('readInk').className = 'pl';
+  document.getElementById('readInk').className = 'ink-img-lg mood-think';
   document.getElementById('micStatus').textContent = fr ? 'Ink analyse... 🔬' : 'Ink is checking... 🔬';
   try {
     const result = await verifyReading(S.transcript, S.hw.tasks[S.tIdx]);
     const fbEl = document.getElementById('vrFeedback'); fbEl.style.display = 'block';
     if (result.fluent) {
-      document.getElementById('readInk').className = 'bn';
+      document.getElementById('readInk').className = 'ink-img-lg mood-bounce';
       let msg = result.feedback;
       if (result.comprehensionQuestion) msg += ' ' + result.comprehensionQuestion;
       fbEl.innerHTML = `<div class="ibub"><span class="ink-label">Ink 🐙</span>${escHtml(msg)}</div>`;
       speak(msg); haptic([50,30,100]);
       setTimeout(() => { show('t'); taskDone(); }, 3500);
     } else {
-      document.getElementById('readInk').className = 'fl';
+      document.getElementById('readInk').className = 'ink-img-lg mood-happy';
       fbEl.innerHTML = `<div class="ibub"><span class="ink-label">Ink 🐙</span>${escHtml(result.feedback)}</div>`;
       speak(result.feedback);
       document.getElementById('vrSubmit').disabled = false;
@@ -1262,7 +1377,7 @@ async function submitReading() {
   } catch(err) {
     console.error(err);
     document.getElementById('vrSubmit').disabled = false;
-    document.getElementById('readInk').className = 'fl';
+    document.getElementById('readInk').className = 'ink-img-lg mood-happy';
     document.getElementById('micStatus').textContent = S.lang==='FR' ? 'Erreur — réessaie !' : 'Error — try again!';
   }
 }
@@ -1398,17 +1513,31 @@ function renderSummary(s, profile) {
   document.getElementById('sumBlockCount').textContent = `${bc} / ${STATION_TOTAL}`;
   renderStationGrid('sumStationGrid', bc, 1);
 
-  if (!s) { document.getElementById('pr').style.display = 'none'; return; }
-  speak(s.headline||'');
-  const h = escHtml;
-  document.getElementById('pr').innerHTML = `
-    <p style="font-size:12px;font-weight:800;color:rgba(224,240,248,.35);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:12px">👨‍👩 ${fr?'Rapport parents':'Parent Report'}</p>
-    <p style="font-size:16px;font-weight:800;color:#d8f5f0;line-height:1.45;margin-bottom:16px">${h(s.headline||'')}</p>
-    ${s.completed?.length?`<div style="display:flex;gap:11px;margin-bottom:10px"><span>✅</span><div><p style="font-size:11px;color:rgba(224,240,248,.38);font-weight:800;margin-bottom:3px;text-transform:uppercase;letter-spacing:.6px">${fr?'Complété':'Completed'}</p>${s.completed.map(c=>`<p style="font-size:14px;margin-top:2px">· ${h(c)}</p>`).join('')}</div></div>`:''}
-    ${s.shone?`<div style="display:flex;gap:11px;margin-bottom:10px"><span>⭐</span><div><p style="font-size:11px;color:rgba(224,240,248,.38);font-weight:800;margin-bottom:3px;text-transform:uppercase;letter-spacing:.6px">${fr?'Point fort':'Shone at'}</p><p style="font-size:14px">${h(s.shone)}</p></div></div>`:''}
-    ${s.struggled?`<div style="display:flex;gap:11px;margin-bottom:10px"><span>🔄</span><div><p style="font-size:11px;color:rgba(224,240,248,.38);font-weight:800;margin-bottom:3px;text-transform:uppercase;letter-spacing:.6px">${fr?'À retravailler':'Needs work'}</p><p style="font-size:14px">${h(s.struggled)}</p></div></div>`:''}
-    ${s.tip?`<div style="display:flex;gap:10px;background:rgba(255,209,102,.08);border-radius:12px;padding:11px 13px;margin-bottom:10px"><span>💡</span><p style="font-size:14px;color:#ffd166;line-height:1.4">${h(s.tip)}</p></div>`:''}
-    ${s.insight?`<div style="display:flex;gap:10px;background:rgba(0,220,200,.06);border-radius:12px;padding:11px 13px"><span>🧠</span><p style="font-size:14px;color:#00dcc6;line-height:1.4">${h(s.insight)}</p></div>`:''}`;
+  // Child-friendly recap (no parent report)
+  const tasksCount = S.hw?.tasks?.length || 1;
+  const totalHints = S.taskHints ? S.taskHints.reduce((a,b)=>a+b,0) : 0;
+  const noHints = totalHints === 0;
+  const recap = document.getElementById('childRecap');
+  const headline = s?.headline || (fr ? 'Super session !' : 'Great session!');
+  speak(headline);
+
+  const funMessages = fr
+    ? [noHints ? '🏆 AUCUN indice utilisé ! Tu es un GÉNIE !' : `💡 ${totalHints} indice${totalHints>1?'s':''} — pas mal du tout !`,
+       `📝 ${tasksCount} tâche${tasksCount>1?'s':''} terminée${tasksCount>1?'s':''}`,
+       s?.shone ? `⭐ ${escHtml(s.shone)}` : '⭐ Bravo pour ta concentration !']
+    : [noHints ? '🏆 ZERO hints used! You are a GENIUS!' : `💡 ${totalHints} hint${totalHints>1?'s':''} — not bad at all!`,
+       `📝 ${tasksCount} task${tasksCount>1?'s':''} completed`,
+       s?.shone ? `⭐ ${escHtml(s.shone)}` : '⭐ Great focus today!'];
+
+  recap.innerHTML = `
+    <p style="font-size:18px;font-weight:900;color:#ffd166;margin-bottom:14px">${escHtml(headline)}</p>
+    ${funMessages.map(m=>`<p style="font-size:15px;margin-bottom:8px;line-height:1.5">${m}</p>`).join('')}`;
+
+  // Minecoins total for session
+  const totalCoins = S.taskHints ? S.taskHints.reduce((h,c) => h + (c===0?15:c===1?10:5), 0) : 0;
+  document.getElementById('sumCoins').innerHTML = `
+    <p style="font-size:24px;font-weight:900;color:#ffd166">⛏️ +${totalCoins} Minecoins</p>
+    <p style="font-size:13px;color:rgba(255,209,102,.7);margin-top:4px">${fr?'Total':'Total'}: ${profile.minecoins} ⛏️</p>`;
 }
 
 // ═══════════════════════════════════════
