@@ -132,8 +132,12 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 .parent-row:last-child{border-bottom:none}
 .session-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 
-/* ── Confetti ── */
+/* ── Confetti & Fireworks ── */
 .confetti-piece{position:fixed;width:8px;height:8px;border-radius:2px;pointer-events:none;z-index:999;animation:confetti-fall .8s ease-out forwards}
+@keyframes firework-burst{0%{transform:translate(0,0) scale(1);opacity:1}100%{opacity:0}}
+@keyframes firework-trail{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-120px);opacity:0}}
+.firework-particle{position:fixed;width:5px;height:5px;border-radius:50%;pointer-events:none;z-index:998}
+.firework-spark{position:fixed;width:3px;height:3px;border-radius:50%;pointer-events:none;z-index:998;animation:pls .3s ease-out forwards}
 
 /* ── Hint button ── */
 .hint-btn{background:rgba(255,209,102,.1);border:1.5px solid rgba(255,209,102,.3);color:#ffd166;font-size:14px;font-weight:800;padding:9px 18px;border-radius:12px;cursor:pointer;transition:all .18s;touch-action:manipulation}
@@ -158,7 +162,8 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 .ink-img.mood-bounce{animation:bnc .55s ease-in-out infinite}
 .ink-img.mood-think{animation:pls 1.6s ease-in-out infinite}
 .ink-img.mood-venk{animation:venk-shake .6s ease-in-out infinite;filter:hue-rotate(280deg) brightness(1.2)}
-.ink-img.mood-celebrate{animation:bnc .35s ease-in-out 6}
+.ink-img.mood-celebrate{animation:wiggle-celebrate 1s ease-in-out 3}
+@keyframes wiggle-celebrate{0%,100%{transform:rotate(0) scale(1)}15%{transform:rotate(-12deg) scale(1.1)}30%{transform:rotate(12deg) scale(1.15)}45%{transform:rotate(-8deg) scale(1.1)}60%{transform:rotate(8deg) scale(1.05)}75%{transform:rotate(-4deg)}90%{transform:rotate(4deg)}}
 .ink-img-lg.mood-happy{animation:float 3s ease-in-out infinite}
 .ink-img-lg.mood-bounce{animation:bnc .55s ease-in-out infinite}
 .ink-img-xl.mood-happy{animation:float 3s ease-in-out infinite}
@@ -466,7 +471,8 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
     <h2 style="font-size:22px;font-weight:900">🔒 Parent View</h2>
     <div style="display:flex;gap:10px;align-items:center">
       <button onclick="forgetKey()" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.3);color:#ff8080;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer">🗑 Forget key</button>
-      <button onclick="forgetWebhook()" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.3);color:#ff8080;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer">🗑 Forget webhook</button>
+      <button onclick="forgetWebhook()" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.3);color:#ff8080;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer">🗑 Webhook</button>
+      <button onclick="forgetOaiKey()" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.3);color:#ff8080;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer">🗑 Voice</button>
       <button onclick="show('w')" style="background:none;border:none;color:rgba(224,240,248,.5);cursor:pointer;font-size:22px">✕</button>
     </div>
   </div>
@@ -480,6 +486,18 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
     <div id="webhookActive" style="display:none">
       <p style="font-size:14px;color:#06d6a0">✅ Email reports active</p>
       <button onclick="testWebhook()" style="background:rgba(0,220,200,.1);border:1px solid rgba(0,220,200,.3);color:#00dcc6;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer;margin-top:8px">📧 Send test email</button>
+    </div>
+  </div>
+  <div class="card" id="parVoice" style="padding:18px 20px">
+    <p style="font-size:12px;font-weight:800;color:rgba(224,240,248,.38);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">🎙️ Human-like Voice (OpenAI TTS)</p>
+    <div id="oaiSetup">
+      <p style="font-size:13px;color:rgba(224,240,248,.5);margin-bottom:10px;line-height:1.5">Add an OpenAI API key for natural-sounding voices (~$0.03/session).</p>
+      <input class="ki" id="oaiKeyInput" type="password" placeholder="sk-..." autocomplete="off" spellcheck="false">
+      <button class="btn bp" style="margin-top:10px;font-size:14px;padding:10px 20px" onclick="saveOaiKey()">💾 Save voice key</button>
+    </div>
+    <div id="oaiActive" style="display:none">
+      <p style="font-size:14px;color:#06d6a0">✅ Human voice active (OpenAI TTS)</p>
+      <button onclick="testVoice()" style="background:rgba(0,220,200,.1);border:1px solid rgba(0,220,200,.3);color:#00dcc6;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer;margin-top:8px">🎙️ Test voice</button>
     </div>
   </div>
   <div class="card" style="padding:18px 20px">
@@ -548,6 +566,7 @@ const CREATURES = [
 // STATE
 // ═══════════════════════════════════════
 let KEY = '';
+let OAIKEY = '';
 let MUTED = false;
 let S = {
   lang: null, hw: null, tIdx: 0, done: [], conv: [], t0: null,
@@ -604,20 +623,58 @@ if (window.speechSynthesis) {
   window.speechSynthesis.onvoiceschanged = () => { cachedVoices = {}; };
 }
 
+let currentAudio = null;
+
 function speak(text) {
-  if (MUTED || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
+  if (MUTED) return;
   // Strip emojis for cleaner speech
   const clean = text.replace(/[\u{1F300}-\u{1FFFF}]|[\u{2600}-\u{27BF}]/gu,'').replace(/["""]/g,'').trim();
   if (!clean) return;
-  const u = new SpeechSynthesisUtterance(clean);
+  // Try OpenAI TTS first if key is available
+  if (OAIKEY) {
+    speakOpenAI(clean);
+  } else {
+    speakBrowser(clean);
+  }
+}
+
+async function speakOpenAI(text) {
+  try {
+    stopSpeaking();
+    const voice = S.lang === 'FR' ? 'nova' : 'nova';
+    const r = await fetch('https://api.openai.com/v1/audio/speech', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${OAIKEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'tts-1', input: text, voice: voice, speed: 0.95 })
+    });
+    if (!r.ok) { console.warn('OpenAI TTS failed, falling back'); speakBrowser(text); return; }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+    currentAudio = new Audio(url);
+    currentAudio.onended = () => { URL.revokeObjectURL(url); currentAudio = null; };
+    currentAudio.play();
+  } catch(e) {
+    console.warn('OpenAI TTS error:', e);
+    speakBrowser(text);
+  }
+}
+
+function speakBrowser(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
   u.lang = S.lang === 'FR' ? 'fr-FR' : 'en-US';
   const voice = getBestVoice(S.lang || 'EN');
   if (voice) u.voice = voice;
   u.rate = 0.92; u.pitch = 1.05;
   window.speechSynthesis.speak(u);
 }
-function stopSpeaking() { if (window.speechSynthesis) window.speechSynthesis.cancel(); }
+
+function stopSpeaking() {
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+}
 function reSpeak(id) { const el=document.getElementById(id); if(el) { const mt=el.querySelector('.msg-text'); speak(mt?mt.textContent:el.textContent); } }
 function toggleMute() {
   MUTED = !MUTED;
@@ -731,7 +788,13 @@ async function analyzeHomework(photos) {
   const imageBlocks = photoArr.map(b64 => ({type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}}));
   const t = await api([{role:'user',content:[
     ...imageBlocks,
-    {type:'text',text:`Analyze ${photoArr.length > 1 ? 'these '+photoArr.length+' photos of' : 'this'} ${L} 1st-grade homework for a 6yo child. ${photoArr.length > 1 ? 'The photos may show guidelines/instructions on one page and exercises on others. Combine them into one mission.' : ''} Return ONLY valid JSON, no markdown:\n{"subject":"math|reading|writing|spelling|poem|other","subjectEmoji":"1 emoji","totalEstimatedMinutes":10,"missionBriefing":"Ink's exciting mission briefing in ${L}, max 18 words, space+ocean metaphors, enthusiastic","tasks":[{"id":1,"emoji":"1 emoji","type":"written|reading|oral","label":"short label in ${L}, max 5 words","instruction":"what child must do, max 15 words in ${L}","socraticPrompt":"Ink's opening question/invitation in ${L}, max 20 words, curious NOT the answer","hints":["hint1 guiding question in ${L}","hint2 more specific in ${L}","hint3 almost there in ${L}"],"verifiable":true}]}`}
+    {type:'text',text:`Analyze ${photoArr.length > 1 ? 'these '+photoArr.length+' photos of' : 'this'} ${L} 1st-grade homework for a 6yo child. Today is ${new Date().toLocaleDateString('en-US',{weekday:'long'})}. ${photoArr.length > 1 ? 'The photos may show guidelines/instructions on one page and exercises on others. Combine them into one mission.' : ''}
+
+IMPORTANT: If the homework is organized by day (Monday, Tuesday, etc.), focus ONLY on today's tasks as the main mission. If there are tasks for other days, IGNORE them — do NOT include them.
+
+After the required tasks, you MAY add 1-2 optional bonus tasks (review questions, extra practice) — mark these with "bonus":true. These earn the child extra reward coins.
+
+Return ONLY valid JSON, no markdown:\n{"subject":"math|reading|writing|spelling|poem|other","subjectEmoji":"1 emoji","totalEstimatedMinutes":10,"missionBriefing":"Ink's exciting mission briefing in ${L}, max 18 words, space+ocean metaphors, enthusiastic","tasks":[{"id":1,"emoji":"1 emoji","type":"written|reading|oral","label":"short label in ${L}, max 5 words","instruction":"what child must do, max 15 words in ${L}","socraticPrompt":"Ink's opening question/invitation in ${L}, max 20 words, curious NOT the answer","hints":["hint1 guiding question in ${L}","hint2 more specific in ${L}","hint3 almost there in ${L}"],"verifiable":true,"bonus":false}]}`}
   ]}],null,1500);
   try { return JSON.parse(t.replace(/```json|```/g,'').trim()); }
   catch { return fallbackHW(); }
@@ -875,13 +938,54 @@ function renderMiniCards(containerId) {
 // CONFETTI
 // ═══════════════════════════════════════
 function fireConfetti() {
-  const colors = ['#00dcc6','#ffd166','#ff6b6b','#0080ff','#06d6a0'];
-  for (let i = 0; i < 28; i++) {
+  const colors = ['#00dcc6','#ffd166','#ff6b6b','#0080ff','#06d6a0','#ff80ab','#b388ff'];
+  // Confetti rain
+  for (let i = 0; i < 35; i++) {
     const el = document.createElement('div'); el.className = 'confetti-piece';
-    el.style.cssText = `left:${10+Math.random()*80}%;top:10%;background:${colors[i%colors.length]};animation-delay:${Math.random()*.5}s;animation-duration:${.6+Math.random()*.5}s;transform:rotate(${Math.random()*360}deg)`;
+    el.style.cssText = `left:${5+Math.random()*90}%;top:${-5+Math.random()*10}%;background:${colors[i%colors.length]};animation-delay:${Math.random()*.6}s;animation-duration:${.7+Math.random()*.6}s;width:${6+Math.random()*6}px;height:${6+Math.random()*6}px;border-radius:${Math.random()>.5?'50%':'2px'}`;
     document.body.appendChild(el);
-    setTimeout(() => el.remove(), 1200);
+    setTimeout(() => el.remove(), 1500);
   }
+}
+
+function fireFireworks() {
+  const colors = ['#00dcc6','#ffd166','#ff6b6b','#0080ff','#06d6a0','#ff80ab','#b388ff','#fff'];
+  // Launch 3 bursts with stagger
+  [0, 400, 900].forEach((delay, burstIdx) => {
+    setTimeout(() => {
+      const cx = 20 + Math.random() * 60; // center X %
+      const cy = 15 + Math.random() * 25; // center Y %
+      const burstColor = colors[Math.floor(Math.random()*colors.length)];
+      const particleCount = 20 + Math.floor(Math.random()*15);
+      for (let i = 0; i < particleCount; i++) {
+        const angle = (Math.PI * 2 * i) / particleCount + (Math.random()-.5)*.3;
+        const dist = 40 + Math.random() * 80;
+        const dx = Math.cos(angle) * dist;
+        const dy = Math.sin(angle) * dist;
+        const el = document.createElement('div');
+        el.className = 'firework-particle';
+        const size = 3 + Math.random() * 4;
+        el.style.cssText = `left:${cx}%;top:${cy}%;width:${size}px;height:${size}px;background:${burstColor};box-shadow:0 0 ${size*2}px ${burstColor};opacity:1`;
+        document.body.appendChild(el);
+        const dur = 600 + Math.random()*400;
+        el.animate([
+          { transform: 'translate(0,0) scale(1)', opacity: 1 },
+          { transform: `translate(${dx}px,${dy}px) scale(0.2)`, opacity: 0 }
+        ], { duration: dur, easing: 'cubic-bezier(0,.6,.5,1)', fill: 'forwards' });
+        setTimeout(() => el.remove(), dur + 50);
+      }
+      // Sparkle ring
+      for (let j = 0; j < 8; j++) {
+        setTimeout(() => {
+          const sp = document.createElement('div');
+          sp.className = 'firework-spark';
+          sp.style.cssText = `left:${cx + (Math.random()-0.5)*8}%;top:${cy + (Math.random()-0.5)*6}%;background:#fff;box-shadow:0 0 6px #fff`;
+          document.body.appendChild(sp);
+          setTimeout(() => sp.remove(), 400);
+        }, j * 40);
+      }
+    }, delay);
+  });
 }
 
 // ═══════════════════════════════════════
@@ -1136,13 +1240,37 @@ function renderMission() {
   const tl = document.getElementById('tl'); tl.innerHTML = '';
   hw.tasks.forEach((t, i) => {
     const isDone = S.done.includes(t.id); const isCur = i===S.tIdx && !isDone;
+    const isBonus = t.bonus;
     const d = document.createElement('div'); d.className = `tpill${isDone?' dn':isCur?' cur':''}`;
-    d.innerHTML = `<span style="font-size:26px">${isDone?'✅':isCur?t.emoji:'🔒'}</span><div style="flex:1"><p style="font-weight:800;font-size:14px;color:${isDone?'#06d6a0':isCur?'#00dcc6':'rgba(224,240,248,.3)'}">${t.label}</p>${isCur?`<p style="font-size:12px;color:rgba(224,240,248,.45);margin-top:2px">${t.instruction}</p>`:''}</div>${isDone?'<span style="font-size:16px">⭐</span>':''}`;
+    if (isBonus) d.style.borderColor = 'rgba(255,209,102,.3)';
+    const bonusTag = isBonus ? `<span style="font-size:10px;font-weight:900;color:#ffd166;background:rgba(255,209,102,.15);padding:2px 6px;border-radius:6px;margin-left:6px">⛏️ BONUS</span>` : '';
+    d.innerHTML = `<span style="font-size:26px">${isDone?'✅':isCur?t.emoji:'🔒'}</span><div style="flex:1"><p style="font-weight:800;font-size:14px;color:${isDone?'#06d6a0':isCur?(isBonus?'#ffd166':'#00dcc6'):'rgba(224,240,248,.3)'}">${t.label}${bonusTag}</p>${isCur?`<p style="font-size:12px;color:rgba(224,240,248,.45);margin-top:2px">${t.instruction}</p>`:''}</div>${isDone?'<span style="font-size:16px">⭐</span>':''}`;
     tl.appendChild(d);
   });
   const mc = document.getElementById('mc');
-  mc.textContent = S.done.length===0 ? (fr?'🚀 Lancer la mission !':'🚀 Launch Mission!') : (fr?'➡️ Tâche suivante !':'➡️ Next Task!');
-  mc.style.display = S.tIdx < hw.tasks.length && !S.done.includes(hw.tasks[S.tIdx]?.id) ? 'flex' : 'none';
+  const curTask = hw.tasks[S.tIdx];
+  const isCurBonus = curTask?.bonus;
+  mc.textContent = S.done.length===0 ? (fr?'🚀 Lancer la mission !':'🚀 Launch Mission!') : isCurBonus ? (fr?'⛏️ Mission Bonus !':'⛏️ Bonus Mission!') : (fr?'➡️ Tâche suivante !':'➡️ Next Task!');
+  mc.style.display = S.tIdx < hw.tasks.length && !S.done.includes(curTask?.id) ? 'flex' : 'none';
+
+  // Show "Finish" button if all required tasks are done but bonus remains
+  let skipBtn = document.getElementById('skipBonusBtn');
+  if (!skipBtn) {
+    skipBtn = document.createElement('button');
+    skipBtn.id = 'skipBonusBtn';
+    skipBtn.className = 'bl';
+    skipBtn.style.marginTop = '8px';
+    skipBtn.onclick = () => { S.tIdx = hw.tasks.length; afterReward(); };
+    mc.parentNode.insertBefore(skipBtn, mc.nextSibling);
+  }
+  const requiredDone = hw.tasks.filter(t => !t.bonus).every(t => S.done.includes(t.id));
+  const hasBonus = hw.tasks.some(t => t.bonus);
+  if (requiredDone && hasBonus && S.tIdx < hw.tasks.length) {
+    skipBtn.style.display = 'flex';
+    skipBtn.textContent = fr ? '🏁 Finir sans le bonus' : '🏁 Finish without bonus';
+  } else {
+    skipBtn.style.display = 'none';
+  }
 }
 
 // ═══════════════════════════════════════
@@ -1468,6 +1596,7 @@ function taskDone() {
   clearIdleTimer();
   haptic([30,20,60,20,100]);
   fireConfetti();
+  fireFireworks();
   const taskMins = Math.max(1, Math.round((Date.now() - (S.taskStartTime||S.t0)) / 60000));
   S.taskHints.push(S.hintCount);
   const fr = S.lang==='FR';
@@ -1479,7 +1608,9 @@ function taskDone() {
   const {card, isNew} = pickCard(profile);
   S.newCard = {card, isNew};
   if (isNew) profile.cards.push(card.e);
-  const coinsEarned = S.hintCount === 0 ? 15 : S.hintCount === 1 ? 10 : 5;
+  const isBonus = S.hw.tasks[S.tIdx]?.bonus;
+  const baseCoins = S.hintCount === 0 ? 15 : S.hintCount === 1 ? 10 : 5;
+  const coinsEarned = isBonus ? baseCoins + 10 : baseCoins;
   profile.minecoins = (profile.minecoins||0) + coinsEarned;
   saveProfile(profile);
 
@@ -1508,7 +1639,7 @@ function taskDone() {
   document.getElementById('rewBlocks').textContent = blockEmojis;
   document.getElementById('rewBlockLabel').textContent = fr ? `+1 module ajouté (${profile.blocks}/${STATION_TOTAL} total)` : `+1 module added (${profile.blocks}/${STATION_TOTAL} total)`;
   document.getElementById('rewCelebText').textContent = celeb;
-  const coinBonus = S.hintCount === 0 ? (fr?'(sans indice !)':'(no hints!)') : '';
+  const coinBonus = isBonus ? (fr?'(bonus ⛏️!)':'(bonus ⛏️!)') : S.hintCount === 0 ? (fr?'(sans indice !)':'(no hints!)') : '';
   document.getElementById('rewCoinsAmount').textContent = `⛏️ +${coinsEarned} ${coinBonus}`;
   document.getElementById('rewCoinsLabel').textContent = fr ? 'Minecoins gagnés !' : 'Minecoins earned!';
   document.getElementById('rewCoinsTotal').textContent = `Total: ${profile.minecoins} ⛏️`;
@@ -1590,6 +1721,8 @@ async function afterReward() {
 // SUMMARY SCREEN
 // ═══════════════════════════════════════
 function renderSummary(s, profile) {
+  fireFireworks();
+  setTimeout(() => fireFireworks(), 1200);
   const fr = S.lang==='FR';
   document.getElementById('sth').textContent = fr ? 'Mission Accomplie ! 🎉' : 'Mission Complete! 🎉';
   document.getElementById('ssb').textContent = fr ? 'La station grandit ! Un vrai explorateur 🚀' : 'The station keeps growing! A true explorer 🚀';
@@ -1736,6 +1869,29 @@ function renderWebhookUI() {
   const url = getWebhookUrl();
   document.getElementById('webhookSetup').style.display = url ? 'none' : 'block';
   document.getElementById('webhookActive').style.display = url ? 'block' : 'none';
+  // OpenAI TTS UI
+  const hasOai = !!OAIKEY;
+  document.getElementById('oaiSetup').style.display = hasOai ? 'none' : 'block';
+  document.getElementById('oaiActive').style.display = hasOai ? 'block' : 'none';
+}
+function saveOaiKey() {
+  const k = document.getElementById('oaiKeyInput').value.trim();
+  if (!k.startsWith('sk-')) { alert('Please enter a valid OpenAI API key (starts with sk-)'); return; }
+  OAIKEY = k;
+  localStorage.setItem('ink_oai_key', k);
+  renderWebhookUI();
+  alert('Voice key saved! Ink will now speak with a human-like voice.');
+}
+function forgetOaiKey() {
+  if (confirm('Remove OpenAI voice key? Ink will use the default robot voice.')) {
+    OAIKEY = '';
+    localStorage.removeItem('ink_oai_key');
+    renderWebhookUI();
+  }
+}
+function testVoice() {
+  const fr = S.lang === 'FR';
+  speak(fr ? 'Salut ! C\'est Ink, ton ami le poulpe scientifique !' : 'Hey there! It\'s Ink, your octopus scientist buddy!');
 }
 function sendReport(data) {
   const url = getWebhookUrl();
@@ -1771,8 +1927,10 @@ function resumeSession(saved) {
   speak(msg);
 }
 
-// Auto-load saved key on startup
+// Auto-load saved keys on startup
 (function(){
+  const oai = localStorage.getItem('ink_oai_key');
+  if (oai && oai.startsWith('sk-')) OAIKEY = oai;
   const saved = localStorage.getItem('ink_api_key');
   if (saved && saved.startsWith('sk-')) {
     KEY = saved;
