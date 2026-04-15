@@ -638,6 +638,7 @@ function speak(text) {
   }
 }
 
+let ttsTestMode = false;
 async function speakOpenAI(text) {
   try {
     stopSpeaking();
@@ -647,15 +648,25 @@ async function speakOpenAI(text) {
       headers: { 'Authorization': `Bearer ${OAIKEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: 'tts-1', input: text, voice: voice, speed: 0.95 })
     });
-    if (!r.ok) { console.warn('OpenAI TTS failed, falling back'); speakBrowser(text); return; }
+    if (!r.ok) {
+      const err = await r.text().catch(()=>'unknown error');
+      console.warn('OpenAI TTS failed:', r.status, err);
+      if (ttsTestMode) alert('Voice error: ' + r.status + ' — ' + err);
+      ttsTestMode = false;
+      speakBrowser(text);
+      return;
+    }
     const blob = await r.blob();
     const url = URL.createObjectURL(blob);
     if (currentAudio) { currentAudio.pause(); currentAudio = null; }
     currentAudio = new Audio(url);
     currentAudio.onended = () => { URL.revokeObjectURL(url); currentAudio = null; };
     currentAudio.play();
+    ttsTestMode = false;
   } catch(e) {
     console.warn('OpenAI TTS error:', e);
+    if (ttsTestMode) alert('Voice error: ' + e.message);
+    ttsTestMode = false;
     speakBrowser(text);
   }
 }
@@ -1890,6 +1901,7 @@ function forgetOaiKey() {
   }
 }
 function testVoice() {
+  ttsTestMode = true;
   const fr = S.lang === 'FR';
   speak(fr ? 'Salut ! C\'est Ink, ton ami le poulpe scientifique !' : 'Hey there! It\'s Ink, your octopus scientist buddy!');
 }
