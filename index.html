@@ -792,7 +792,7 @@ async function api(messages, system, maxTokens=500) {
   return d.content.map(x => x.text||'').filter(Boolean).join('');
 }
 
-async function analyzeHomework(photos) {
+async function analyzeHomework(photos, forceDay) {
   const L = S.lang==='FR' ? 'French' : 'English';
   // Support single b64 string or array of b64 strings
   const photoArr = Array.isArray(photos) ? photos : [photos];
@@ -801,11 +801,15 @@ async function analyzeHomework(photos) {
     ...imageBlocks,
     {type:'text',text:`Analyze ${photoArr.length > 1 ? 'these '+photoArr.length+' photos of' : 'this'} ${L} 1st-grade homework for a 6yo child. Today is ${new Date().toLocaleDateString('en-US',{weekday:'long'})}. ${photoArr.length > 1 ? 'The photos may show guidelines/instructions on one page and exercises on others. Combine them into one mission.' : ''}
 
-IMPORTANT: If the homework is organized by day (Monday, Tuesday, etc.), focus ONLY on today's tasks as the main mission. If there are tasks for other days, IGNORE them — do NOT include them.
+CRITICAL — day detection:
+- Look carefully for day labels (Monday/Lundi, Tuesday/Mardi, abbreviations like Mon/Mar, M/T/W/Th/F, etc.)
+${forceDay ? `- The user has confirmed: focus ONLY on ${forceDay}'s tasks. Ignore all other days. Set "dayAmbiguous":false.` : `- If the homework is organized by day, focus ONLY on today's (${new Date().toLocaleDateString('en-US',{weekday:'long'})}) tasks as the main mission
+- If you see multiple days and cannot clearly identify today's section, set "dayAmbiguous":true and list which days you see in "daysFound":["Monday","Wednesday"]`}
+- If there are no day labels, treat the entire page as today's homework
 
 After the required tasks, you MAY add 1-2 optional bonus tasks (review questions, extra practice) — mark these with "bonus":true. These earn the child extra reward coins.
 
-Return ONLY valid JSON, no markdown:\n{"subject":"math|reading|writing|spelling|poem|other","subjectEmoji":"1 emoji","totalEstimatedMinutes":10,"missionBriefing":"Ink's exciting mission briefing in ${L}, max 18 words, space+ocean metaphors, enthusiastic","tasks":[{"id":1,"emoji":"1 emoji","type":"written|reading|oral","label":"short label in ${L}, max 5 words","instruction":"what child must do, max 15 words in ${L}","socraticPrompt":"Ink's opening question/invitation in ${L}, max 20 words, curious NOT the answer","hints":["hint1 guiding question in ${L}","hint2 more specific in ${L}","hint3 almost there in ${L}"],"verifiable":true,"bonus":false}]}`}
+Return ONLY valid JSON, no markdown:\n{"dayAmbiguous":false,"daysFound":[],"subject":"math|reading|writing|spelling|poem|other","subjectEmoji":"1 emoji","totalEstimatedMinutes":10,"missionBriefing":"Ink's exciting mission briefing in ${L}, max 18 words, space+ocean metaphors, enthusiastic","tasks":[{"id":1,"emoji":"1 emoji","type":"written|reading|oral","label":"short label in ${L}, max 5 words","instruction":"what child must do, max 15 words in ${L}","detailedInstruction":"precise description of the exercise for teacher reports, max 30 words in English","socraticPrompt":"Ink's opening question/invitation in ${L}, max 20 words, curious NOT the answer","hints":["hint1 guiding question in ${L}","hint2 more specific in ${L}","hint3 almost there in ${L}"],"verifiable":true,"bonus":false}]}`}
   ]}],null,1500);
   try { return JSON.parse(t.replace(/```json|```/g,'').trim()); }
   catch { return fallbackHW(); }
@@ -887,7 +891,12 @@ async function generateSummary(durationMins, sessions) {
   const historyContext = sessions.length > 2
     ? `Past session data (last ${Math.min(sessions.length,5)} sessions): ${JSON.stringify(sessions.slice(-5).map(s=>({subject:s.subject,avgHints:s.avgHints,minutes:s.minutes})))}.`
     : '';
-  const t = await api([{role:'user',content:`Generate a parent report in ${L}. Subject: ${S.hw.subject}. Duration: ~${durationMins}min. Hints used: ${S.taskHints.reduce((a,b)=>a+b,0)}. ${historyContext}\nReturn ONLY valid JSON:\n{"headline":"warm 1-sentence session summary","completed":["item1","item2"],"struggled":"what was hardest or null","shone":"specific thing he did well","tip":"practical parent tip or null","insight":"pattern from history or null"}`}],null,320);
+  const taskDetails = (S.hw?.tasks||[]).map((t,i) => `Task ${i+1}: ${t.detailedInstruction||t.instruction} (hints: ${S.taskHints[i]||0}${t.bonus?' [bonus]':''})`).join('; ');
+  const t = await api([{role:'user',content:`Generate TWO reports for a homework session in ${L}.
+
+Session info: Subject: ${S.hw.subject}. Duration: ~${durationMins}min. Hints used: ${S.taskHints.reduce((a,b)=>a+b,0)}. Tasks: ${taskDetails}. ${historyContext}
+
+Return ONLY valid JSON:\n{"childHeadline":"exciting 1-sentence message TO the child (you/tu, not he/il) celebrating what they did, in ${L}","childShone":"specific thing the child did well, addressed to them (you/tu), in ${L}","completed":["item1","item2"],"struggled":"what was hardest or null","shone":"specific strength for parent report","tip":"practical parent tip or null","insight":"pattern from history or null","teacherTasks":[{"task":"precise exercise description in English","result":"how the student performed","hintsUsed":0}]}`}],null,500);
   try { return JSON.parse(t.replace(/```json|```/g,'').trim()); }
   catch { return {headline:L==='French'?'Super session aujourd\'hui !':'Great session today!',completed:[L==='French'?'Devoirs terminés':'Homework done'],struggled:null,shone:L==='French'?'Beaucoup de concentration':'Great focus',tip:null,insight:null}; }
 }
@@ -1224,6 +1233,22 @@ function analyzeAllPhotos() {
   (async () => {
     try {
       S.hw = await analyzeHomework(uploadedPhotos);
+      // If day is ambiguous, ask user which day
+      if (S.hw.dayAmbiguous && S.hw.daysFound && S.hw.daysFound.length > 1) {
+        clearInterval(aiv);
+        const fr = S.lang==='FR';
+        const days = S.hw.daysFound;
+        const todayName = new Date().toLocaleDateString(fr?'fr-FR':'en-US',{weekday:'long'});
+        const msg = fr
+          ? `Ink voit les devoirs de ${days.join(', ')}.\nOn fait juste aujourd'hui (${todayName}) ou tous les jours ?`
+          : `Ink sees homework for ${days.join(', ')}.\nDo just today (${todayName}) or all days?`;
+        const justToday = confirm(msg + (fr ? '\n\nOK = juste aujourd\'hui\nAnnuler = tous les jours' : '\n\nOK = just today\nCancel = all days'));
+        if (justToday) {
+          // Re-analyze with explicit day filter
+          show('a'); el.textContent = fr ? 'Ink se concentre sur aujourd\'hui... 🔬' : 'Ink is focusing on today... 🔬';
+          S.hw = await analyzeHomework(uploadedPhotos, todayName);
+        }
+      }
       S.t0 = Date.now(); S.tIdx = 0; S.done = []; S.taskHints = [];
       saveSession();
       clearInterval(aiv); renderMission(); show('m');
@@ -1716,9 +1741,10 @@ async function afterReward() {
       avgHints: Math.round((S.taskHints.reduce((a,b)=>a+b,0)/S.taskHints.length)*10)/10,
       coinsEarned: totalCoins, minecoins: profile.minecoins||0,
       blocks: profile.blocks||0, cardsCount: profile.cards?.length||0,
-      headline: summary?.headline||null, completed: summary?.completed||null,
+      headline: summary?.childHeadline||null, completed: summary?.completed||null,
       shone: summary?.shone||null, struggled: summary?.struggled||null,
-      tip: summary?.tip||null, insight: summary?.insight||null
+      tip: summary?.tip||null, insight: summary?.insight||null,
+      teacherTasks: summary?.teacherTasks||null
     });
     show('s');
   } else {
@@ -1742,21 +1768,21 @@ function renderSummary(s, profile) {
   document.getElementById('sumBlockCount').textContent = `${bc} / ${STATION_TOTAL}`;
   renderStationGrid('sumStationGrid', bc, 1);
 
-  // Child-friendly recap (no parent report)
+  // Child-friendly recap — talks TO Jules, not about him
   const tasksCount = S.hw?.tasks?.length || 1;
   const totalHints = S.taskHints ? S.taskHints.reduce((a,b)=>a+b,0) : 0;
   const noHints = totalHints === 0;
   const recap = document.getElementById('childRecap');
-  const headline = s?.headline || (fr ? 'Super session !' : 'Great session!');
+  const headline = s?.childHeadline || (fr ? 'Tu as tout déchiré !' : 'You crushed it!');
   speak(headline);
 
   const funMessages = fr
-    ? [noHints ? '🏆 AUCUN indice utilisé ! Tu es un GÉNIE !' : `💡 ${totalHints} indice${totalHints>1?'s':''} — pas mal du tout !`,
+    ? [noHints ? '🏆 AUCUN indice ! Tu es un GÉNIE !' : `💡 ${totalHints} indice${totalHints>1?'s':''} — pas mal du tout !`,
        `📝 ${tasksCount} tâche${tasksCount>1?'s':''} terminée${tasksCount>1?'s':''}`,
-       s?.shone ? `⭐ ${escHtml(s.shone)}` : '⭐ Bravo pour ta concentration !']
-    : [noHints ? '🏆 ZERO hints used! You are a GENIUS!' : `💡 ${totalHints} hint${totalHints>1?'s':''} — not bad at all!`,
+       s?.childShone ? `⭐ ${escHtml(s.childShone)}` : '⭐ Bravo, tu étais super concentré !']
+    : [noHints ? '🏆 ZERO hints! You are a GENIUS!' : `💡 ${totalHints} hint${totalHints>1?'s':''} — not bad at all!`,
        `📝 ${tasksCount} task${tasksCount>1?'s':''} completed`,
-       s?.shone ? `⭐ ${escHtml(s.shone)}` : '⭐ Great focus today!'];
+       s?.childShone ? `⭐ ${escHtml(s.childShone)}` : '⭐ You were super focused today!'];
 
   recap.innerHTML = `
     <p style="font-size:18px;font-weight:900;color:#ffd166;margin-bottom:14px">${escHtml(headline)}</p>

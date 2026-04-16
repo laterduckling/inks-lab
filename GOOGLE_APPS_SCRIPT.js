@@ -7,6 +7,11 @@
 // >>> CHANGE THESE TO YOUR REAL EMAIL ADDRESSES <<<
 const EMAILS = ['your@gmail.com', 'wife@gmail.com'];
 
+// >>> TEACHER EMAILS (weekly report, one per language) <<<
+const TEACHER_EN = ''; // English teacher email (leave empty to skip)
+const TEACHER_FR = ''; // French teacher email (leave empty to skip)
+// While testing, you can set these to your own email
+
 // Receive session report from the app (POST webhook)
 function doPost(e) {
   try {
@@ -205,6 +210,104 @@ Sent automatically from Ink's Lab
   });
 }
 
+// Teacher weekly digest — runs every Friday via time trigger
+// Sends separate reports to EN and FR teachers with only their relevant sessions
+function sendTeacherDigest() {
+  const store = PropertiesService.getScriptProperties();
+  const allSessions = JSON.parse(store.getProperty('sessions') || '[]');
+
+  // Filter to last 7 days
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const week = allSessions.filter(s => new Date(s.receivedAt || s.date).getTime() > weekAgo);
+
+  // Split by language
+  const enSessions = week.filter(s => s.lang === 'EN');
+  const frSessions = week.filter(s => s.lang === 'FR');
+
+  if (TEACHER_EN && enSessions.length > 0) {
+    sendTeacherEmail(TEACHER_EN, 'English', enSessions);
+  }
+  if (TEACHER_FR && frSessions.length > 0) {
+    sendTeacherEmail(TEACHER_FR, 'French', frSessions);
+  }
+  // Also send to parents for testing/visibility
+  if (enSessions.length > 0 || frSessions.length > 0) {
+    EMAILS.forEach(email => {
+      if (enSessions.length > 0) sendTeacherEmail(email, 'English', enSessions);
+      if (frSessions.length > 0) sendTeacherEmail(email, 'French', frSessions);
+    });
+  }
+}
+
+function sendTeacherEmail(email, language, sessions) {
+  const totalMins = sessions.reduce((a, s) => a + (s.minutes || 0), 0);
+  const totalHints = sessions.reduce((a, s) => a + (s.totalHints || 0), 0);
+  const flag = language === 'French' ? '\ud83c\uddeb\ud83c\uddf7' : '\ud83c\uddfa\ud83c\uddf8';
+
+  const sessionDetails = sessions.map(s => {
+    const d = new Date(s.date || s.receivedAt);
+    const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const difficulty = (s.avgHints || 0) > 2 ? 'Needed extra support' : (s.avgHints || 0) > 1 ? 'Some difficulty' : 'Comfortable';
+
+    // Task-level detail if available
+    let taskLines = '';
+    if (s.teacherTasks && s.teacherTasks.length > 0) {
+      taskLines = s.teacherTasks.map(t =>
+        `      - ${t.task}: ${t.result} (${t.hintsUsed || 0} hint${(t.hintsUsed || 0) !== 1 ? 's' : ''})`
+      ).join('\n');
+    }
+
+    return `  ${dateStr} \u2014 ${s.subject || 'Homework'} (${s.minutes || '?'} min, ${difficulty})` +
+      (s.shone ? `\n    Strength: ${s.shone}` : '') +
+      (s.struggled ? `\n    Needs work: ${s.struggled}` : '') +
+      (taskLines ? `\n    Exercises:\n${taskLines}` : '');
+  }).join('\n\n');
+
+  // Identify patterns
+  const hardSessions = sessions.filter(s => (s.avgHints || 0) > 2);
+  const subjects = {};
+  sessions.forEach(s => { if (s.subject) subjects[s.subject] = (subjects[s.subject] || 0) + 1; });
+
+  const body = `
+Ink's Lab \u2014 Weekly Teacher Report
+${flag} ${language} Sessions
+${'='.repeat(50)}
+
+Student: Jules
+Week: ${new Date(Date.now() - 7*24*60*60*1000).toLocaleDateString('en-US', {month:'short',day:'numeric'})} \u2013 ${new Date().toLocaleDateString('en-US', {month:'short',day:'numeric'})}
+Sessions this week: ${sessions.length}
+Total study time: ${totalMins} minutes
+Total hints used: ${totalHints}
+
+${'─'.repeat(50)}
+SESSION DETAILS
+${'─'.repeat(50)}
+
+${sessionDetails}
+
+${'─'.repeat(50)}
+PATTERNS & OBSERVATIONS
+${'─'.repeat(50)}
+
+${hardSessions.length > 0
+  ? `Areas needing support: ${hardSessions.map(s => s.subject).filter((v,i,a) => a.indexOf(v) === i).join(', ')} (${hardSessions.length} session${hardSessions.length > 1 ? 's' : ''} with extra difficulty)`
+  : 'No major difficulty patterns this week.'}
+
+Subjects covered: ${Object.entries(subjects).map(([k,v]) => `${k} (${v}x)`).join(', ')}
+
+${'='.repeat(50)}
+This report is generated automatically by Ink's Lab,
+a homework companion app used at home.
+For questions, please contact Jules's parents.
+`.trim();
+
+  MailApp.sendEmail({
+    to: email,
+    subject: `${flag} Ink's Lab \u2014 Jules's ${language} Homework Report (week of ${new Date().toLocaleDateString('en-US', {month:'short',day:'numeric'})})`,
+    body: body
+  });
+}
+
 // ═══════════════════════════════════════════════════════
 // SETUP INSTRUCTIONS
 // ═══════════════════════════════════════════════════════
@@ -245,7 +348,20 @@ Sent automatically from Ink's Lab
 //     - Time: 6pm to 7pm (or whenever you want)
 // 15. Click Save
 //
+// For the teacher weekly report:
+// 18. Click "+ Add Trigger" again
+// 19. Set:
+//     - Function: sendTeacherDigest
+//     - Event source: Time-driven
+//     - Type: Week timer
+//     - Day: Friday
+//     - Time: 6pm to 7pm
+// 20. Click Save
+// 21. Set TEACHER_EN and TEACHER_FR at the top to real teacher emails
+//     (or your own emails for testing)
+//
 // That's it! You'll get:
 // - An email after every homework session (automatic)
 // - A weekly summary every Sunday evening (automatic)
+// - Teacher reports every Friday (split by language)
 // ═══════════════════════════════════════════════════════
