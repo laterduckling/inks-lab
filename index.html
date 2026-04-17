@@ -528,6 +528,7 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
       <span id="coinSaved" style="font-size:13px;color:#06d6a0;display:none">✅ Saved!</span>
     </div>
   </div>
+  <div class="card" id="parCognitive" style="padding:18px 20px;display:none"></div>
   <div class="card" id="parStats" style="padding:18px 20px"></div>
   <div class="card" style="padding:0">
     <div style="padding:14px 18px 10px;font-size:12px;font-weight:800;color:rgba(224,240,248,.42);text-transform:uppercase;letter-spacing:.8px">Recent Sessions</div>
@@ -601,8 +602,8 @@ function loadSession() {
 // PERSISTENCE
 // ═══════════════════════════════════════
 function getProfile() {
-  try { const p = JSON.parse(localStorage.getItem('ink_v2') || '{}'); return {blocks:p.blocks||0,cards:p.cards||[],sessions:p.sessions||[],minecoins:p.minecoins||0,lastWeekendMission:p.lastWeekendMission||0}; }
-  catch { return {blocks:0,cards:[],sessions:[],minecoins:0,lastWeekendMission:0}; }
+  try { const p = JSON.parse(localStorage.getItem('ink_v2') || '{}'); return {blocks:p.blocks||0,cards:p.cards||[],sessions:p.sessions||[],minecoins:p.minecoins||0,lastWeekendMission:p.lastWeekendMission||0,cognitiveProfile:p.cognitiveProfile||null,cognitiveProfileDate:p.cognitiveProfileDate||0}; }
+  catch { return {blocks:0,cards:[],sessions:[],minecoins:0,lastWeekendMission:0,cognitiveProfile:null,cognitiveProfileDate:0}; }
 }
 function saveProfile(p) {
   try { localStorage.setItem('ink_v2', JSON.stringify(p)); } catch {}
@@ -810,9 +811,11 @@ async function analyzeHomework(photos, forceDay) {
   // Support single b64 string or array of b64 strings
   const photoArr = Array.isArray(photos) ? photos : [photos];
   const imageBlocks = photoArr.map(b64 => ({type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}}));
+  const cp = getProfile().cognitiveProfile;
+  const profileNote = cp ? `\nKnown about Jules: ${cp.profile}${cp.strategies?.length?' Preferred scaffolding: '+cp.strategies.join('; '):''}${cp.watchFor?.length?' Watch for: '+cp.watchFor.join('; '):''}\nCalibrate the hints and task framing accordingly — lean into his strengths, scaffold more carefully around his struggles.\n` : '';
   const t = await api([{role:'user',content:[
     ...imageBlocks,
-    {type:'text',text:`Analyze ${photoArr.length > 1 ? 'these '+photoArr.length+' photos of' : 'this'} ${L} 1st-grade homework for a 6yo child. Today is ${new Date().toLocaleDateString('en-US',{weekday:'long'})}. ${photoArr.length > 1 ? 'The photos may show guidelines/instructions on one page and exercises on others. Combine them into one mission.' : ''}
+    {type:'text',text:`Analyze ${photoArr.length > 1 ? 'these '+photoArr.length+' photos of' : 'this'} ${L} 1st-grade homework for a 6yo child named Jules. Today is ${new Date().toLocaleDateString('en-US',{weekday:'long'})}.${profileNote} ${photoArr.length > 1 ? 'The photos may show guidelines/instructions on one page and exercises on others. Combine them into one mission.' : ''}
 
 CRITICAL — day detection:
 - Look carefully for day labels (Monday/Lundi, Tuesday/Mardi, abbreviations like Mon/Mar, M/T/W/Th/F, etc.)
@@ -844,8 +847,17 @@ async function chatWithInk(userMsg) {
   const task = S.hw.tasks[S.tIdx];
   const isVenk = S.hintCount >= 2;
 
-  const normalSys = `You are Ink — a CHAOTIC, FUNNY, brilliant octopus scientist living in an underwater space station. You are helping a 6-year-old boy with his ${L} homework and you are his BEST friend.
+  // Inject cognitive profile so Ink adapts to Jules
+  const cp = getProfile().cognitiveProfile;
+  const profileBlock = cp ? `
+WHAT YOU KNOW ABOUT THIS CHILD (Jules, 6yo) — USE THIS to adapt your scaffolding:
+${cp.profile}
+${cp.strategies?.length ? `Strategies that work for him: ${cp.strategies.join('; ')}` : ''}
+${cp.watchFor?.length ? `Watch out for: ${cp.watchFor.join('; ')}` : ''}
+` : '';
 
+  const normalSys = `You are Ink — a CHAOTIC, FUNNY, brilliant octopus scientist living in an underwater space station. You are helping a 6-year-old boy named Jules with his ${L} homework and you are his BEST friend.
+${profileBlock}
 Current task: "${task.instruction}"
 
 YOUR PERSONALITY (very important):
@@ -865,7 +877,7 @@ UNBREAKABLE rules:
 5. If child says done/finished: celebrate WILDLY, one sentence, say to tap ✅`;
 
   const venkSys = `You are VENK — the dramatic villain transformation of Ink the octopus. Ink has temporarily transformed because this homework problem is SO HARD it broke his brain.
-
+${profileBlock}
 Current task: "${task.instruction}"
 
 VENK's personality:
@@ -897,6 +909,37 @@ async function verifyReading(transcript, task) {
   const t = await api([{role:'user',content:`A 6-year-old read aloud for this task: "${task.instruction}". Their transcript: "${transcript}". Assess for a 6yo's level. Return ONLY valid JSON:\n{"fluent":true,"feedback":"Ink's excited 1-sentence reaction in ${L}","comprehensionQuestion":"1 simple question about what they read in ${L}"}\nor {"fluent":false,"feedback":"gentle encouraging line in ${L}","needsWork":"what to try again in ${L}, simple"}`}],null,200);
   try { return JSON.parse(t.replace(/```json|```/g,'').trim()); }
   catch { return {fluent:true,feedback:S.lang==='FR'?'Super lecture !':'Great reading!',comprehensionQuestion:null}; }
+}
+
+async function generateCognitiveProfile(sessions) {
+  if (sessions.length < 3) return null;
+  const recent = sessions.slice(-10);
+  const sessionData = recent.map(s => ({
+    subject: s.subject,
+    minutes: s.minutes,
+    avgHints: s.avgHints,
+    totalHints: s.totalHints,
+    tasksCount: s.tasksCount,
+    shone: s.shone,
+    struggled: s.struggled,
+    lang: s.lang
+  }));
+  try {
+    const t = await api([{role:'user',content:`You are analyzing a 6-year-old boy named Jules to build a short cognitive/learning profile used by his AI homework tutor (Ink).
+
+Session history (most recent last): ${JSON.stringify(sessionData)}
+
+Infer patterns across:
+- Subjects he handles easily vs. struggles with
+- Likely learning style (visual, story-based, concrete objects, step-by-step, etc.)
+- Focus/pace tendencies (rushes? lingers? loses steam?)
+- What scaffolding seems to work best
+- Any emerging strengths to leverage
+
+Return ONLY valid JSON, no markdown:
+{"profile":"2-3 short sentences, max 300 chars, describing Jules's cognitive patterns in plain English","strategies":["specific tutoring strategy #1 Ink should use","specific tutoring strategy #2","specific tutoring strategy #3"],"watchFor":["area where Jules tends to struggle","another pattern to watch"]}`}],null,500);
+    return JSON.parse(t.replace(/```json|```/g,'').trim());
+  } catch(e) { console.warn('cognitive profile gen failed', e); return null; }
 }
 
 async function generateSummary(durationMins, sessions) {
@@ -1085,6 +1128,25 @@ function renderParentMode() {
   const profile = getProfile();
   document.getElementById('coinEdit').value = profile.minecoins || 0;
   document.getElementById('blockEdit').value = profile.blocks || 0;
+
+  // Cognitive profile
+  const cogEl = document.getElementById('parCognitive');
+  const cp = profile.cognitiveProfile;
+  if (cp) {
+    const updated = profile.cognitiveProfileDate ? new Date(profile.cognitiveProfileDate).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+    cogEl.style.display = 'block';
+    cogEl.innerHTML = `
+      <p style="font-size:12px;font-weight:800;color:rgba(224,240,248,.38);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">🧠 Jules's Learning Profile ${updated?`<span style="font-weight:600;color:rgba(224,240,248,.35);text-transform:none;letter-spacing:0">· updated ${updated}</span>`:''}</p>
+      <p style="font-size:14px;line-height:1.6;color:#d8f5f0;margin-bottom:14px">${escHtml(cp.profile||'')}</p>
+      ${cp.strategies?.length ? `<p style="font-size:12px;font-weight:800;color:#00dcc6;margin-bottom:6px">Strategies that work</p><ul style="font-size:13px;line-height:1.6;color:rgba(224,240,248,.75);padding-left:20px;margin-bottom:12px">${cp.strategies.map(s=>`<li>${escHtml(s)}</li>`).join('')}</ul>` : ''}
+      ${cp.watchFor?.length ? `<p style="font-size:12px;font-weight:800;color:#ffd166;margin-bottom:6px">Watch for</p><ul style="font-size:13px;line-height:1.6;color:rgba(224,240,248,.75);padding-left:20px">${cp.watchFor.map(s=>`<li>${escHtml(s)}</li>`).join('')}</ul>` : ''}
+      <p style="font-size:11px;color:rgba(224,240,248,.3);margin-top:14px;font-style:italic">Ink uses this to adapt how he scaffolds each task.</p>`;
+  } else if ((profile.sessions||[]).length > 0) {
+    cogEl.style.display = 'block';
+    cogEl.innerHTML = `<p style="font-size:12px;font-weight:800;color:rgba(224,240,248,.38);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">🧠 Jules's Learning Profile</p><p style="font-size:13px;color:rgba(224,240,248,.5);line-height:1.5">Building Jules's cognitive profile... Need ${Math.max(0,3-profile.sessions.length)} more session${3-profile.sessions.length>1?'s':''} before Ink can adapt to his learning style.</p>`;
+  } else {
+    cogEl.style.display = 'none';
+  }
   const sessions = profile.sessions || [];
   const fr = false; // parent mode always in parent's UI language
 
@@ -1739,12 +1801,27 @@ async function afterReward() {
       profile.lastWeekendMission = Date.now();
       S.isWeekendMission = false;
     }
+    // Enrich the just-added session with shone/struggled from summary (for profile gen)
     saveProfile(profile);
     let summary = null;
     try {
       summary = await generateSummary(mins, profile.sessions);
       renderSummary(summary, profile);
     } catch { renderSummary(null, profile); }
+    // Regenerate cognitive profile every session (once we have 3+)
+    if (profile.sessions.length >= 3) {
+      // Attach summary details to the latest session so the profile generator can use them
+      if (summary) {
+        const last = profile.sessions[profile.sessions.length - 1];
+        last.shone = summary.shone || null;
+        last.struggled = summary.struggled || null;
+      }
+      try {
+        const cp = await generateCognitiveProfile(profile.sessions);
+        if (cp) { profile.cognitiveProfile = cp; profile.cognitiveProfileDate = Date.now(); }
+      } catch(e) { console.warn('cognitive profile update failed', e); }
+      saveProfile(profile);
+    }
     clearSession();
     // Send email report
     const totalCoins = S.taskHints.reduce((h,c) => h + (c===0?15:c===1?10:5), 0);
