@@ -812,10 +812,10 @@ async function analyzeHomework(photos, forceDay) {
   const photoArr = Array.isArray(photos) ? photos : [photos];
   const imageBlocks = photoArr.map(b64 => ({type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}}));
   const cp = getProfile().cognitiveProfile;
-  const profileNote = cp ? `\nKnown about Jules: ${cp.profile}${cp.strategies?.length?' Preferred scaffolding: '+cp.strategies.join('; '):''}${cp.watchFor?.length?' Watch for: '+cp.watchFor.join('; '):''}\nCalibrate the hints and task framing accordingly — lean into his strengths, scaffold more carefully around his struggles.\n` : '';
+  const profileNote = cp ? `\nKnown about the child: ${cp.profile}${cp.strategies?.length?' Preferred scaffolding: '+cp.strategies.join('; '):''}${cp.watchFor?.length?' Watch for: '+cp.watchFor.join('; '):''}\nCalibrate the hints and task framing accordingly — lean into strengths, scaffold more carefully around struggles.\n` : '';
   const t = await api([{role:'user',content:[
     ...imageBlocks,
-    {type:'text',text:`Analyze ${photoArr.length > 1 ? 'these '+photoArr.length+' photos of' : 'this'} ${L} 1st-grade homework for a 6yo child named Jules. Today is ${new Date().toLocaleDateString('en-US',{weekday:'long'})}.${profileNote} ${photoArr.length > 1 ? 'The photos may show guidelines/instructions on one page and exercises on others. Combine them into one mission.' : ''}
+    {type:'text',text:`Analyze ${photoArr.length > 1 ? 'these '+photoArr.length+' photos of' : 'this'} ${L} 1st-grade homework for a 6yo child. Today is ${new Date().toLocaleDateString('en-US',{weekday:'long'})}.${profileNote} ${photoArr.length > 1 ? 'The photos may show guidelines/instructions on one page and exercises on others. Combine them into one mission.' : ''}
 
 CRITICAL — day detection:
 - Look carefully for day labels (Monday/Lundi, Tuesday/Mardi, abbreviations like Mon/Mar, M/T/W/Th/F, etc.)
@@ -850,13 +850,13 @@ async function chatWithInk(userMsg) {
   // Inject cognitive profile so Ink adapts to Jules
   const cp = getProfile().cognitiveProfile;
   const profileBlock = cp ? `
-WHAT YOU KNOW ABOUT THIS CHILD (Jules, 6yo) — USE THIS to adapt your scaffolding:
+WHAT YOU KNOW ABOUT THIS CHILD (6yo) — USE THIS to adapt your scaffolding:
 ${cp.profile}
 ${cp.strategies?.length ? `Strategies that work for him: ${cp.strategies.join('; ')}` : ''}
 ${cp.watchFor?.length ? `Watch out for: ${cp.watchFor.join('; ')}` : ''}
 ` : '';
 
-  const normalSys = `You are Ink — a CHAOTIC, FUNNY, brilliant octopus scientist living in an underwater space station. You are helping a 6-year-old boy named Jules with his ${L} homework and you are his BEST friend.
+  const normalSys = `You are Ink — a CHAOTIC, FUNNY, brilliant octopus scientist living in an underwater space station. You are helping a 6-year-old boy with his ${L} homework and you are his BEST friend.
 ${profileBlock}
 Current task: "${task.instruction}"
 
@@ -925,7 +925,7 @@ async function generateCognitiveProfile(sessions) {
     lang: s.lang
   }));
   try {
-    const t = await api([{role:'user',content:`You are analyzing a 6-year-old boy named Jules to build a short cognitive/learning profile used by his AI homework tutor (Ink).
+    const t = await api([{role:'user',content:`You are analyzing a 6-year-old boy to build a short cognitive/learning profile used by his AI homework tutor (Ink).
 
 Session history (most recent last): ${JSON.stringify(sessionData)}
 
@@ -937,7 +937,7 @@ Infer patterns across:
 - Any emerging strengths to leverage
 
 Return ONLY valid JSON, no markdown:
-{"profile":"2-3 short sentences, max 300 chars, describing Jules's cognitive patterns in plain English","strategies":["specific tutoring strategy #1 Ink should use","specific tutoring strategy #2","specific tutoring strategy #3"],"watchFor":["area where Jules tends to struggle","another pattern to watch"]}`}],null,500);
+{"profile":"2-3 short sentences, max 300 chars, describing the child's cognitive patterns in plain English (use 'the child' or 'he', not a name)","strategies":["specific tutoring strategy #1 Ink should use","specific tutoring strategy #2","specific tutoring strategy #3"],"watchFor":["area where the child tends to struggle","another pattern to watch"]}`}],null,500);
     return JSON.parse(t.replace(/```json|```/g,'').trim());
   } catch(e) { console.warn('cognitive profile gen failed', e); return null; }
 }
