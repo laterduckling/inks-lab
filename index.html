@@ -498,7 +498,7 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
     <div id="oaiActive" style="display:none">
       <p style="font-size:14px;color:#06d6a0">✅ Human voice active (OpenAI TTS)</p>
       <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
-        <label style="font-size:13px;color:rgba(224,240,248,.6)">Voice:</label>
+        <label style="font-size:13px;color:rgba(224,240,248,.6);width:60px">🇺🇸 EN:</label>
         <select id="voiceSelect" onchange="setVoice(this.value)" style="background:rgba(255,255,255,.06);border:1.5px solid rgba(0,220,200,.28);border-radius:10px;color:#e0f0f8;font-size:13px;font-weight:700;padding:6px 10px;outline:none">
           <option value="ash">Ash — cowboy, warm (recommended)</option>
           <option value="onyx">Onyx — deep, Baloo vibe</option>
@@ -509,8 +509,23 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
           <option value="alloy">Alloy — neutral</option>
           <option value="sage">Sage — calm, wise</option>
         </select>
-        <button onclick="testVoice()" style="background:rgba(0,220,200,.1);border:1px solid rgba(0,220,200,.3);color:#00dcc6;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer">🎙️ Test</button>
+        <button onclick="testVoice('EN')" style="background:rgba(0,220,200,.1);border:1px solid rgba(0,220,200,.3);color:#00dcc6;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer">🎙️ Test</button>
       </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
+        <label style="font-size:13px;color:rgba(224,240,248,.6);width:60px">🇫🇷 FR:</label>
+        <select id="voiceSelectFR" onchange="setVoiceFR(this.value)" style="background:rgba(255,255,255,.06);border:1.5px solid rgba(0,220,200,.28);border-radius:10px;color:#e0f0f8;font-size:13px;font-weight:700;padding:6px 10px;outline:none">
+          <option value="fable">Fable — closest to France FR</option>
+          <option value="sage">Sage — calm, softer accent</option>
+          <option value="onyx">Onyx — deep, some FR drift</option>
+          <option value="shimmer">Shimmer — light, neutral</option>
+          <option value="nova">Nova — friendly, US-tinged</option>
+          <option value="alloy">Alloy — neutral</option>
+          <option value="echo">Echo — grounded</option>
+          <option value="ash">Ash — warm, US accent</option>
+        </select>
+        <button onclick="testVoice('FR')" style="background:rgba(0,220,200,.1);border:1px solid rgba(0,220,200,.3);color:#00dcc6;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer">🎙️ Test</button>
+      </div>
+      <p style="font-size:11px;color:rgba(224,240,248,.35);margin-top:8px;line-height:1.4;font-style:italic">Note: OpenAI voices aren't natively French — Fable and Sage tend to sound closest to metropolitan French, less Québécois.</p>
     </div>
   </div>
   <div class="card" style="padding:18px 20px">
@@ -589,6 +604,7 @@ const CREATURES = [
 let KEY = '';
 let OAIKEY = '';
 let OAIVOICE = 'ash';
+let OAIVOICE_FR = 'fable';
 let MUTED = false;
 let S = {
   lang: null, hw: null, tIdx: 0, done: [], conv: [], t0: null,
@@ -674,7 +690,7 @@ async function speakOpenAI(text) {
     const r = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${OAIKEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'tts-1', input: text, voice: OAIVOICE, speed: 0.95 })
+      body: JSON.stringify({ model: 'tts-1', input: text, voice: (S.lang === 'FR' ? OAIVOICE_FR : OAIVOICE), speed: 0.95 })
     });
     if (!r.ok) {
       const err = await r.text().catch(()=>'unknown error');
@@ -2029,6 +2045,7 @@ function renderWebhookUI() {
   document.getElementById('oaiSetup').style.display = hasOai ? 'none' : 'block';
   document.getElementById('oaiActive').style.display = hasOai ? 'block' : 'none';
   const vs = document.getElementById('voiceSelect'); if (vs) vs.value = OAIVOICE;
+  const vf = document.getElementById('voiceSelectFR'); if (vf) vf.value = OAIVOICE_FR;
 }
 function saveOaiKey() {
   const k = document.getElementById('oaiKeyInput').value.trim();
@@ -2045,14 +2062,21 @@ function forgetOaiKey() {
     renderWebhookUI();
   }
 }
-function testVoice() {
+function testVoice(lang) {
   ttsTestMode = true;
-  const fr = S.lang === 'FR';
+  const fr = lang ? lang === 'FR' : S.lang === 'FR';
+  const prevLang = S.lang;
+  S.lang = fr ? 'FR' : 'EN';
   speak(fr ? 'Salut ! C\'est Ink, ton ami le poulpe scientifique !' : 'Hey there! It\'s Ink, your octopus scientist buddy!');
+  S.lang = prevLang;
 }
 function setVoice(v) {
   OAIVOICE = v;
   localStorage.setItem('ink_oai_voice', v);
+}
+function setVoiceFR(v) {
+  OAIVOICE_FR = v;
+  localStorage.setItem('ink_oai_voice_fr', v);
 }
 function sendReport(data) {
   const url = getWebhookUrl();
@@ -2094,6 +2118,8 @@ function resumeSession(saved) {
   if (oai && oai.startsWith('sk-')) OAIKEY = oai;
   const savedVoice = localStorage.getItem('ink_oai_voice');
   if (savedVoice) OAIVOICE = savedVoice;
+  const savedVoiceFR = localStorage.getItem('ink_oai_voice_fr');
+  if (savedVoiceFR) OAIVOICE_FR = savedVoiceFR;
   const saved = localStorage.getItem('ink_api_key');
   if (saved && saved.startsWith('sk-')) {
     KEY = saved;
