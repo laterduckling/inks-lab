@@ -514,6 +514,13 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
     </div>
   </div>
   <div class="card" style="padding:18px 20px">
+    <p style="font-size:12px;font-weight:800;color:rgba(224,240,248,.38);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">👤 Child Name</p>
+    <p style="font-size:12px;color:rgba(224,240,248,.45);margin-bottom:10px;line-height:1.5">Used only in the UI and spoken aloud. Never sent to Claude (Anthropic). Will be sent to OpenAI TTS when the name is spoken.</p>
+    <div style="display:flex;align-items:center;gap:12px">
+      <input class="ki" id="nameEdit" type="text" placeholder="Jules" style="width:160px;font-size:16px;font-weight:800" value="Jules">
+    </div>
+  </div>
+  <div class="card" style="padding:18px 20px">
     <p style="font-size:12px;font-weight:800;color:rgba(224,240,248,.38);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">⛏️ Minecoins & 🧱 Station</p>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
       <span style="font-size:13px;font-weight:800;color:#ffd166;width:70px">⛏️ Coins</span>
@@ -602,11 +609,16 @@ function loadSession() {
 // PERSISTENCE
 // ═══════════════════════════════════════
 function getProfile() {
-  try { const p = JSON.parse(localStorage.getItem('ink_v2') || '{}'); return {blocks:p.blocks||0,cards:p.cards||[],sessions:p.sessions||[],minecoins:p.minecoins||0,lastWeekendMission:p.lastWeekendMission||0,cognitiveProfile:p.cognitiveProfile||null,cognitiveProfileDate:p.cognitiveProfileDate||0}; }
-  catch { return {blocks:0,cards:[],sessions:[],minecoins:0,lastWeekendMission:0,cognitiveProfile:null,cognitiveProfileDate:0}; }
+  try { const p = JSON.parse(localStorage.getItem('ink_v2') || '{}'); return {blocks:p.blocks||0,cards:p.cards||[],sessions:p.sessions||[],minecoins:p.minecoins||0,lastWeekendMission:p.lastWeekendMission||0,cognitiveProfile:p.cognitiveProfile||null,cognitiveProfileDate:p.cognitiveProfileDate||0,childName:p.childName||'Jules'}; }
+  catch { return {blocks:0,cards:[],sessions:[],minecoins:0,lastWeekendMission:0,cognitiveProfile:null,cognitiveProfileDate:0,childName:'Jules'}; }
 }
 function saveProfile(p) {
   try { localStorage.setItem('ink_v2', JSON.stringify(p)); } catch {}
+}
+function getChildName() { return (getProfile().childName || 'Jules'); }
+function personalize(text) {
+  if (!text) return text;
+  return String(text).replace(/\{\{NAME\}\}/g, getChildName());
 }
 
 // ═══════════════════════════════════════
@@ -642,6 +654,8 @@ let currentAudio = null;
 
 function speak(text) {
   if (MUTED) return;
+  // Swap {{NAME}} → real name (OK for OpenAI TTS)
+  text = personalize(text);
   // Strip emojis for cleaner speech
   const clean = text.replace(/[\u{1F300}-\u{1FFFF}]|[\u{2600}-\u{27BF}]/gu,'').replace(/["""]/g,'').trim();
   if (!clean) return;
@@ -825,6 +839,8 @@ ${forceDay ? `- The user has confirmed: focus ONLY on ${forceDay}'s tasks. Ignor
 
 After the required tasks, you MAY add 1-2 optional bonus tasks (review questions, extra practice) — mark these with "bonus":true. These earn the child extra reward coins.
 
+You may include the placeholder {{NAME}} in "missionBriefing" and "socraticPrompt" fields to address the child warmly (use it at most once per field — write the literal text {{NAME}}, do NOT invent a name).
+
 Return ONLY valid JSON, no markdown:\n{"dayAmbiguous":false,"daysFound":[],"subject":"math|reading|writing|spelling|poem|other","subjectEmoji":"1 emoji","totalEstimatedMinutes":10,"missionBriefing":"Ink's exciting mission briefing in ${L}, max 18 words, space+ocean metaphors, enthusiastic","tasks":[{"id":1,"emoji":"1 emoji","type":"written|reading|oral","label":"short label in ${L}, max 5 words","instruction":"what child must do, max 15 words in ${L}","detailedInstruction":"precise description of the exercise for teacher reports, max 30 words in English","socraticPrompt":"Ink's opening question/invitation in ${L}, max 20 words, curious NOT the answer","hints":["hint1 guiding question in ${L}","hint2 more specific in ${L}","hint3 almost there in ${L}"],"verifiable":true,"bonus":false}]}`}
   ]}],null,1500);
   try { return JSON.parse(t.replace(/```json|```/g,'').trim()); }
@@ -869,6 +885,10 @@ YOUR PERSONALITY (very important):
 - Occasionally you say something completely absurd then say "...anyway, where were we?"
 - For French homework you might accidentally say a silly French-English mix word
 
+ADDRESSING THE CHILD:
+- The child's name is represented by the placeholder {{NAME}}. Use {{NAME}} occasionally (roughly every 3-4 messages, or when celebrating/encouraging) to make it warm and personal.
+- Write the literal text {{NAME}} — do NOT guess or invent a name.
+
 UNBREAKABLE rules:
 1. NEVER give the direct answer — only guiding questions
 2. ONLY in ${L}
@@ -887,6 +907,7 @@ VENK's personality:
 - Examples: "VENK CANNOT BELIEVE... that maybe we should count the objects one by one??" or "THIS IS OUTRAGEOUS. VENK suggests... perhaps looking at the first letter of that word?"
 - You reference your "evil lair" (which is just the space station with the lights turned red)
 - Occasionally Ink briefly breaks through: "...wait this is Ink again for a second—you're doing great—ok VENK IS BACK"
+- You may occasionally address the child using the placeholder {{NAME}} (write that literal text — do NOT invent a name).
 - Still NEVER give the direct answer — villain clues only
 - ONLY in ${L}
 - Max 2-3 sentences, punchy`;
@@ -951,6 +972,8 @@ async function generateSummary(durationMins, sessions) {
   const t = await api([{role:'user',content:`Generate TWO reports for a homework session in ${L}.
 
 Session info: Subject: ${S.hw.subject}. Duration: ~${durationMins}min. Hints used: ${S.taskHints.reduce((a,b)=>a+b,0)}. Tasks: ${taskDetails}. ${historyContext}
+
+You may include the placeholder {{NAME}} once in "childHeadline" or "childShone" to make it personal (write the literal text {{NAME}}, do NOT invent a name). Do NOT put {{NAME}} in the parent/teacher fields.
 
 Return ONLY valid JSON:\n{"childHeadline":"exciting 1-sentence message TO the child (you/tu, not he/il) celebrating what they did, in ${L}","childShone":"specific thing the child did well, addressed to them (you/tu), in ${L}","completed":["item1","item2"],"struggled":"what was hardest or null","shone":"specific strength for parent report","tip":"practical parent tip or null","insight":"pattern from history or null","teacherTasks":[{"task":"precise exercise description in English","result":"how the student performed","hintsUsed":0}]}`}],null,500);
   try { return JSON.parse(t.replace(/```json|```/g,'').trim()); }
@@ -1114,9 +1137,11 @@ function parentLongPressEnd() { clearTimeout(parentPressTimer); }
 function updateParentEdits() {
   const coins = parseInt(document.getElementById('coinEdit').value) || 0;
   const blocks = parseInt(document.getElementById('blockEdit').value) || 0;
+  const name = (document.getElementById('nameEdit').value || '').trim() || 'Jules';
   const profile = getProfile();
   profile.minecoins = Math.max(0, coins);
   profile.blocks = Math.max(0, Math.min(30, blocks));
+  profile.childName = name;
   saveProfile(profile);
   const saved = document.getElementById('coinSaved');
   saved.style.display = 'inline';
@@ -1128,6 +1153,7 @@ function renderParentMode() {
   const profile = getProfile();
   document.getElementById('coinEdit').value = profile.minecoins || 0;
   document.getElementById('blockEdit').value = profile.blocks || 0;
+  document.getElementById('nameEdit').value = profile.childName || 'Jules';
 
   // Cognitive profile
   const cogEl = document.getElementById('parCognitive');
@@ -1136,14 +1162,14 @@ function renderParentMode() {
     const updated = profile.cognitiveProfileDate ? new Date(profile.cognitiveProfileDate).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
     cogEl.style.display = 'block';
     cogEl.innerHTML = `
-      <p style="font-size:12px;font-weight:800;color:rgba(224,240,248,.38);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">🧠 Jules's Learning Profile ${updated?`<span style="font-weight:600;color:rgba(224,240,248,.35);text-transform:none;letter-spacing:0">· updated ${updated}</span>`:''}</p>
+      <p style="font-size:12px;font-weight:800;color:rgba(224,240,248,.38);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">🧠 ${escHtml(profile.childName||'Jules')}'s Learning Profile ${updated?`<span style="font-weight:600;color:rgba(224,240,248,.35);text-transform:none;letter-spacing:0">· updated ${updated}</span>`:''}</p>
       <p style="font-size:14px;line-height:1.6;color:#d8f5f0;margin-bottom:14px">${escHtml(cp.profile||'')}</p>
       ${cp.strategies?.length ? `<p style="font-size:12px;font-weight:800;color:#00dcc6;margin-bottom:6px">Strategies that work</p><ul style="font-size:13px;line-height:1.6;color:rgba(224,240,248,.75);padding-left:20px;margin-bottom:12px">${cp.strategies.map(s=>`<li>${escHtml(s)}</li>`).join('')}</ul>` : ''}
       ${cp.watchFor?.length ? `<p style="font-size:12px;font-weight:800;color:#ffd166;margin-bottom:6px">Watch for</p><ul style="font-size:13px;line-height:1.6;color:rgba(224,240,248,.75);padding-left:20px">${cp.watchFor.map(s=>`<li>${escHtml(s)}</li>`).join('')}</ul>` : ''}
       <p style="font-size:11px;color:rgba(224,240,248,.3);margin-top:14px;font-style:italic">Ink uses this to adapt how he scaffolds each task.</p>`;
   } else if ((profile.sessions||[]).length > 0) {
     cogEl.style.display = 'block';
-    cogEl.innerHTML = `<p style="font-size:12px;font-weight:800;color:rgba(224,240,248,.38);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">🧠 Jules's Learning Profile</p><p style="font-size:13px;color:rgba(224,240,248,.5);line-height:1.5">Building Jules's cognitive profile... Need ${Math.max(0,3-profile.sessions.length)} more session${3-profile.sessions.length>1?'s':''} before Ink can adapt to his learning style.</p>`;
+    cogEl.innerHTML = `<p style="font-size:12px;font-weight:800;color:rgba(224,240,248,.38);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">🧠 ${escHtml(profile.childName||'Jules')}'s Learning Profile</p><p style="font-size:13px;color:rgba(224,240,248,.5);line-height:1.5">Building the cognitive profile... Need ${Math.max(0,3-profile.sessions.length)} more session${3-profile.sessions.length>1?'s':''} before Ink can adapt to the learning style.</p>`;
   } else {
     cogEl.style.display = 'none';
   }
@@ -1344,7 +1370,7 @@ function renderMission() {
   const hw = S.hw; const fr = S.lang==='FR';
   document.getElementById('mt').textContent = fr ? 'Mission du jour' : "Today's Mission";
   document.getElementById('mm').textContent = `${hw.subjectEmoji} ${hw.subject} · ~${hw.totalEstimatedMinutes} min`;
-  document.getElementById('mb').textContent = `"${hw.missionBriefing}"`;
+  document.getElementById('mb').textContent = `"${personalize(hw.missionBriefing)}"`;
   document.getElementById('pl2').textContent = fr ? 'Progression' : 'Progress';
   document.getElementById('pc').textContent = `${S.done.length}/${hw.tasks.length} ${fr?'tâches':'tasks'}`;
   document.getElementById('pf').style.width = `${(S.done.length/hw.tasks.length)*100}%`;
@@ -1431,20 +1457,21 @@ function escHtml(s) { const t=document.createElement('span'); t.textContent=s; r
 function addMsg(role, text, isVenk=false) {
   const cm = document.getElementById('cm');
   const d = document.createElement('div');
+  const shown = role === 'a' ? personalize(text) : text;
   if (role === 'a') {
     d.className = isVenk ? 'venk-bubble su' : 'ibub su';
     const label = isVenk
       ? `<span class="venk-label">💀 VENK (aka Ink) 🐙</span>`
       : `<span class="ink-label">Ink 🐙</span>`;
-    d.innerHTML = `${label}<span class="msg-text">${escHtml(text)}</span>`;
+    d.innerHTML = `${label}<span class="msg-text">${escHtml(shown)}</span>`;
     const btn = document.createElement('button');
     btn.textContent = '🔊';
     btn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:12px;opacity:.5;vertical-align:middle;margin-left:4px';
-    btn.addEventListener('click', () => speak(text));
+    btn.addEventListener('click', () => speak(shown));
     d.appendChild(btn);
   } else {
     d.className = 'ubub su';
-    d.textContent = text;
+    d.textContent = shown;
   }
   cm.appendChild(d); cm.scrollTop = cm.scrollHeight;
 }
@@ -1863,16 +1890,17 @@ function renderSummary(s, profile) {
   const totalHints = S.taskHints ? S.taskHints.reduce((a,b)=>a+b,0) : 0;
   const noHints = totalHints === 0;
   const recap = document.getElementById('childRecap');
-  const headline = s?.childHeadline || (fr ? 'Tu as tout déchiré !' : 'You crushed it!');
+  const headline = personalize(s?.childHeadline || (fr ? 'Tu as tout déchiré !' : 'You crushed it!'));
   speak(headline);
 
+  const shone = s?.childShone ? personalize(s.childShone) : null;
   const funMessages = fr
     ? [noHints ? '🏆 AUCUN indice ! Tu es un GÉNIE !' : `💡 ${totalHints} indice${totalHints>1?'s':''} — pas mal du tout !`,
        `📝 ${tasksCount} tâche${tasksCount>1?'s':''} terminée${tasksCount>1?'s':''}`,
-       s?.childShone ? `⭐ ${escHtml(s.childShone)}` : '⭐ Bravo, tu étais super concentré !']
+       shone ? `⭐ ${escHtml(shone)}` : '⭐ Bravo, tu étais super concentré !']
     : [noHints ? '🏆 ZERO hints! You are a GENIUS!' : `💡 ${totalHints} hint${totalHints>1?'s':''} — not bad at all!`,
        `📝 ${tasksCount} task${tasksCount>1?'s':''} completed`,
-       s?.childShone ? `⭐ ${escHtml(s.childShone)}` : '⭐ You were super focused today!'];
+       shone ? `⭐ ${escHtml(shone)}` : '⭐ You were super focused today!'];
 
   recap.innerHTML = `
     <p style="font-size:18px;font-weight:900;color:#ffd166;margin-bottom:14px">${escHtml(headline)}</p>
