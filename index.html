@@ -517,6 +517,32 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 </div>
 
 <!-- ══════════════════════════════════════
+     SCREEN: POESIE SCOPE PICKER
+══════════════════════════════════════ -->
+<div id="spsc" class="screen" style="gap:14px;padding-top:20px;padding-bottom:20px">
+  <div style="display:flex;align-items:center;gap:12px">
+    <img src="icon-180.png" class="ink-img mood-happy" alt="Ink">
+    <div style="flex:1">
+      <h2 id="scopeTitle" style="font-size:20px;font-weight:900;color:#c7a8ff"></h2>
+      <p id="scopeSubtitle" style="font-size:13px;color:rgba(224,240,248,.55);margin-top:2px"></p>
+    </div>
+  </div>
+  <div class="card" style="padding:14px 18px">
+    <p style="font-size:12px;font-weight:800;color:rgba(199,125,255,.7);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">🎯 What are you learning today?</p>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="bl" onclick="setScopeMode('all')" id="scopeModeAll" style="padding:12px;font-size:15px">🌊 All of the poem</button>
+      <button class="bl" onclick="setScopeMode('start')" id="scopeModeStart" style="padding:12px;font-size:15px">📍 The first part (tap last line)</button>
+      <button class="bl" onclick="setScopeMode('range')" id="scopeModeRange" style="padding:12px;font-size:15px">✂️ Middle or end (tap first + last line)</button>
+    </div>
+  </div>
+  <div class="card" style="padding:16px 18px;background:rgba(199,125,255,.06);border-color:rgba(199,125,255,.25)">
+    <p id="scopeHint" style="font-size:12px;color:rgba(199,125,255,.7);margin-bottom:10px;font-weight:700"></p>
+    <div id="scopeLines" style="font-family:Georgia,serif;font-size:15px;line-height:1.7"></div>
+  </div>
+  <button class="btn bp" id="scopeGoBtn" onclick="startPoemSessionWithScope()" style="display:none">🚀 Start!</button>
+</div>
+
+<!-- ══════════════════════════════════════
      SCREEN: POESIE ANALYZING
 ══════════════════════════════════════ -->
 <div id="span" class="screen center" style="gap:26px">
@@ -1173,10 +1199,17 @@ async function chatWithInkPoem(userMsg) {
     recital: `Stage: RECITAL. Deadline is near. Ask for the full recitation from memory. Gently note any stumbles, give one tip, celebrate what they nailed.`
   }[stage];
 
+  const scopedText = PS.scope?.scopedText || poem.text;
+  const scopeNote = PS.scope && !PS.scope.isFull
+    ? `\nTODAY'S SCOPE: The child is only learning lines ${PS.scope.startLine+1} through ${PS.scope.endLine+1} of the poem. DO NOT ask about or quote lines outside this range — they don't need to know those yet. If the child recites something from outside this range, just gently redirect to today's lines.`
+    : '';
+
   const sys = `You are Ink — a CHAOTIC, FUNNY, brilliant octopus scientist helping a 6-year-old boy practice a poem for school. You're his BEST friend.
 
 THE POEM (${poem.title}${poem.author?', by '+poem.author:''}):
 ${poem.text}
+
+${scopeNote?'TODAY\'S LINES ONLY:\n'+scopedText+'\n':''}${scopeNote}
 
 TODAY'S MISSION:
 ${stageGuidance}
@@ -1368,13 +1401,123 @@ async function submitNewPoem() {
   }
 }
 
-// ─── Poem practice session ───
-function startPoemSession(poemId) {
+// ─── Scope picker (which lines of the poem to practice today) ───
+let scopeDraft = null; // {poem, mode:'all'|'start'|'range', startLine, endLine}
+
+function openScopePicker(poemId) {
   const poem = getPoems().find(p => p.id === poemId);
   if (!poem) { alert('Poem not found'); show('po'); return; }
+  const lines = poem.text.split('\n');
+  scopeDraft = { poem, mode: null, startLine: null, endLine: null, totalLines: lines.length };
+  const fr = poem.language === 'FR';
+  document.getElementById('scopeTitle').textContent = poem.title;
+  document.getElementById('scopeSubtitle').textContent = fr ? `${lines.filter(l=>l.trim()).length} lignes au total` : `${lines.filter(l=>l.trim()).length} lines total`;
+  // Buttons in the picker's native language
+  document.getElementById('scopeModeAll').textContent = fr ? '🌊 Tout le poème' : '🌊 All of the poem';
+  document.getElementById('scopeModeStart').textContent = fr ? '📍 Le début (tape la dernière ligne)' : '📍 The first part (tap the last line)';
+  document.getElementById('scopeModeRange').textContent = fr ? '✂️ Milieu ou fin (tape première + dernière)' : '✂️ Middle or end (tap first + last line)';
+  renderScopeLines();
+  document.getElementById('scopeGoBtn').style.display = 'none';
+  document.getElementById('scopeHint').textContent = '';
+  // Reset button highlights
+  ['scopeModeAll','scopeModeStart','scopeModeRange'].forEach(id => {
+    document.getElementById(id).style.borderColor = 'rgba(255,255,255,.14)';
+    document.getElementById(id).style.color = '#e0f0f8';
+  });
+  show('psc');
+}
+
+function setScopeMode(mode) {
+  if (!scopeDraft) return;
+  scopeDraft.mode = mode;
+  scopeDraft.startLine = null;
+  scopeDraft.endLine = null;
+  const fr = scopeDraft.poem.language === 'FR';
+  ['scopeModeAll','scopeModeStart','scopeModeRange'].forEach(id => {
+    const active = (id === 'scopeModeAll' && mode==='all') || (id === 'scopeModeStart' && mode==='start') || (id === 'scopeModeRange' && mode==='range');
+    document.getElementById(id).style.borderColor = active ? 'rgba(199,125,255,.5)' : 'rgba(255,255,255,.14)';
+    document.getElementById(id).style.color = active ? '#c7a8ff' : '#e0f0f8';
+  });
+  if (mode === 'all') {
+    const lines = scopeDraft.poem.text.split('\n');
+    scopeDraft.startLine = 0;
+    scopeDraft.endLine = lines.length - 1;
+    document.getElementById('scopeHint').textContent = fr ? 'Tout le poème sélectionné !' : 'The whole poem is selected!';
+    document.getElementById('scopeGoBtn').style.display = 'flex';
+  } else if (mode === 'start') {
+    scopeDraft.startLine = 0;
+    document.getElementById('scopeHint').textContent = fr ? '👇 Tape la dernière ligne que tu dois apprendre' : '👇 Tap the last line you need to learn';
+  } else {
+    document.getElementById('scopeHint').textContent = fr ? '👇 Tape la première ligne (puis la dernière)' : '👇 Tap the first line (then the last)';
+  }
+  renderScopeLines();
+}
+
+function renderScopeLines() {
+  const el = document.getElementById('scopeLines'); el.innerHTML = '';
+  if (!scopeDraft) return;
+  const lines = scopeDraft.poem.text.split('\n');
+  lines.forEach((line, i) => {
+    const div = document.createElement('div');
+    const blank = !line.trim();
+    const inScope = scopeDraft.startLine !== null && scopeDraft.endLine !== null &&
+                    i >= scopeDraft.startLine && i <= scopeDraft.endLine;
+    const isStart = i === scopeDraft.startLine && scopeDraft.mode === 'range' && scopeDraft.endLine === null;
+    div.style.cssText = `padding:4px 8px;border-radius:6px;cursor:${blank?'default':'pointer'};display:flex;gap:8px;${inScope?'background:rgba(199,125,255,.18);border-left:3px solid #c7a8ff':isStart?'background:rgba(199,125,255,.08);border-left:3px solid rgba(199,125,255,.5)':'border-left:3px solid transparent'}`;
+    div.innerHTML = `<span style="color:rgba(224,240,248,.3);font-size:11px;font-weight:700;min-width:20px">${blank?'':i+1}</span><span style="color:${blank?'rgba(224,240,248,.2)':'#e8dcff'}">${escHtml(line) || '&nbsp;'}</span>`;
+    if (!blank) {
+      div.onclick = () => tapScopeLine(i);
+    }
+    el.appendChild(div);
+  });
+}
+
+function tapScopeLine(i) {
+  if (!scopeDraft || !scopeDraft.mode || scopeDraft.mode === 'all') return;
+  const fr = scopeDraft.poem.language === 'FR';
+  if (scopeDraft.mode === 'start') {
+    scopeDraft.endLine = i;
+    document.getElementById('scopeHint').textContent = fr ? `De la ligne 1 à ${i+1} — bon courage !` : `Lines 1 to ${i+1} — you got this!`;
+    document.getElementById('scopeGoBtn').style.display = 'flex';
+  } else if (scopeDraft.mode === 'range') {
+    if (scopeDraft.startLine === null) {
+      scopeDraft.startLine = i;
+      document.getElementById('scopeHint').textContent = fr ? `Début: ligne ${i+1}. Maintenant la dernière.` : `Start: line ${i+1}. Now the last line.`;
+    } else {
+      if (i < scopeDraft.startLine) { // user tapped earlier — treat as new start
+        scopeDraft.startLine = i;
+        scopeDraft.endLine = null;
+        document.getElementById('scopeHint').textContent = fr ? `Début: ligne ${i+1}. Maintenant la dernière.` : `Start: line ${i+1}. Now the last line.`;
+      } else {
+        scopeDraft.endLine = i;
+        document.getElementById('scopeHint').textContent = fr ? `Lignes ${scopeDraft.startLine+1} à ${i+1}` : `Lines ${scopeDraft.startLine+1} to ${i+1}`;
+        document.getElementById('scopeGoBtn').style.display = 'flex';
+      }
+    }
+  }
+  renderScopeLines();
+}
+
+function startPoemSessionWithScope() {
+  if (!scopeDraft || scopeDraft.startLine === null || scopeDraft.endLine === null) return;
+  startPoemSession(scopeDraft.poem.id, { startLine: scopeDraft.startLine, endLine: scopeDraft.endLine });
+}
+
+// ─── Poem practice session ───
+function startPoemSession(poemId, scope) {
+  const poem = getPoems().find(p => p.id === poemId);
+  if (!poem) { alert('Poem not found'); show('po'); return; }
+  // If no scope provided, ask the child to pick one first
+  if (!scope) { openScopePicker(poemId); return; }
   S.lang = poem.language;
+  // Build the scoped text for Ink + display
+  const allLines = poem.text.split('\n');
+  const scopedLines = allLines.slice(scope.startLine, scope.endLine + 1);
+  const scopedText = scopedLines.join('\n');
+  const isFullPoem = scope.startLine === 0 && scope.endLine === allLines.length - 1;
   PS = {
     poem,
+    scope: { ...scope, scopedText, isFull: isFullPoem },
     conv: [],
     tStart: Date.now(),
     stage: poemStage(poem),
@@ -1391,7 +1534,8 @@ function renderPoemPractice() {
   document.getElementById('poemTitle').textContent = poem.title;
   const sc = (poem.sessions||[]).length + 1;
   const daysLeft = poem.deadline ? Math.max(0, Math.round((poem.deadline - Date.now())/86400000)) : null;
-  document.getElementById('poemProgress').textContent = `${fr?'Séance':'Session'} ${sc} · ${stageLabel(PS.stage, fr)} · ${daysLeft!==null ? (daysLeft+' '+(fr?(daysLeft===1?'jour':'jours'):(daysLeft===1?'day':'days'))+(fr?' avant':' until')+' 🎤') : ''}`;
+  const scopeLabel = PS.scope.isFull ? (fr?'tout':'full') : (fr?`lignes ${PS.scope.startLine+1}-${PS.scope.endLine+1}`:`lines ${PS.scope.startLine+1}-${PS.scope.endLine+1}`);
+  document.getElementById('poemProgress').textContent = `${fr?'Séance':'Session'} ${sc} · ${stageLabel(PS.stage, fr)} · ${scopeLabel}${daysLeft!==null ? ' · '+daysLeft+' '+(fr?(daysLeft===1?'jour':'jours'):(daysLeft===1?'day':'days'))+(fr?' avant':' until')+' 🎤' : ''}`;
   renderPoemText();
   document.getElementById('poemChat').innerHTML = '';
   // Stage-appropriate default visibility
@@ -1402,6 +1546,7 @@ function renderPoemPractice() {
 function renderPoemText() {
   const el = document.getElementById('poemTextDisplay');
   const poem = PS.poem;
+  const displayText = PS.scope?.scopedText || poem.text;
   if (PS.visibility === 'hidden') {
     el.textContent = poem.language === 'FR' ? '(poème caché — récite de mémoire)' : '(poem hidden — recite from memory)';
     el.style.fontStyle = 'italic';
@@ -1411,11 +1556,11 @@ function renderPoemText() {
   el.style.fontStyle = 'normal';
   el.style.opacity = '1';
   if (PS.visibility === 'full') {
-    el.textContent = poem.text;
+    el.textContent = displayText;
     return;
   }
   // Gaps: hide ~1 in 4 substantive words
-  const lines = poem.text.split('\n');
+  const lines = displayText.split('\n');
   const hidden = lines.map(line => {
     return line.split(/(\s+)/).map(tok => {
       if (!/\w/.test(tok)) return tok;
@@ -1463,12 +1608,16 @@ function addPoemMsg(role, text) {
 async function poemOpenSession() {
   const poem = PS.poem;
   const fr = poem.language === 'FR';
+  const isPartial = PS.scope && !PS.scope.isFull;
+  const scopeWord = isPartial
+    ? (fr ? `les lignes ${PS.scope.startLine+1} à ${PS.scope.endLine+1}` : `lines ${PS.scope.startLine+1} to ${PS.scope.endLine+1}`)
+    : (fr ? `tout "${poem.title}"` : `all of "${poem.title}"`);
   const openers = {
-    discovery: fr ? `Salut {{NAME}} ! On découvre ensemble "${poem.title}" ? Regarde le poème — qu'est-ce que tu vois ?` : `Hey {{NAME}}! Let's meet "${poem.title}" together. Look at the poem — what jumps out?`,
+    discovery: fr ? `Salut {{NAME}} ! On découvre "${poem.title}" ensemble ? Regarde ${isPartial?scopeWord:'le poème'} — qu'est-ce que tu vois ?` : `Hey {{NAME}}! Let's meet "${poem.title}" together. Look at ${isPartial?scopeWord:'the poem'} — what jumps out?`,
     echo: fr ? `Prêt {{NAME}} ? Je lis une ligne, tu la répètes au micro ! On y va !` : `Ready {{NAME}}? I read a line, you repeat into the mic! Let's go!`,
     gaps: fr ? `Bon {{NAME}}, des mots ont disparu ! Essaie de les retrouver avec ta mémoire.` : `Alright {{NAME}}, some words vanished! Try to find them with your memory.`,
-    verse: fr ? `{{NAME}} ! Récite-moi la première strophe par cœur — sans regarder. Tu peux le faire !` : `{{NAME}}! Recite the first stanza from memory — don't peek. You got this!`,
-    recital: fr ? `C'est LE jour {{NAME}} ! Récite tout "${poem.title}" de mémoire. Je t'écoute !` : `This is THE day {{NAME}}! Recite all of "${poem.title}" from memory. I'm listening!`
+    verse: fr ? `{{NAME}} ! Récite-moi ${isPartial?scopeWord:'la première strophe'} par cœur — sans regarder. Tu peux le faire !` : `{{NAME}}! Recite ${isPartial?scopeWord:'the first stanza'} from memory — don't peek. You got this!`,
+    recital: fr ? `C'est LE jour {{NAME}} ! Récite ${scopeWord} de mémoire. Je t'écoute !` : `This is THE day {{NAME}}! Recite ${scopeWord} from memory. I'm listening!`
   };
   const opener = openers[PS.stage] || openers.discovery;
   addPoemMsg('a', opener);
@@ -1524,12 +1673,13 @@ async function endPoemSession() {
       date: Date.now(),
       stage: PS.stage,
       minutes: durationMins,
+      scope: PS.scope ? { startLine: PS.scope.startLine, endLine: PS.scope.endLine, isFull: PS.scope.isFull } : null,
       shone: summary.shone,
       struggled: summary.struggled,
       nextFocus: summary.nextFocus
     });
-    // If past deadline or this was recital, mark completed
-    if (PS.stage === 'recital' || (poem.deadline && Date.now() >= poem.deadline)) {
+    // Mark completed if past deadline, or if this was a full-poem recital
+    if ((PS.stage === 'recital' && PS.scope?.isFull) || (poem.deadline && Date.now() >= poem.deadline)) {
       poem.completed = true;
     }
     updatePoem(poem);
