@@ -497,7 +497,20 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
     </div>
     <div id="oaiActive" style="display:none">
       <p style="font-size:14px;color:#06d6a0">✅ Human voice active (OpenAI TTS)</p>
-      <button onclick="testVoice()" style="background:rgba(0,220,200,.1);border:1px solid rgba(0,220,200,.3);color:#00dcc6;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer;margin-top:8px">🎙️ Test voice</button>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
+        <label style="font-size:13px;color:rgba(224,240,248,.6)">Voice:</label>
+        <select id="voiceSelect" onchange="setVoice(this.value)" style="background:rgba(255,255,255,.06);border:1.5px solid rgba(0,220,200,.28);border-radius:10px;color:#e0f0f8;font-size:13px;font-weight:700;padding:6px 10px;outline:none">
+          <option value="ash">Ash — cowboy, warm (recommended)</option>
+          <option value="onyx">Onyx — deep, Baloo vibe</option>
+          <option value="fable">Fable — British storyteller</option>
+          <option value="echo">Echo — grounded male</option>
+          <option value="nova">Nova — friendly female</option>
+          <option value="shimmer">Shimmer — soft female</option>
+          <option value="alloy">Alloy — neutral</option>
+          <option value="sage">Sage — calm, wise</option>
+        </select>
+        <button onclick="testVoice()" style="background:rgba(0,220,200,.1);border:1px solid rgba(0,220,200,.3);color:#00dcc6;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer">🎙️ Test</button>
+      </div>
     </div>
   </div>
   <div class="card" style="padding:18px 20px">
@@ -567,6 +580,7 @@ const CREATURES = [
 // ═══════════════════════════════════════
 let KEY = '';
 let OAIKEY = '';
+let OAIVOICE = 'ash';
 let MUTED = false;
 let S = {
   lang: null, hw: null, tIdx: 0, done: [], conv: [], t0: null,
@@ -642,11 +656,10 @@ let ttsTestMode = false;
 async function speakOpenAI(text) {
   try {
     stopSpeaking();
-    const voice = S.lang === 'FR' ? 'nova' : 'nova';
     const r = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${OAIKEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'tts-1', input: text, voice: voice, speed: 0.95 })
+      body: JSON.stringify({ model: 'tts-1', input: text, voice: OAIVOICE, speed: 0.95 })
     });
     if (!r.ok) {
       const err = await r.text().catch(()=>'unknown error');
@@ -1910,6 +1923,7 @@ function renderWebhookUI() {
   const hasOai = !!OAIKEY;
   document.getElementById('oaiSetup').style.display = hasOai ? 'none' : 'block';
   document.getElementById('oaiActive').style.display = hasOai ? 'block' : 'none';
+  const vs = document.getElementById('voiceSelect'); if (vs) vs.value = OAIVOICE;
 }
 function saveOaiKey() {
   const k = document.getElementById('oaiKeyInput').value.trim();
@@ -1930,6 +1944,10 @@ function testVoice() {
   ttsTestMode = true;
   const fr = S.lang === 'FR';
   speak(fr ? 'Salut ! C\'est Ink, ton ami le poulpe scientifique !' : 'Hey there! It\'s Ink, your octopus scientist buddy!');
+}
+function setVoice(v) {
+  OAIVOICE = v;
+  localStorage.setItem('ink_oai_voice', v);
 }
 function sendReport(data) {
   const url = getWebhookUrl();
@@ -1969,6 +1987,8 @@ function resumeSession(saved) {
 (function(){
   const oai = localStorage.getItem('ink_oai_key');
   if (oai && oai.startsWith('sk-')) OAIKEY = oai;
+  const savedVoice = localStorage.getItem('ink_oai_voice');
+  if (savedVoice) OAIVOICE = savedVoice;
   const saved = localStorage.getItem('ink_api_key');
   if (saved && saved.startsWith('sk-')) {
     KEY = saved;
