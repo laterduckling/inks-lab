@@ -244,6 +244,7 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
     <div style="display:flex;flex-direction:column;gap:10px">
       <button class="bl" onclick="go('EN')">🇺🇸  English Homework</button>
       <button class="bl" onclick="go('FR')">🇫🇷  Devoirs en français</button>
+      <button class="bl" onclick="openPoemList()" id="poesieBtn" style="border-color:rgba(199,125,255,.35);color:#c7a8ff">📜  Poésie <span id="poesieBtnBadge" style="font-size:12px;color:rgba(224,240,248,.5);font-weight:700;margin-left:4px"></span></button>
     </div>
   </div>
 
@@ -464,6 +465,110 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 </div>
 
 <!-- ══════════════════════════════════════
+     SCREEN: POESIE LIST
+══════════════════════════════════════ -->
+<div id="spo" class="screen" style="gap:16px;padding-top:24px">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <h2 style="font-size:26px;font-weight:900">📜 Poésies</h2>
+    <button onclick="show('w')" style="background:none;border:none;color:rgba(224,240,248,.5);cursor:pointer;font-size:22px">✕</button>
+  </div>
+  <div id="poemListContainer"></div>
+  <button class="btn bp" onclick="startNewPoem()" style="margin-top:8px">+ Add a new poem</button>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: POESIE NEW (upload + metadata)
+══════════════════════════════════════ -->
+<div id="spu" class="screen" style="gap:18px;padding-top:28px">
+  <div style="display:flex;align-items:center;gap:12px">
+    <img src="icon-180.png" class="ink-img mood-happy" alt="Ink">
+    <div>
+      <h2 style="font-size:22px;font-weight:900">New poem 📜</h2>
+      <p style="font-size:13px;color:rgba(224,240,248,.5)">Upload a photo of the poem</p>
+    </div>
+  </div>
+  <div id="poemDz" class="card" onclick="document.getElementById('poemFi').click()"
+    ondragover="event.preventDefault();this.style.borderColor='#c7a8ff'"
+    ondragleave="this.style.borderColor='rgba(199,125,255,.28)'"
+    ondrop="event.preventDefault();addPoemPhoto(event.dataTransfer.files[0]);this.style.borderColor='rgba(199,125,255,.28)'"
+    style="width:100%;padding:28px 20px;border:2px dashed rgba(199,125,255,.35);cursor:pointer;transition:all .2s">
+    <div style="font-size:48px">📸</div>
+    <p id="poemDl" style="margin-top:10px;font-size:17px;font-weight:900;color:#c7a8ff">Tap to add a photo</p>
+    <p style="font-size:12px;color:rgba(224,240,248,.35);margin-top:4px">add more if the poem spans pages</p>
+  </div>
+  <div id="poemThumbs" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center"></div>
+  <input id="poemFi" type="file" accept="image/*" capture="environment" style="display:none" onchange="addPoemPhoto(this.files[0])">
+
+  <div class="card" style="padding:16px 20px">
+    <p style="font-size:12px;font-weight:800;color:rgba(224,240,248,.5);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Language</p>
+    <div style="display:flex;gap:8px">
+      <button onclick="setPoemLang('FR')" id="poemLangFR" class="bl" style="padding:10px;font-size:15px;border-color:rgba(199,125,255,.5);color:#c7a8ff">🇫🇷 French</button>
+      <button onclick="setPoemLang('EN')" id="poemLangEN" class="bl" style="padding:10px;font-size:15px">🇺🇸 English</button>
+    </div>
+  </div>
+
+  <div class="card" style="padding:16px 20px">
+    <p style="font-size:12px;font-weight:800;color:rgba(224,240,248,.5);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Recitation deadline</p>
+    <p style="font-size:12px;color:rgba(224,240,248,.4);margin-bottom:10px;line-height:1.4" id="poemDeadlineHelp">When does he have to recite it by?</p>
+    <input class="ki" id="poemDeadline" type="date">
+  </div>
+
+  <button class="btn bp" id="poemSaveBtn" onclick="submitNewPoem()" style="display:none">🚀 Read the poem with Ink</button>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: POESIE ANALYZING
+══════════════════════════════════════ -->
+<div id="span" class="screen center" style="gap:26px">
+  <img src="icon-180.png" class="ink-img-xl mood-think" alt="Ink">
+  <div class="card" style="padding:20px 34px">
+    <p id="panMsg" style="font-size:18px;font-weight:800">Ink is reading the poem...</p>
+    <div style="margin-top:12px;display:flex;justify-content:center">
+      <span class="dot d1"></span><span class="dot d2"></span><span class="dot d3"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: POESIE PRACTICE
+══════════════════════════════════════ -->
+<div id="spm" class="screen" style="gap:14px;padding-top:16px;padding-bottom:20px">
+  <div style="display:flex;align-items:center;gap:12px">
+    <img src="icon-180.png" class="ink-img mood-happy" id="poemInk" alt="Ink">
+    <div style="flex:1">
+      <h2 id="poemTitle" style="font-size:20px;font-weight:900;color:#c7a8ff"></h2>
+      <p id="poemProgress" style="font-size:12px;color:rgba(224,240,248,.5);margin-top:2px"></p>
+    </div>
+  </div>
+
+  <!-- Poem display (can be fully shown, partially hidden, or hidden) -->
+  <div class="card" id="poemTextCard" style="padding:18px 20px;background:rgba(199,125,255,.06);border-color:rgba(199,125,255,.25)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <p style="font-size:11px;font-weight:800;color:rgba(199,125,255,.7);text-transform:uppercase;letter-spacing:.6px">📜 The poem</p>
+      <div style="display:flex;gap:6px">
+        <button onclick="setPoemVisibility('full')" id="pvFull" style="background:rgba(199,125,255,.15);border:1px solid rgba(199,125,255,.3);color:#c7a8ff;font-size:11px;font-weight:800;padding:5px 9px;border-radius:8px;cursor:pointer">Full</button>
+        <button onclick="setPoemVisibility('gaps')" id="pvGaps" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:rgba(224,240,248,.6);font-size:11px;font-weight:800;padding:5px 9px;border-radius:8px;cursor:pointer">Gaps</button>
+        <button onclick="setPoemVisibility('hidden')" id="pvHidden" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:rgba(224,240,248,.6);font-size:11px;font-weight:800;padding:5px 9px;border-radius:8px;cursor:pointer">Hide</button>
+      </div>
+    </div>
+    <div id="poemTextDisplay" style="font-size:15px;line-height:1.7;color:#e8dcff;white-space:pre-wrap;font-family:Georgia,serif"></div>
+  </div>
+
+  <!-- Chat -->
+  <div id="poemChat" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 0;min-height:120px"></div>
+
+  <!-- Controls -->
+  <div style="display:flex;gap:8px;align-items:stretch">
+    <button onclick="poemStartListening()" id="poemMicBtn" class="bicon" style="background:rgba(255,80,80,.15);border:2px solid rgba(255,80,80,.4);color:#ff8080;font-size:20px">🎙️</button>
+    <input class="ci" id="poemInput" type="text" placeholder="Talk to Ink..." onkeydown="if(event.key==='Enter') sendPoemMsg()">
+    <button class="sbtn" onclick="sendPoemMsg()">➤</button>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button onclick="endPoemSession()" class="btn" style="background:rgba(6,214,160,.15);border:1.5px solid rgba(6,214,160,.4);color:#06d6a0;font-size:14px;padding:11px">✅ End session</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
      SCREEN: PARENT MODE
 ══════════════════════════════════════ -->
 <div id="spar" class="screen" style="gap:16px;padding-top:24px">
@@ -550,6 +655,7 @@ body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
       <span id="coinSaved" style="font-size:13px;color:#06d6a0;display:none">✅ Saved!</span>
     </div>
   </div>
+  <div class="card" id="parPoems" style="padding:18px 20px"></div>
   <div class="card" id="parCognitive" style="padding:18px 20px;display:none"></div>
   <div class="card" id="parStats" style="padding:18px 20px"></div>
   <div class="card" style="padding:0">
@@ -997,6 +1103,461 @@ Return ONLY valid JSON:\n{"childHeadline":"exciting 1-sentence message TO the ch
 }
 
 // ═══════════════════════════════════════
+// POESIE MODE
+// ═══════════════════════════════════════
+function getPoems() {
+  try { const p = JSON.parse(localStorage.getItem('ink_poems') || '[]'); return Array.isArray(p)?p:[]; } catch { return []; }
+}
+function savePoems(arr) { try { localStorage.setItem('ink_poems', JSON.stringify(arr)); } catch {} }
+function updatePoem(updated) {
+  const poems = getPoems();
+  const idx = poems.findIndex(p => p.id === updated.id);
+  if (idx >= 0) poems[idx] = updated; else poems.push(updated);
+  savePoems(poems);
+}
+function deletePoem(id) {
+  savePoems(getPoems().filter(p => p.id !== id));
+}
+function activePoems() {
+  const now = Date.now();
+  return getPoems().filter(p => !p.completed && (!p.deadline || p.deadline + 86400000 * 2 > now));
+}
+
+// Poem session state
+let PS = null; // {poem, conv, tStart, stage, visibility}
+let newPoem = null; // draft during upload: {photos:[], lang:'FR', deadline:null, lang_explicit:false}
+
+async function analyzePoemPhoto(photos, preferredLang) {
+  const photoArr = Array.isArray(photos) ? photos : [photos];
+  const imageBlocks = photoArr.map(b64 => ({type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}}));
+  const t = await api([{role:'user',content:[
+    ...imageBlocks,
+    {type:'text',text:`Read ${photoArr.length>1?'these photos':'this photo'} of a short poem a 6-year-old must memorize. Extract the full text exactly as written, preserving line breaks and punctuation. ${preferredLang?`Expected language: ${preferredLang==='FR'?'French':'English'}.`:''}
+
+Return ONLY valid JSON:
+{"title":"poem title if visible, otherwise make a short title from the first line","author":"author if visible, else null","language":"FR|EN","text":"full poem text with \\n between lines and blank line between stanzas","stanzaCount":2,"lineCount":8,"vocabulary":[{"word":"word that may be hard for a 6yo","meaning":"short kid-friendly definition in the poem's language"}]}`}
+  ]}],null,1500);
+  try { return JSON.parse(t.replace(/```json|```/g,'').trim()); }
+  catch(e) { console.warn('poem OCR failed', e); return null; }
+}
+
+function poemStage(poem) {
+  const sessionCount = (poem.sessions||[]).length;
+  const daysTotal = poem.deadline ? Math.max(1, Math.round((poem.deadline - poem.createdDate) / 86400000)) : 7;
+  const daysLeft = poem.deadline ? Math.max(0, Math.round((poem.deadline - Date.now()) / 86400000)) : 7;
+  const progress = Math.min(1, sessionCount / Math.max(3, daysTotal - 1));
+  // Stage selection: lean on sessionCount, accelerate if deadline is close
+  if (daysLeft <= 1) return 'recital';
+  if (sessionCount === 0) return 'discovery';
+  if (sessionCount === 1 || progress < 0.35) return 'echo';
+  if (progress < 0.65) return 'gaps';
+  if (progress < 0.9) return 'verse';
+  return 'recital';
+}
+
+function stageLabel(stage, fr) {
+  if (fr) return {discovery:'Découverte',echo:'Écho',gaps:'Trous à remplir',verse:'Strophe par cœur',recital:'Récitation complète'}[stage] || stage;
+  return {discovery:'Discovery',echo:'Echo reading',gaps:'Fill the gaps',verse:'Verse by heart',recital:'Full recitation'}[stage] || stage;
+}
+
+async function chatWithInkPoem(userMsg) {
+  const poem = PS.poem;
+  const fr = poem.language === 'FR';
+  const L = fr ? 'French' : 'English';
+  const stage = PS.stage;
+  const stageGuidance = {
+    discovery: `Stage: DISCOVERY (1st session). Read the poem together. Explain 1-2 unfamiliar words in simple terms. Ask what the poem makes the child picture. Do NOT ask them to memorize anything yet.`,
+    echo: `Stage: ECHO. Ask the child to repeat lines after you. Read 1-2 lines, have them repeat via mic. Celebrate good rhythm. Gently correct big word mistakes only.`,
+    gaps: `Stage: GAPS. Some words are hidden from the child's view. Ask them to recall missing words from context. If stuck, give the first sound, not the word.`,
+    verse: `Stage: VERSE BY HEART. Ask the child to recite the first stanza from memory. Encourage, cue with the first word of each line if stuck, never read the whole line.`,
+    recital: `Stage: RECITAL. Deadline is near. Ask for the full recitation from memory. Gently note any stumbles, give one tip, celebrate what they nailed.`
+  }[stage];
+
+  const sys = `You are Ink — a CHAOTIC, FUNNY, brilliant octopus scientist helping a 6-year-old boy practice a poem for school. You're his BEST friend.
+
+THE POEM (${poem.title}${poem.author?', by '+poem.author:''}):
+${poem.text}
+
+TODAY'S MISSION:
+${stageGuidance}
+
+${poem.vocabulary?.length ? `HARD WORDS THIS POEM USES: ${poem.vocabulary.map(v=>`${v.word} (${v.meaning})`).join('; ')}` : ''}
+
+YOUR PERSONALITY:
+- Silly, makes the child giggle ("BLOOPSNORK!", "TENTACULOUS!")
+- Occasional ink-squirt mishaps
+- Dramatic celebrations when a line lands ("YESSS! Tentacle 4 is DANCING!")
+- Uses space/ocean metaphors
+
+ADDRESSING THE CHILD:
+- The child's name is represented by {{NAME}}. Use it occasionally — write the literal text {{NAME}}, do NOT invent a name.
+
+RULES:
+1. ONLY in ${L}
+2. Max 2-3 SHORT sentences — snappy and punchy
+3. Very simple words for a 6-year-old
+4. NEVER dump the whole poem — you're a tutor, not a reader
+5. When the child speaks into the mic, their message will be labeled [RECITED]: and you should check it against the actual poem lines, celebrate what matched, gently point out one miss.`;
+
+  return api([...PS.conv, {role:'user',content:userMsg}], sys, 220);
+}
+
+async function summarizePoemSession(poem, stage, durationMins) {
+  const fr = poem.language === 'FR';
+  const L = fr ? 'French' : 'English';
+  const t = await api([{role:'user',content:`Write a short celebration + recap for a 6-year-old who just finished a poésie practice session.
+
+Poem: "${poem.title}". Stage worked on: ${stage}. Duration: ~${durationMins} min. Session count now: ${(poem.sessions?.length||0)+1}. Days to deadline: ${poem.deadline?Math.max(0,Math.round((poem.deadline-Date.now())/86400000)):'unknown'}.
+
+You may include {{NAME}} in "childHeadline" once. Return ONLY valid JSON:
+{"childHeadline":"exciting 1-sentence TO the child in ${L}","childNote":"warm 1-sentence about progress on this poem in ${L}","shone":"strength for parent in English","struggled":"what was hardest or null","nextFocus":"what to work on next session, 1 sentence English"}`}],null,300);
+  try { return JSON.parse(t.replace(/```json|```/g,'').trim()); }
+  catch { return {childHeadline:fr?'Super poésie aujourd\'hui !':'Great poem session today!',childNote:fr?'Tu progresses bien !':'You\'re making great progress!',shone:'Engaged with the poem',struggled:null,nextFocus:'Keep practicing'}; }
+}
+
+function openPoemList() { renderPoemList(); show('po'); }
+
+function renderParentPoems() {
+  const el = document.getElementById('parPoems');
+  const poems = getPoems();
+  const active = poems.filter(p => !p.completed);
+  const done = poems.filter(p => p.completed);
+  let html = `<p style="font-size:12px;font-weight:800;color:rgba(224,240,248,.38);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">📜 Poems</p>`;
+  if (!poems.length) {
+    html += `<p style="font-size:13px;color:rgba(224,240,248,.4);line-height:1.5">No poems yet.</p>`;
+  } else {
+    if (active.length) {
+      html += active.map(p => {
+        const sc = (p.sessions||[]).length;
+        const daysLeft = p.deadline ? Math.max(0, Math.round((p.deadline - Date.now())/86400000)) : null;
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+          <div style="flex:1;min-width:0">
+            <p style="font-size:14px;font-weight:800">${p.language==='FR'?'🇫🇷':'🇺🇸'} ${escHtml(p.title)}</p>
+            <p style="font-size:12px;color:rgba(224,240,248,.4)">${sc} session${sc===1?'':'s'} · ${daysLeft!==null?daysLeft+' day'+(daysLeft===1?'':'s')+' left':'no deadline'}</p>
+          </div>
+          <button onclick="confirmDeletePoem('${p.id}')" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.3);color:#ff8080;font-size:11px;font-weight:800;padding:6px 10px;border-radius:8px;cursor:pointer">🗑</button>
+        </div>`;
+      }).join('');
+    }
+    if (done.length) {
+      html += `<p style="font-size:11px;font-weight:800;color:rgba(6,214,160,.7);margin-top:10px;margin-bottom:6px">✅ Completed</p>`;
+      html += done.map(p => `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;opacity:.7">
+        <p style="flex:1;font-size:13px">${p.language==='FR'?'🇫🇷':'🇺🇸'} ${escHtml(p.title)}</p>
+        <button onclick="confirmDeletePoem('${p.id}')" style="background:none;border:none;color:rgba(224,240,248,.4);font-size:14px;cursor:pointer">🗑</button>
+      </div>`).join('');
+    }
+  }
+  el.innerHTML = html;
+}
+
+function confirmDeletePoem(id) {
+  const poem = getPoems().find(p => p.id === id);
+  if (!poem) return;
+  if (confirm(`Delete "${poem.title}"? This also removes all session history for it.`)) {
+    deletePoem(id);
+    renderParentPoems();
+  }
+}
+
+// ─── Poem list rendering ───
+function renderPoemList() {
+  const el = document.getElementById('poemListContainer');
+  const poems = activePoems();
+  if (!poems.length) {
+    el.innerHTML = `<div class="card" style="padding:24px 20px;text-align:center">
+      <p style="font-size:40px;margin-bottom:10px">📜</p>
+      <p style="font-size:15px;color:rgba(224,240,248,.65);line-height:1.5">No poems yet. Tap below to add one and Ink will help ${escHtml(getChildName())} learn it across several days.</p>
+    </div>`;
+    return;
+  }
+  el.innerHTML = poems.map(p => {
+    const sc = (p.sessions||[]).length;
+    const daysLeft = p.deadline ? Math.max(0, Math.round((p.deadline - Date.now())/86400000)) : null;
+    const daysTotal = p.deadline ? Math.max(1, Math.round((p.deadline - p.createdDate)/86400000)) : null;
+    const dayInfo = daysLeft !== null ? `${daysLeft} day${daysLeft===1?'':'s'} left` : '—';
+    const stage = poemStage(p);
+    const urgency = daysLeft !== null && daysLeft <= 1 ? '#ff8080' : daysLeft !== null && daysLeft <= 3 ? '#ffd166' : '#c7a8ff';
+    return `<div class="card" style="padding:16px 18px;margin-bottom:10px;cursor:pointer;border-color:rgba(199,125,255,.3)" onclick="startPoemSession('${p.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div style="flex:1;min-width:0">
+          <p style="font-size:16px;font-weight:900;color:#e8dcff">📜 ${escHtml(p.title)}</p>
+          <p style="font-size:12px;color:rgba(224,240,248,.5);margin-top:3px">${p.language==='FR'?'🇫🇷':'🇺🇸'} · Session ${sc+1} · ${stageLabel(stage, p.language==='FR')}</p>
+        </div>
+        <div style="text-align:right">
+          <p style="font-size:13px;font-weight:800;color:${urgency}">${dayInfo}</p>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── New poem flow ───
+function startNewPoem() {
+  newPoem = { photos: [], lang: 'FR', deadline: null };
+  document.getElementById('poemThumbs').innerHTML = '';
+  document.getElementById('poemDeadline').value = '';
+  document.getElementById('poemSaveBtn').style.display = 'none';
+  document.getElementById('poemDl').textContent = 'Tap to add a photo';
+  const help = document.getElementById('poemDeadlineHelp');
+  if (help) help.textContent = `When does ${getChildName()} have to recite it by?`;
+  setPoemLang('FR');
+  show('pu');
+}
+
+function setPoemLang(lang) {
+  if (!newPoem) newPoem = {photos:[],lang,deadline:null};
+  newPoem.lang = lang;
+  document.getElementById('poemLangFR').style.borderColor = lang==='FR'?'rgba(199,125,255,.5)':'rgba(255,255,255,.14)';
+  document.getElementById('poemLangFR').style.color = lang==='FR'?'#c7a8ff':'#e0f0f8';
+  document.getElementById('poemLangEN').style.borderColor = lang==='EN'?'rgba(199,125,255,.5)':'rgba(255,255,255,.14)';
+  document.getElementById('poemLangEN').style.color = lang==='EN'?'#c7a8ff':'#e0f0f8';
+}
+
+function addPoemPhoto(f) {
+  if (!f || !f.type.startsWith('image/')) return;
+  compressImage(f).then(b64 => {
+    newPoem.photos.push(b64);
+    renderPoemThumbs();
+    document.getElementById('poemFi').value = '';
+  });
+}
+function renderPoemThumbs() {
+  const el = document.getElementById('poemThumbs'); el.innerHTML = '';
+  newPoem.photos.forEach((b64, i) => {
+    const thumb = document.createElement('div');
+    thumb.style.cssText = 'position:relative;width:64px;height:64px;border-radius:10px;overflow:hidden;border:2px solid rgba(199,125,255,.4)';
+    thumb.innerHTML = `<img src="data:image/jpeg;base64,${b64}" style="width:100%;height:100%;object-fit:cover">
+      <button onclick="event.stopPropagation();newPoem.photos.splice(${i},1);renderPoemThumbs()" style="position:absolute;top:-2px;right:-2px;background:rgba(255,80,80,.9);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:20px">✕</button>`;
+    el.appendChild(thumb);
+  });
+  const has = newPoem.photos.length > 0;
+  document.getElementById('poemDl').textContent = has ? `${newPoem.photos.length} photo${newPoem.photos.length>1?'s':''} — add more?` : 'Tap to add a photo';
+  document.getElementById('poemSaveBtn').style.display = has ? 'flex' : 'none';
+}
+
+async function submitNewPoem() {
+  const deadlineStr = document.getElementById('poemDeadline').value;
+  if (!deadlineStr) { alert('Pick a recitation deadline first'); return; }
+  if (!newPoem.photos.length) { alert('Add at least one photo of the poem'); return; }
+  const deadline = new Date(deadlineStr + 'T18:00:00').getTime();
+  if (deadline < Date.now()) { alert('Deadline must be in the future'); return; }
+  document.getElementById('panMsg').textContent = newPoem.lang==='FR' ? 'Ink lit la poésie... 📜' : 'Ink is reading the poem... 📜';
+  show('pan');
+  try {
+    const parsed = await analyzePoemPhoto(newPoem.photos, newPoem.lang);
+    if (!parsed || !parsed.text) { alert('Ink could not read the poem — try a clearer photo.'); show('pu'); return; }
+    const poem = {
+      id: 'poem-' + Date.now(),
+      title: parsed.title || 'Untitled',
+      author: parsed.author || null,
+      text: parsed.text,
+      language: parsed.language || newPoem.lang,
+      vocabulary: parsed.vocabulary || [],
+      stanzaCount: parsed.stanzaCount || 1,
+      lineCount: parsed.lineCount || parsed.text.split('\n').filter(l=>l.trim()).length,
+      createdDate: Date.now(),
+      deadline,
+      sessions: [],
+      completed: false
+    };
+    updatePoem(poem);
+    newPoem = null;
+    startPoemSession(poem.id);
+  } catch(e) {
+    console.error(e); alert('Error analyzing poem: ' + (e.message||e)); show('pu');
+  }
+}
+
+// ─── Poem practice session ───
+function startPoemSession(poemId) {
+  const poem = getPoems().find(p => p.id === poemId);
+  if (!poem) { alert('Poem not found'); show('po'); return; }
+  S.lang = poem.language;
+  PS = {
+    poem,
+    conv: [],
+    tStart: Date.now(),
+    stage: poemStage(poem),
+    visibility: 'full'
+  };
+  renderPoemPractice();
+  show('pm');
+  // Ink kicks things off based on stage
+  setTimeout(() => poemOpenSession(), 250);
+}
+
+function renderPoemPractice() {
+  const poem = PS.poem; const fr = poem.language === 'FR';
+  document.getElementById('poemTitle').textContent = poem.title;
+  const sc = (poem.sessions||[]).length + 1;
+  const daysLeft = poem.deadline ? Math.max(0, Math.round((poem.deadline - Date.now())/86400000)) : null;
+  document.getElementById('poemProgress').textContent = `${fr?'Séance':'Session'} ${sc} · ${stageLabel(PS.stage, fr)} · ${daysLeft!==null ? (daysLeft+' '+(fr?(daysLeft===1?'jour':'jours'):(daysLeft===1?'day':'days'))+(fr?' avant':' until')+' 🎤') : ''}`;
+  renderPoemText();
+  document.getElementById('poemChat').innerHTML = '';
+  // Stage-appropriate default visibility
+  const v = PS.stage === 'discovery' || PS.stage === 'echo' ? 'full' : PS.stage === 'gaps' ? 'gaps' : PS.stage === 'verse' ? 'hidden' : 'hidden';
+  setPoemVisibility(v);
+}
+
+function renderPoemText() {
+  const el = document.getElementById('poemTextDisplay');
+  const poem = PS.poem;
+  if (PS.visibility === 'hidden') {
+    el.textContent = poem.language === 'FR' ? '(poème caché — récite de mémoire)' : '(poem hidden — recite from memory)';
+    el.style.fontStyle = 'italic';
+    el.style.opacity = '.5';
+    return;
+  }
+  el.style.fontStyle = 'normal';
+  el.style.opacity = '1';
+  if (PS.visibility === 'full') {
+    el.textContent = poem.text;
+    return;
+  }
+  // Gaps: hide ~1 in 4 substantive words
+  const lines = poem.text.split('\n');
+  const hidden = lines.map(line => {
+    return line.split(/(\s+)/).map(tok => {
+      if (!/\w/.test(tok)) return tok;
+      if (tok.length < 3) return tok;
+      if (Math.random() < 0.28) return '_'.repeat(tok.length);
+      return tok;
+    }).join('');
+  }).join('\n');
+  el.textContent = hidden;
+}
+
+function setPoemVisibility(v) {
+  PS.visibility = v;
+  ['pvFull','pvGaps','pvHidden'].forEach(id => {
+    const btn = document.getElementById(id);
+    const active = (id==='pvFull'&&v==='full') || (id==='pvGaps'&&v==='gaps') || (id==='pvHidden'&&v==='hidden');
+    btn.style.background = active ? 'rgba(199,125,255,.15)' : 'rgba(255,255,255,.04)';
+    btn.style.borderColor = active ? 'rgba(199,125,255,.3)' : 'rgba(255,255,255,.1)';
+    btn.style.color = active ? '#c7a8ff' : 'rgba(224,240,248,.6)';
+  });
+  renderPoemText();
+}
+
+function addPoemMsg(role, text) {
+  const cm = document.getElementById('poemChat');
+  const d = document.createElement('div');
+  const shown = role === 'a' ? personalize(text) : text;
+  if (role === 'a') {
+    d.className = 'ibub su';
+    d.style.borderColor = 'rgba(199,125,255,.32)';
+    d.style.background = 'rgba(199,125,255,.09)';
+    d.innerHTML = `<span class="ink-label" style="color:#c7a8ff">Ink 📜</span><span class="msg-text">${escHtml(shown)}</span>`;
+    const btn = document.createElement('button');
+    btn.textContent = '🔊';
+    btn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:12px;opacity:.5;vertical-align:middle;margin-left:4px';
+    btn.addEventListener('click', () => speak(shown));
+    d.appendChild(btn);
+  } else {
+    d.className = 'ubub su';
+    d.textContent = shown;
+  }
+  cm.appendChild(d); cm.scrollTop = cm.scrollHeight;
+}
+
+async function poemOpenSession() {
+  const poem = PS.poem;
+  const fr = poem.language === 'FR';
+  const openers = {
+    discovery: fr ? `Salut {{NAME}} ! On découvre ensemble "${poem.title}" ? Regarde le poème — qu'est-ce que tu vois ?` : `Hey {{NAME}}! Let's meet "${poem.title}" together. Look at the poem — what jumps out?`,
+    echo: fr ? `Prêt {{NAME}} ? Je lis une ligne, tu la répètes au micro ! On y va !` : `Ready {{NAME}}? I read a line, you repeat into the mic! Let's go!`,
+    gaps: fr ? `Bon {{NAME}}, des mots ont disparu ! Essaie de les retrouver avec ta mémoire.` : `Alright {{NAME}}, some words vanished! Try to find them with your memory.`,
+    verse: fr ? `{{NAME}} ! Récite-moi la première strophe par cœur — sans regarder. Tu peux le faire !` : `{{NAME}}! Recite the first stanza from memory — don't peek. You got this!`,
+    recital: fr ? `C'est LE jour {{NAME}} ! Récite tout "${poem.title}" de mémoire. Je t'écoute !` : `This is THE day {{NAME}}! Recite all of "${poem.title}" from memory. I'm listening!`
+  };
+  const opener = openers[PS.stage] || openers.discovery;
+  addPoemMsg('a', opener);
+  PS.conv.push({role:'assistant',content:opener});
+  speak(opener);
+}
+
+async function sendPoemMsg(prefixTag) {
+  const inp = document.getElementById('poemInput');
+  const raw = inp.value.trim(); if (!raw) return;
+  inp.value = '';
+  const display = raw;
+  const labeled = prefixTag ? `[${prefixTag}]: ${raw}` : raw;
+  addPoemMsg('u', display);
+  PS.conv.push({role:'user',content:labeled});
+  try {
+    const rep = await chatWithInkPoem(labeled);
+    addPoemMsg('a', rep);
+    PS.conv.push({role:'assistant',content:rep});
+    speak(rep);
+  } catch(e) {
+    console.error(e);
+    const err = PS.poem.language==='FR' ? 'Oups, une bulle !' : 'Oops, a bubble!';
+    addPoemMsg('a', err); speak(err);
+  }
+}
+
+function poemStartListening() {
+  const btn = document.getElementById('poemMicBtn');
+  if (isListening) { stopListening(); btn.classList.remove('listening'); return; }
+  btn.classList.add('listening');
+  startListening(
+    (partial) => { document.getElementById('poemInput').value = partial; },
+    (final) => {
+      btn.classList.remove('listening');
+      if (final) {
+        document.getElementById('poemInput').value = final;
+        sendPoemMsg('RECITED');
+      }
+    }
+  );
+}
+
+async function endPoemSession() {
+  const fr = PS.poem.language==='FR';
+  if (!confirm(fr ? 'Terminer la séance ?' : 'End this session?')) return;
+  const durationMins = Math.max(1, Math.round((Date.now() - PS.tStart) / 60000));
+  try {
+    const summary = await summarizePoemSession(PS.poem, PS.stage, durationMins);
+    const poem = PS.poem;
+    poem.sessions = poem.sessions || [];
+    poem.sessions.push({
+      date: Date.now(),
+      stage: PS.stage,
+      minutes: durationMins,
+      shone: summary.shone,
+      struggled: summary.struggled,
+      nextFocus: summary.nextFocus
+    });
+    // If past deadline or this was recital, mark completed
+    if (PS.stage === 'recital' || (poem.deadline && Date.now() >= poem.deadline)) {
+      poem.completed = true;
+    }
+    updatePoem(poem);
+    // Reward: 10 coins per poem session, 25 if recital completed
+    const profile = getProfile();
+    const coinsEarned = PS.stage === 'recital' && poem.completed ? 25 : 10;
+    profile.minecoins = (profile.minecoins||0) + coinsEarned;
+    saveProfile(profile);
+    // Brief celebration alert + back to list
+    const head = personalize(summary.childHeadline || (fr ? 'Bravo !' : 'Nice work!'));
+    const note = personalize(summary.childNote || '');
+    speak(head + ' ' + note);
+    fireFireworks();
+    setTimeout(() => {
+      alert(`${head}\n\n${note}\n\n+${coinsEarned} ⛏️ Minecoins`);
+      PS = null;
+      renderPoemList();
+      show('po');
+    }, 400);
+  } catch(e) {
+    console.error(e);
+    alert('Error ending session — your progress was saved.');
+    PS = null;
+    show('po');
+  }
+}
+
+// ═══════════════════════════════════════
 // STATION GRID RENDERER
 // ═══════════════════════════════════════
 function renderStationGrid(containerId, blocks, newBlocks=0) {
@@ -1114,6 +1675,17 @@ function renderWelcome() {
   renderStationGrid('stationGrid', bc);
   renderMiniCards('miniCards');
   document.getElementById('muteBtn').style.display = 'flex';
+  const poems = activePoems();
+  const badge = document.getElementById('poesieBtnBadge');
+  if (badge) {
+    if (poems.length) {
+      const urgent = poems.filter(p => p.deadline && (p.deadline - Date.now()) < 86400000 * 2);
+      badge.textContent = urgent.length ? `· ${poems.length} (🎤 soon!)` : `· ${poems.length} in progress`;
+      badge.style.color = urgent.length ? '#ff8080' : 'rgba(224,240,248,.5)';
+    } else {
+      badge.textContent = '';
+    }
+  }
   // Show resume banner if there's an active session
   const sess = loadSession();
   document.getElementById('resumeBanner').style.display = sess ? 'block' : 'none';
@@ -1166,6 +1738,7 @@ function updateParentEdits() {
 
 function renderParentMode() {
   renderWebhookUI();
+  renderParentPoems();
   const profile = getProfile();
   document.getElementById('coinEdit').value = profile.minecoins || 0;
   document.getElementById('blockEdit').value = profile.blocks || 0;
