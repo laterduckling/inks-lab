@@ -176,9 +176,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 #ti.venk-mode{animation:venk-shake .5s ease-in-out infinite!important}
 
 /* ── Ink character image ── */
-.ink-img{width:80px;height:80px;border-radius:20px;object-fit:cover;display:inline-block}
-.ink-img-lg{width:120px;height:120px;border-radius:28px;object-fit:cover;display:inline-block}
-.ink-img-xl{width:160px;height:160px;border-radius:36px;object-fit:cover;display:inline-block}
+.ink-img{width:80px;height:80px;object-fit:contain;display:inline-block}
+.ink-img-lg{width:120px;height:120px;object-fit:contain;display:inline-block}
+.ink-img-xl{width:170px;height:170px;object-fit:contain;display:inline-block}
 .ink-img.mood-happy{animation:float 3s ease-in-out infinite}
 .ink-img.mood-bounce{animation:bnc .55s ease-in-out infinite}
 .ink-img.mood-think{animation:pls 1.6s ease-in-out infinite}
@@ -2386,10 +2386,21 @@ function addTyping() {
   cm.appendChild(d); cm.scrollTop = cm.scrollHeight;
 }
 
+// Ink pose image map. Poses we don't have yet fall back to happy (Venk also uses
+// a CSS hue-rotate filter, so happy.png + filter gives the red evil look).
+const INK_IMG = { happy:'01_happy.png', bounce:'02_excited.png', think:'03_thinking.png', venk:'01_happy.png' };
+function inkSrc(moodWord) {
+  const key = moodWord === 'excited' ? 'bounce' : moodWord === 'thinking' ? 'think' : moodWord;
+  return INK_IMG[key] || INK_IMG.happy;
+}
+function setInkImg(el, moodWord) { if (el) el.src = inkSrc(moodWord); }
+
 function setMood(m) {
   const el = document.getElementById('ti');
   const isVenk = S.hintCount >= 2;
-  el.className = 'ink-img ' + (isVenk ? 'mood-venk' : m==='thinking' ? 'mood-think' : m==='excited' ? 'mood-bounce' : 'mood-happy');
+  const moodCls = isVenk ? 'mood-venk' : m==='thinking' ? 'mood-think' : m==='excited' ? 'mood-bounce' : 'mood-happy';
+  el.className = 'ink-img ' + moodCls;
+  setInkImg(el, isVenk ? 'venk' : m);
 }
 
 async function sendMsg() {
@@ -2600,20 +2611,20 @@ async function submitReading() {
   if (!S.transcript || S.transcript.length < 3) return;
   const fr = S.lang==='FR';
   document.getElementById('vrSubmit').disabled = true;
-  document.getElementById('readInk').className = 'ink-img-lg mood-think';
+  { const rI = document.getElementById('readInk'); rI.className = 'ink-img-lg mood-think'; setInkImg(rI,'thinking'); }
   document.getElementById('micStatus').textContent = fr ? 'Ink analyse... 🔬' : 'Ink is checking... 🔬';
   try {
     const result = await verifyReading(S.transcript, S.hw.tasks[S.tIdx]);
     const fbEl = document.getElementById('vrFeedback'); fbEl.style.display = 'block';
     if (result.fluent) {
-      document.getElementById('readInk').className = 'ink-img-lg mood-bounce';
+      { const rI = document.getElementById('readInk'); rI.className = 'ink-img-lg mood-bounce'; setInkImg(rI,'excited'); }
       let msg = result.feedback;
       if (result.comprehensionQuestion) msg += ' ' + result.comprehensionQuestion;
       fbEl.innerHTML = `<div class="ibub"><span class="ink-label">Ink 🐙</span>${escHtml(msg)}</div>`;
       speak(msg); haptic([50,30,100]);
       setTimeout(() => { show('t'); taskDone(); }, 3500);
     } else {
-      document.getElementById('readInk').className = 'ink-img-lg mood-happy';
+      { const rI = document.getElementById('readInk'); rI.className = 'ink-img-lg mood-happy'; setInkImg(rI,'happy'); }
       fbEl.innerHTML = `<div class="ibub"><span class="ink-label">Ink 🐙</span>${escHtml(result.feedback)}</div>`;
       speak(result.feedback);
       document.getElementById('vrSubmit').disabled = false;
@@ -2623,7 +2634,7 @@ async function submitReading() {
   } catch(err) {
     console.error(err);
     document.getElementById('vrSubmit').disabled = false;
-    document.getElementById('readInk').className = 'ink-img-lg mood-happy';
+    { const rI = document.getElementById('readInk'); rI.className = 'ink-img-lg mood-happy'; setInkImg(rI,'happy'); }
     document.getElementById('micStatus').textContent = S.lang==='FR' ? 'Erreur — réessaie !' : 'Error — try again!';
   }
 }
@@ -3029,6 +3040,18 @@ function resumeSession(saved) {
       show('w');
     }
   }
+})();
+
+// Sweep all static Ink images → pose-appropriate file based on mood class.
+// (apple-touch-icon link tag is untouched — only <img> elements match.)
+(function(){
+  document.querySelectorAll('img[src$="icon-180.png"]').forEach(el => {
+    const m = el.classList.contains('mood-think') ? 'thinking'
+            : el.classList.contains('mood-bounce') ? 'excited'
+            : el.classList.contains('mood-venk')   ? 'venk'
+            : 'happy';
+    setInkImg(el, m);
+  });
 })();
 </script>
 </body>
