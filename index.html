@@ -11,10 +11,54 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <title>Ink's Lab 🐙</title>
 <style>
+/* ═════════ Design Tokens (from Claude Design) ═════════ */
+:root{
+  /* Abyss — backgrounds */
+  --abyss:#030814; --deep:#061228; --trench:#0a1a36; --reef:#102448;
+  --kelp:#18305a; --glass:rgba(16,36,72,.65);
+  /* Bioluminescent — primary */
+  --biolume:#2de0c6; --biolume-dim:#1aa696;
+  --cyan:#5ac8ff; --cyan-dim:#2e8ec2;
+  /* Warm — coins, rewards */
+  --gold:#ffc94d; --gold-dim:#c78f1f; --amber:#ff9a3d;
+  /* VENK — villain */
+  --venk:#ff3d6e; --venk-deep:#a60030; --venk-glow:#ff6b94;
+  /* Character — Ink's body */
+  --cream-body:#f5e4c2; --cream-hi:#fff4dc; --cream-lo:#d9c090;
+  --cream-lo-deep:#b59966; --ink-outline:#1a2438; --ink-pupil:#0a1224;
+  /* Text on dark */
+  --text-hi:#f0f7ff; --text-mid:rgba(224,240,255,.72);
+  --text-lo:rgba(224,240,255,.45); --text-dim:rgba(224,240,255,.22);
+  /* Semantic */
+  --success:#3ae08c; --error:#ff5e7e;
+  /* Typography */
+  --font-display:'Space Grotesk','Helvetica Neue',sans-serif;
+  --font-body:'Figtree',-apple-system,BlinkMacSystemFont,sans-serif;
+  --font-mono:'JetBrains Mono','SF Mono',monospace;
+  /* Radius */
+  --r-tight:10px; --r-std:16px; --r-card:22px; --r-lg:28px; --r-pill:999px;
+  /* Glow */
+  --glow-teal-sm:0 0 16px rgba(45,224,198,.35);
+  --glow-teal-md:0 0 32px rgba(45,224,198,.45);
+  --glow-teal-lg:0 0 64px rgba(45,224,198,.55);
+  --glow-cyan-sm:0 0 16px rgba(90,200,255,.30);
+  --glow-cyan-md:0 0 36px rgba(90,200,255,.45);
+  --glow-gold-sm:0 0 18px rgba(255,201,77,.35);
+  --glow-gold-md:0 0 40px rgba(255,201,77,.55);
+  --glow-venk-sm:0 0 20px rgba(255,61,110,.50);
+  --glow-venk-md:0 0 48px rgba(255,61,110,.70);
+  /* Motion */
+  --spring:cubic-bezier(.34,1.56,.64,1);
+  --ease-out:cubic-bezier(.2,.8,.2,1);
+  --ease-io:cubic-bezier(.4,0,.2,1);
+}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-body{background:#05080f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;color:#e0f0f8;min-height:100vh;overflow-x:hidden;overscroll-behavior:none;}
+body{background:var(--deep);font-family:var(--font-body);color:var(--text-hi);min-height:100vh;overflow-x:hidden;overscroll-behavior:none;}
 .screen{display:none;flex-direction:column;padding:18px 20px 32px;max-width:540px;margin:0 auto;min-height:100svh;position:relative;z-index:1;}
 .screen.active{display:flex;}
 .center{align-items:center;justify-content:center;text-align:center;}
@@ -54,24 +98,24 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 @keyframes rayShift{0%{opacity:.35;transform:rotate(10deg) translateX(0)}100%{opacity:.7;transform:rotate(14deg) translateX(14px)}}
 
 /* ── Buttons ── */
-.btn{display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;border:none;border-radius:16px;cursor:pointer;transition:transform .12s,filter .12s,box-shadow .12s;touch-action:manipulation;user-select:none;width:100%}
-.btn:active{transform:scale(.91)}
-.bp{background:linear-gradient(135deg,#00dcc6,#0080ff);color:#fff;font-size:18px;padding:15px 32px;box-shadow:0 4px 24px rgba(0,220,200,.36)}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;font-weight:700;border:none;border-radius:var(--r-std);cursor:pointer;transition:transform .12s,filter .12s,box-shadow .12s;touch-action:manipulation;user-select:none;width:100%;font-family:var(--font-display);letter-spacing:.3px}
+.btn:active{transform:scale(.97)}
+.bp{background:linear-gradient(135deg,var(--biolume),var(--cyan));color:#00231c;font-size:17px;padding:15px 28px;box-shadow:var(--glow-teal-md)}
 .bp:hover{filter:brightness(1.08)}
 .bp:disabled{opacity:.38;pointer-events:none}
-.bs{background:linear-gradient(135deg,#06d6a0,#0096c7);color:#fff;font-size:17px;padding:14px 24px;box-shadow:0 4px 20px rgba(6,214,160,.36)}
-.bw{background:rgba(255,80,80,.15);border:2px solid rgba(255,80,80,.4);color:#ff8080;font-size:17px;padding:14px 24px}
-.bl{background:rgba(14,26,56,.85);border:2px solid rgba(255,255,255,.14);color:#e0f0f8;font-size:19px;padding:17px 22px;border-radius:18px;cursor:pointer;font-weight:800;transition:all .18s;width:100%}
-.bl:hover{border-color:rgba(0,220,200,.5);background:rgba(0,220,200,.1)}
-.bl:active{transform:scale(.95)}
+.bs{background:linear-gradient(135deg,var(--biolume),var(--biolume-dim));color:#00231c;font-size:16px;padding:14px 24px;box-shadow:var(--glow-teal-sm)}
+.bw{background:rgba(255,61,110,.12);border:1.5px solid rgba(255,61,110,.4);color:var(--venk-glow);font-size:16px;padding:14px 24px}
+.bl{background:rgba(16,36,72,.55);border:1.5px solid rgba(45,224,198,.25);color:var(--text-hi);font-size:17px;padding:15px 22px;border-radius:var(--r-card);cursor:pointer;font-weight:700;font-family:var(--font-display);transition:all .18s;width:100%}
+.bl:hover{border-color:rgba(45,224,198,.6);background:rgba(45,224,198,.08)}
+.bl:active{transform:scale(.97)}
 .bicon{display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:14px;border:none;cursor:pointer;transition:transform .12s,filter .12s;flex-shrink:0;font-size:20px}
 .bicon:active{transform:scale(.88)}
 
 /* ── Cards ── */
-.card{background:rgba(12,22,50,.82);border:1px solid rgba(0,220,200,.18);border-radius:20px}
-.ibub{background:rgba(0,220,200,.09);border:2px solid rgba(0,220,200,.32);border-radius:20px 20px 20px 6px;padding:13px 17px;font-size:15px;line-height:1.55;color:#d8f5f0;position:relative}
-.ubub{background:rgba(0,128,255,.13);border:1.5px solid rgba(0,128,255,.28);border-radius:20px 20px 6px 20px;padding:11px 17px;font-size:15px;color:#cce8ff}
-.ink-label{font-size:12px;font-weight:900;color:#00dcc6;display:block;margin-bottom:4px}
+.card{background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(45,224,198,.15);border-radius:var(--r-card)}
+.ibub{background:rgba(45,224,198,.10);border:1.5px solid rgba(45,224,198,.35);border-radius:22px 22px 22px 6px;padding:13px 17px;font-size:15px;line-height:1.55;color:#dcf7f1;position:relative;font-family:var(--font-body)}
+.ubub{background:rgba(90,200,255,.12);border:1.5px solid rgba(90,200,255,.25);border-radius:22px 22px 6px 22px;padding:11px 16px;font-size:15px;color:#cae7ff;font-family:var(--font-body)}
+.ink-label{font-size:11px;font-weight:700;color:var(--biolume);display:block;margin-bottom:4px;font-family:var(--font-mono);letter-spacing:1.5px;text-transform:uppercase}
 
 /* ── Task pills ── */
 .tpill{display:flex;align-items:center;gap:12px;padding:13px 17px;border-radius:14px;background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.09);transition:all .22s;margin-bottom:9px}
@@ -123,9 +167,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .station-block.room.new-fill{background:rgba(255,209,102,.35);border:2px solid #ffd166;animation:glw 1s ease-in-out 4}
 .station-block.room-locked{font-size:11px;opacity:.5}
 .rooms-strip{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 12px}
-.room-chip{display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);font-size:11px;color:rgba(224,240,248,.4);font-weight:700}
-.room-chip.unlocked{background:rgba(255,209,102,.12);border-color:rgba(255,209,102,.45);color:#ffd166}
+.room-chip{display:flex;align-items:center;gap:5px;padding:4px 9px;border-radius:var(--r-pill);background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);font-size:9px;color:var(--text-lo);font-family:var(--font-mono);font-weight:700;letter-spacing:.5px;opacity:.6}
+.room-chip.unlocked{background:rgba(45,224,198,.12);border-color:var(--biolume);color:var(--biolume);opacity:1}
 .room-chip .ri{font-size:13px}
+.room-chip .rn{text-transform:uppercase}
 @keyframes roomUnlock{0%{transform:scale(0);opacity:0}60%{transform:scale(1.25)}100%{transform:scale(1);opacity:1}}
 .room-unlock-banner{background:linear-gradient(135deg,rgba(255,209,102,.3),rgba(255,140,60,.2));border:2px solid #ffd166;border-radius:18px;padding:14px 18px;margin:10px 0;text-align:center;animation:roomUnlock .6s cubic-bezier(.34,1.56,.64,1) both;box-shadow:0 0 32px rgba(255,209,102,.4)}
 .room-unlock-banner .ru-icon{font-size:40px;display:block;margin-bottom:4px}
@@ -169,8 +214,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 @keyframes venk-flicker{0%,100%{opacity:1}45%{opacity:.7}50%{opacity:1}55%{opacity:.5}60%{opacity:1}}
 @keyframes venk-shake{0%,100%{transform:translateX(0) rotate(0)}20%{transform:translateX(-4px) rotate(-1deg)}40%{transform:translateX(4px) rotate(1deg)}60%{transform:translateX(-3px) rotate(-0.5deg)}80%{transform:translateX(3px) rotate(0.5deg)}}
 @keyframes ink-splat{0%{transform:scale(0) rotate(-20deg);opacity:0}60%{transform:scale(1.3) rotate(5deg);opacity:1}100%{transform:scale(1) rotate(0deg);opacity:1}}
-.venk-bubble{background:rgba(120,0,30,.2);border:2px solid rgba(220,0,60,.5);border-radius:20px 20px 20px 6px;padding:13px 17px;font-size:15px;line-height:1.55;color:#ffb0c0;animation:venk-flicker 3s ease-in-out infinite}
-.venk-label{font-size:12px;font-weight:900;color:#ff4060;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px}
+.venk-bubble{background:rgba(120,0,30,.25);border:1.5px solid rgba(255,61,110,.5);border-radius:22px 22px 22px 6px;padding:13px 17px;font-size:15px;line-height:1.55;color:#ffcdd8;box-shadow:var(--glow-venk-sm);animation:venk-flicker 3s ease-in-out infinite;font-family:var(--font-body)}
+.venk-label{font-size:11px;font-weight:700;color:var(--venk);display:block;margin-bottom:4px;font-family:var(--font-mono);letter-spacing:1.5px;text-transform:uppercase}
 .ink-splat{animation:ink-splat .4s cubic-bezier(.34,1.56,.64,1) both}
 .venk-emoji{animation:venk-shake .6s ease-in-out infinite;display:inline-block}
 #ti.venk-mode{animation:venk-shake .5s ease-in-out infinite!important}
@@ -182,7 +227,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .ink-img.mood-happy{animation:float 3s ease-in-out infinite}
 .ink-img.mood-bounce{animation:bnc .55s ease-in-out infinite}
 .ink-img.mood-think{animation:pls 1.6s ease-in-out infinite}
-.ink-img.mood-venk{animation:venk-shake .6s ease-in-out infinite;filter:hue-rotate(280deg) brightness(1.2)}
+.ink-img.mood-venk,.ink-img-lg.mood-venk,.ink-img-xl.mood-venk{animation:venk-shake .6s ease-in-out infinite;filter:drop-shadow(0 0 12px rgba(255,61,110,.5))}
 .ink-img.mood-celebrate{animation:wiggle-celebrate 1s ease-in-out 3}
 @keyframes wiggle-celebrate{0%,100%{transform:rotate(0) scale(1)}15%{transform:rotate(-12deg) scale(1.1)}30%{transform:rotate(12deg) scale(1.15)}45%{transform:rotate(-8deg) scale(1.1)}60%{transform:rotate(8deg) scale(1.05)}75%{transform:rotate(-4deg)}90%{transform:rotate(4deg)}}
 .ink-img-lg.mood-happy{animation:float 3s ease-in-out infinite}
@@ -201,6 +246,45 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .home-btn:active{transform:scale(.88)}
 
 ::-webkit-scrollbar{display:none}
+
+/* ═════════ Claude Design — typography + components ═════════ */
+.hero-title{font-family:var(--font-display);font-size:52px;font-weight:800;letter-spacing:-1.5px;line-height:.95;background:linear-gradient(135deg,var(--biolume),var(--cyan));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;margin-top:4px}
+.hero-sub{font-family:var(--font-mono);font-size:10px;color:var(--biolume);letter-spacing:3.5px;text-transform:uppercase;margin-top:4px;font-weight:500}
+.coin-pill{display:inline-flex;align-items:center;gap:10px;padding:8px 18px;border-radius:var(--r-pill);background:linear-gradient(135deg,rgba(255,201,77,.16),rgba(255,154,61,.08));border:1.5px solid rgba(255,201,77,.35);box-shadow:var(--glow-gold-sm);font-family:var(--font-display)}
+.coin-pill .amt{font-weight:800;font-size:22px;color:var(--gold)}
+.coin-pill .lbl{font-family:var(--font-mono);font-size:10px;color:rgba(255,201,77,.7);letter-spacing:1px;font-weight:700}
+.mission-label{font-family:var(--font-mono);font-size:10px;color:var(--text-lo);letter-spacing:2px;text-transform:uppercase;font-weight:500;padding-left:4px;margin-bottom:2px}
+.mission-btn{display:flex;align-items:center;gap:14px;padding:14px 18px;background:rgba(16,36,72,.55);border:1.5px solid var(--mb-tint,rgba(45,224,198,.35));border-radius:var(--r-card);cursor:pointer;text-align:left;width:100%;font-family:var(--font-body);transition:background .18s,border-color .18s,transform .12s;color:var(--text-hi)}
+.mission-btn:active{transform:scale(.98)}
+.mission-btn:hover{background:rgba(45,224,198,.08)}
+.mission-btn .mb-icon{width:44px;height:44px;border-radius:12px;flex-shrink:0;background:var(--mb-tint-soft,rgba(45,224,198,.09));border:1px solid var(--mb-tint,rgba(45,224,198,.35));display:flex;align-items:center;justify-content:center;font-size:22px}
+.mission-btn .mb-title{font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--text-hi)}
+.mission-btn .mb-sub{font-size:12px;color:var(--text-lo);margin-top:1px}
+.mission-btn .mb-arrow{color:var(--mb-tint-solid,var(--biolume));font-size:20px;font-weight:700;flex-shrink:0;padding-right:2px}
+.mission-btn.teal{--mb-tint:rgba(45,224,198,.35);--mb-tint-soft:rgba(45,224,198,.09);--mb-tint-solid:var(--biolume)}
+.mission-btn.cyan{--mb-tint:rgba(90,200,255,.35);--mb-tint-soft:rgba(90,200,255,.09);--mb-tint-solid:var(--cyan)}
+.mission-btn.violet{--mb-tint:rgba(199,168,255,.35);--mb-tint-soft:rgba(199,168,255,.09);--mb-tint-solid:#c7a8ff}
+.station-card{background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(45,224,198,.15);border-radius:var(--r-card);box-shadow:var(--glow-teal-sm);overflow:hidden}
+.station-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 8px}
+.station-head .t{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;color:var(--biolume);text-transform:uppercase;font-weight:700}
+.station-head .b{font-family:var(--font-display);font-size:12px;font-weight:700;color:var(--text-mid)}
+
+/* ═════════ iPad Mini + larger screens ═════════ */
+@media (min-width:700px){
+  .screen{max-width:680px;padding:28px 32px 40px}
+  .hero-title{font-size:72px}
+  .hero-sub{font-size:12px;letter-spacing:4.5px}
+  .ink-img-xl{width:220px;height:220px}
+  .ink-img-lg{width:150px;height:150px}
+  .mission-btn .mb-title{font-size:19px}
+  .mission-btn .mb-sub{font-size:13px}
+  .coin-pill .amt{font-size:26px}
+}
+@media (min-width:1000px){
+  .screen{max-width:860px;padding:36px 40px 48px}
+  .hero-title{font-size:84px}
+  .ink-img-xl{width:260px;height:260px}
+}
 </style>
 </head>
 <body>
@@ -216,10 +300,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
      SCREEN: API KEY
 ══════════════════════════════════════ -->
 <div id="sk" class="screen center active" style="gap:24px">
-  <div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
     <img src="icon-180.png" class="ink-img-xl mood-happy" alt="Ink">
-    <h1 style="font-size:44px;font-weight:900;background:linear-gradient(135deg,#00dcc6,#0080ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;margin-top:8px">INK'S LAB</h1>
-    <p style="font-size:14px;color:rgba(224,240,248,.5);margin-top:6px;font-weight:700">🚀 Underwater Space Station 🌊</p>
+    <h1 class="hero-title">INK'S LAB</h1>
+    <div class="hero-sub">◢ Bioluminescent Research Station ◣</div>
   </div>
   <div class="card" style="padding:26px;width:100%;max-width:380px">
     <p style="font-size:13px;font-weight:800;color:rgba(224,240,248,.8);margin-bottom:4px">Anthropic API Key</p>
@@ -233,52 +317,73 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <!-- ══════════════════════════════════════
      SCREEN: WELCOME
 ══════════════════════════════════════ -->
-<div id="sw" class="screen center" style="gap:22px">
-  <div>
+<div id="sw" class="screen center" style="gap:18px;padding-top:32px">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
     <img src="icon-180.png" class="ink-img-xl mood-happy" id="welcomeInk" alt="Ink">
-    <h1 id="welcomeTitle" style="font-size:44px;font-weight:900;background:linear-gradient(135deg,#00dcc6,#0080ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;margin-top:6px;cursor:default" ontouchstart="parentLongPressStart()" ontouchend="parentLongPressEnd()" onmousedown="parentLongPressStart()" onmouseup="parentLongPressEnd()">INK'S LAB</h1>
-    <p style="font-size:14px;color:rgba(224,240,248,.5);margin-top:6px;font-weight:700">🚀 Underwater Space Station 🌊</p>
+    <h1 id="welcomeTitle" class="hero-title" ontouchstart="parentLongPressStart()" ontouchend="parentLongPressEnd()" onmousedown="parentLongPressStart()" onmouseup="parentLongPressEnd()">INK'S LAB</h1>
+    <div class="hero-sub">◢ Bioluminescent Research Station ◣</div>
+  </div>
+
+  <!-- Minecoin pill (front + center) -->
+  <div class="coin-pill" id="welcomeCoins">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8" stroke-width="1.6"/></svg>
+    <span class="amt" id="coinCount">0</span>
+    <span class="lbl">MINECOINS</span>
   </div>
 
   <!-- Resume mission button (shown when there's a paused session) -->
-  <div id="resumeBanner" class="card" style="padding:18px 22px;width:100%;max-width:380px;display:none;background:linear-gradient(135deg,rgba(0,220,200,.08),rgba(0,128,255,.08));border:2px solid rgba(0,220,200,.35)">
-    <p style="font-size:14px;font-weight:900;color:#00dcc6;margin-bottom:10px">🚀 Mission in progress!</p>
-    <button class="bl" onclick="resumeFromHome()" style="border-color:rgba(0,220,200,.5);color:#00dcc6">➡️ Continue Mission</button>
-    <button onclick="abandonMission()" style="background:none;border:none;color:rgba(224,240,248,.3);font-size:12px;margin-top:8px;cursor:pointer;padding:4px">Abandon mission</button>
-  </div>
-
-  <!-- Minecoins (prominent, what Jules cares about) -->
-  <div class="coin-earned" id="welcomeCoins" style="width:100%;max-width:380px;padding:12px 20px">
-    <p style="font-size:24px;font-weight:900;color:#ffd166">⛏️ <span id="coinCount">0</span> Minecoins</p>
+  <div id="resumeBanner" class="card" style="padding:18px 22px;width:100%;max-width:420px;display:none;background:linear-gradient(135deg,rgba(45,224,198,.08),rgba(90,200,255,.08));border:2px solid rgba(45,224,198,.35)">
+    <p style="font-size:14px;font-weight:900;color:var(--biolume);margin-bottom:10px;font-family:var(--font-display)">🚀 Mission in progress!</p>
+    <button class="bl" onclick="resumeFromHome()" style="border-color:rgba(45,224,198,.5);color:var(--biolume)">➡️ Continue Mission</button>
+    <button onclick="abandonMission()" style="background:none;border:none;color:var(--text-lo);font-size:12px;margin-top:8px;cursor:pointer;padding:4px">Abandon mission</button>
   </div>
 
   <!-- Weekend bonus mission (Fri-Sun only) -->
-  <div id="weekendMission" class="card" style="padding:22px;width:100%;max-width:380px;display:none;background:linear-gradient(135deg,rgba(255,209,102,.08),rgba(255,130,50,.08));border:2px solid rgba(255,209,102,.3)">
-    <p style="font-size:14px;font-weight:900;color:#ffd166;margin-bottom:6px">⛏️ Weekend Bonus Mission!</p>
-    <p style="font-size:13px;color:rgba(224,240,248,.55);margin-bottom:14px;line-height:1.5">Review this week's homework with Ink and earn <strong style="color:#ffd166">25 bonus Minecoins</strong>!</p>
-    <button class="bl" onclick="startWeekendMission()" style="border-color:rgba(255,209,102,.4);color:#ffd166">⛏️ Start Weekend Mission!</button>
+  <div id="weekendMission" class="card" style="padding:22px;width:100%;max-width:420px;display:none;background:linear-gradient(135deg,rgba(255,201,77,.08),rgba(255,154,61,.08));border:2px solid rgba(255,201,77,.35);box-shadow:var(--glow-gold-sm)">
+    <p style="font-size:14px;font-weight:900;color:var(--gold);margin-bottom:6px;font-family:var(--font-display)">⛏️ Weekend Bonus Mission!</p>
+    <p style="font-size:13px;color:var(--text-mid);margin-bottom:14px;line-height:1.5">Review this week's homework with Ink and earn <strong style="color:var(--gold)">25 bonus Minecoins</strong>!</p>
+    <button class="bl" onclick="startWeekendMission()" style="border-color:rgba(255,201,77,.4);color:var(--gold)">⛏️ Start Weekend Mission!</button>
   </div>
 
-  <!-- Language choice (primary action) -->
-  <div class="card" style="padding:22px;width:100%;max-width:380px">
-    <p style="font-size:14px;color:rgba(224,240,248,.6);margin-bottom:14px;font-weight:800">Choose today's mission!</p>
-    <div style="display:flex;flex-direction:column;gap:10px">
-      <button class="bl" onclick="go('EN')">🇺🇸  English Homework</button>
-      <button class="bl" onclick="go('FR')">🇫🇷  Devoirs en français</button>
-      <button class="bl" onclick="openPoemList()" id="poesieBtn" style="border-color:rgba(199,125,255,.35);color:#c7a8ff">📜  Poésie <span id="poesieBtnBadge" style="font-size:12px;color:rgba(224,240,248,.5);font-weight:700;margin-left:4px"></span></button>
-    </div>
+  <!-- Mission selector -->
+  <div style="width:100%;max-width:420px;display:flex;flex-direction:column;gap:10px">
+    <div class="mission-label">Choose today's mission</div>
+    <button class="mission-btn teal" onclick="go('EN')">
+      <span class="mb-icon">🇺🇸</span>
+      <div style="flex:1">
+        <div class="mb-title">English Homework</div>
+        <div class="mb-sub">Reading · Spelling · Math</div>
+      </div>
+      <span class="mb-arrow">→</span>
+    </button>
+    <button class="mission-btn cyan" onclick="go('FR')">
+      <span class="mb-icon">🇫🇷</span>
+      <div style="flex:1">
+        <div class="mb-title">Devoirs en français</div>
+        <div class="mb-sub">Lecture · Dictée · Calcul</div>
+      </div>
+      <span class="mb-arrow">→</span>
+    </button>
+    <button class="mission-btn violet" onclick="openPoemList()" id="poesieBtn">
+      <span class="mb-icon">📜</span>
+      <div style="flex:1">
+        <div class="mb-title">Poésie</div>
+        <div class="mb-sub" id="poesieBtnBadge">Récite & apprends</div>
+      </div>
+      <span class="mb-arrow">→</span>
+    </button>
   </div>
 
-  <!-- Station progress + collection (secondary, below buttons) -->
-  <div class="card" style="width:100%;max-width:380px;padding:0 0 4px;opacity:.85">
-    <div style="padding:12px 16px 6px;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:12px;font-weight:800;color:#00dcc6">🏗️ Space Station</span>
-      <span class="score-badge" id="blockCount" style="font-size:12px">0 / 30</span>
+  <!-- Station card with cross-section -->
+  <div class="station-card" style="width:100%;max-width:420px">
+    <div class="station-head">
+      <span class="t">◈ Your Station</span>
+      <span class="b" id="blockCount">0 / 30 blocks</span>
     </div>
-    <div class="station-grid" id="stationGrid"></div>
-    <div class="rooms-strip" id="stationGrid_rooms"></div>
-    <div style="padding:6px 16px 10px;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:11px;color:rgba(224,240,248,.4);font-weight:700">🎴 Cards</span>
+    <div id="stationSVG" style="padding:0 10px 10px"></div>
+    <div class="rooms-strip" id="stationGrid_rooms" style="padding:0 18px 14px"></div>
+    <div style="padding:0 18px 14px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(45,224,198,.08);padding-top:10px">
+      <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-lo);letter-spacing:2px;text-transform:uppercase;font-weight:500">Specimens</span>
       <div class="mini-cards" id="miniCards"></div>
     </div>
   </div>
@@ -335,7 +440,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     </div>
   </div>
   <div class="ibub">
-    <span class="ink-label">Ink 🐙</span>
+    <span class="ink-label">INK</span>
     <span id="mb"></span>
     <button onclick="reSpeak('mb')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-left:8px;opacity:.6" title="Hear again">🔊</button>
   </div>
@@ -436,7 +541,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <div>
     <p id="rewSub" style="font-size:14px;color:rgba(224,240,248,.5);font-weight:700"></p>
     <h2 id="rewTitle" style="font-size:26px;font-weight:900;margin-top:4px;color:#ffd166"></h2>
-    <div id="rewCeleb" class="ibub" style="margin-top:12px;font-size:14px;text-align:left"><span class="ink-label">Ink 🐙</span><span id="rewCelebText"></span></div>
+    <div id="rewCeleb" class="ibub" style="margin-top:12px;font-size:14px;text-align:left"><span class="ink-label">INK</span><span id="rewCelebText"></span></div>
   </div>
   <!-- Room unlock banner (conditional) -->
   <div id="rewRoomUnlock" style="display:none;width:100%"></div>
@@ -722,12 +827,12 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 const MODEL = "claude-sonnet-4-20250514";
 const STATION_TOTAL = 30;
 const STATION_ROOMS = [
-  {at:3,  icon:'🔭', en:'Observation Deck', fr:"Poste d'observation"},
-  {at:8,  icon:'🧪', en:'Creature Lab',     fr:'Labo des créatures'},
-  {at:13, icon:'💎', en:'Minecoin Vault',   fr:'Coffre des Minecoins'},
-  {at:18, icon:'🚀', en:'Launch Bay',       fr:'Baie de lancement'},
-  {at:23, icon:'👽', en:'Alien Garden',     fr:'Jardin extraterrestre'},
-  {at:30, icon:'🌌', en:'Cosmic Throne',    fr:'Trône cosmique'},
+  {id:'observe',  at:3,  icon:'🔭', en:'Observation Deck', fr:"Poste d'observation"},
+  {id:'creature', at:8,  icon:'🧪', en:'Creature Lab',     fr:'Labo des créatures'},
+  {id:'vault',    at:13, icon:'💎', en:'Minecoin Vault',   fr:'Coffre des Minecoins'},
+  {id:'launch',   at:18, icon:'🚀', en:'Launch Bay',       fr:'Baie de lancement'},
+  {id:'garden',   at:23, icon:'👽', en:'Alien Garden',     fr:'Jardin extraterrestre'},
+  {id:'throne',   at:30, icon:'🌌', en:'Cosmic Throne',    fr:'Trône cosmique'},
 ];
 function roomAtBlock(n) { return STATION_ROOMS.find(r => r.at === n); }
 
@@ -1695,7 +1800,7 @@ function addPoemMsg(role, text) {
     d.className = 'ibub su';
     d.style.borderColor = 'rgba(199,125,255,.32)';
     d.style.background = 'rgba(199,125,255,.09)';
-    d.innerHTML = `<span class="ink-label" style="color:#c7a8ff">Ink 📜</span><span class="msg-text"></span>`;
+    d.innerHTML = `<span class="ink-label" style="color:#c7a8ff">INK · POÉSIE</span><span class="msg-text"></span>`;
     const btn = document.createElement('button');
     btn.textContent = '🔊';
     btn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:12px;opacity:.5;vertical-align:middle;margin-left:4px';
@@ -1849,6 +1954,88 @@ function renderRoomsStrip(el, blocks) {
   });
 }
 
+// ═════════ Station — bioluminescent cross-section (from Claude Design) ═════════
+function stationSVG(blocks, venk=false) {
+  const maxBlocks = STATION_TOTAL;
+  const pct = Math.min(1, blocks / maxBlocks);
+  const unlocked = new Set(STATION_ROOMS.filter(r => blocks >= r.at).map(r => r.id));
+  const glow = venk ? '#ff3d6e' : '#2de0c6';
+  const cyan = venk ? '#ff6b94' : '#5ac8ff';
+  const rooms = [
+    {id:'observe',  x:60,  y:60,  w:90,  h:60},
+    {id:'creature', x:165, y:60,  w:90,  h:60},
+    {id:'vault',    x:270, y:60,  w:90,  h:60},
+    {id:'launch',   x:375, y:60,  w:90,  h:60},
+    {id:'garden',   x:105, y:140, w:140, h:60},
+    {id:'throne',   x:260, y:140, w:140, h:60},
+  ];
+  const roomName = (id) => {
+    const r = STATION_ROOMS.find(x => x.id === id);
+    return r ? (S.lang === 'FR' ? r.fr : r.en).toUpperCase() : '';
+  };
+  const uid = 'st' + Math.random().toString(36).slice(2,6);
+  const roomSVG = (r, isTopRow) => {
+    const on = unlocked.has(r.id);
+    const fill = on ? `url(#hullOn-${uid})` : `url(#hull-${uid})`;
+    const stroke = on ? glow : '#2a4570';
+    const sw = on ? 2 : 1.5;
+    const filt = on ? `filter="drop-shadow(0 0 8px ${glow})"` : '';
+    const label = on ? roomName(r.id) : '── LOCKED ──';
+    let portholes;
+    if (isTopRow) {
+      portholes = `<circle cx="${r.x+20}" cy="${r.y+r.h/2}" r="10" fill="${on?cyan:'#0c1a30'}" stroke="${on?glow:'#1a2e50'}" stroke-width="1.5" opacity="${on?0.85:1}"/>
+<circle cx="${r.x+r.w-20}" cy="${r.y+r.h/2}" r="10" fill="${on?cyan:'#0c1a30'}" stroke="${on?glow:'#1a2e50'}" stroke-width="1.5" opacity="${on?0.85:1}"/>
+<rect x="${r.x+r.w/2-7}" y="${r.y+r.h-18}" width="14" height="18" fill="${on?'#0a1830':'#061020'}" stroke="${on?glow:'#1a2e50'}" stroke-width="1.2" rx="2"/>`;
+    } else {
+      portholes = `<circle cx="${r.x+25}" cy="${r.y+r.h/2}" r="10" fill="${on?cyan:'#0c1a30'}" stroke="${on?glow:'#1a2e50'}" stroke-width="1.5"/>
+<circle cx="${r.x+r.w/2}" cy="${r.y+r.h/2}" r="12" fill="${on?cyan:'#0c1a30'}" stroke="${on?glow:'#1a2e50'}" stroke-width="1.5"/>
+<circle cx="${r.x+r.w-25}" cy="${r.y+r.h/2}" r="10" fill="${on?cyan:'#0c1a30'}" stroke="${on?glow:'#1a2e50'}" stroke-width="1.5"/>`;
+    }
+    const connector = isTopRow && (r.x + r.w < 455)
+      ? `<rect x="${r.x+r.w}" y="${r.y+r.h/2-5}" width="15" height="10" fill="url(#hull-${uid})" stroke="#2a4570" stroke-width="1"/>` : '';
+    const labelY = isTopRow ? (r.y - 6) : (r.y + r.h + 14);
+    return `<g>
+<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" rx="6" ${filt}/>
+${portholes}${connector}
+<text x="${r.x+r.w/2}" y="${labelY}" text-anchor="middle" font-size="8" font-family="'JetBrains Mono',monospace" font-weight="700" fill="${on?glow:'#3a5880'}" letter-spacing="0.5">${label}</text>
+</g>`;
+  };
+  const blockDots = Array.from({length: Math.min(maxBlocks, 30)}, (_, i) => {
+    const row = Math.floor(i / 10), col = i % 10;
+    const filled = i < blocks;
+    const op = filled ? (0.5 + (i/maxBlocks)*0.5) : 1;
+    const c = filled ? glow : '#152744';
+    return `<rect x="${col*10}" y="${row*10}" width="7" height="7" rx="1.5" fill="${c}" opacity="${op}"/>`;
+  }).join('');
+  const bubbles = pct > 0 ? [[110,50,4],[290,40,6],[400,55,5]].map(([x,y,d])=>
+    `<circle cx="${x}" cy="${y}" r="${d}" fill="none" stroke="${cyan}" stroke-width="1" opacity="0.4"/>`).join('') : '';
+  return `<svg viewBox="0 0 520 290" width="100%" xmlns="http://www.w3.org/2000/svg" style="display:block">
+<defs>
+<linearGradient id="hull-${uid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1e3458"/><stop offset="100%" stop-color="#0a1830"/></linearGradient>
+<linearGradient id="hullOn-${uid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${cyan}" stop-opacity="0.25"/><stop offset="100%" stop-color="${glow}" stop-opacity="0.12"/></linearGradient>
+</defs>
+<path d="M 0 270 Q 100 255, 200 265 T 400 262 T 520 270 L 520 290 L 0 290 Z" fill="#0a1a2e"/>
+<path d="M 20 270 L 40 255 L 60 270 Z M 440 268 L 460 250 L 480 268 Z" fill="#152744" opacity="0.8"/>
+<path d="M 80 290 C 78 260, 84 240, 82 220" stroke="#0f2440" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.6"/>
+<path d="M 430 290 C 428 270, 434 250, 432 225" stroke="#0f2440" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.6"/>
+<rect x="245" y="115" width="30" height="30" fill="url(#hull-${uid})" stroke="#2a4570" stroke-width="1.5"/>
+${rooms.slice(0,4).map(r => roomSVG(r, true)).join('')}
+${rooms.slice(4).map(r => roomSVG(r, false)).join('')}
+<g opacity="${pct > 0.3 ? 1 : 0.35}">
+<line x1="260" y1="60" x2="260" y2="30" stroke="${pct > 0.3 ? glow : '#2a4570'}" stroke-width="2"/>
+<path d="M 248 30 Q 260 20, 272 30" stroke="${pct > 0.3 ? glow : '#2a4570'}" stroke-width="2" fill="${pct > 0.3 ? 'rgba(45,224,198,0.15)' : 'none'}"/>
+<circle cx="260" cy="30" r="2" fill="${glow}"/>
+</g>
+<g transform="translate(10, 10)">${blockDots}</g>
+${bubbles}
+</svg>`;
+}
+function renderStationSVG(containerId, blocks) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = stationSVG(blocks, false);
+}
+
 // ═══════════════════════════════════════
 // CREATURE CARD SYSTEM
 // ═══════════════════════════════════════
@@ -1869,7 +2056,7 @@ function renderMiniCards(containerId) {
   const profile = getProfile();
   const el = document.getElementById(containerId); el.innerHTML = '';
   if (!profile.cards.length) {
-    el.innerHTML = '<span style="font-size:12px;color:rgba(224,240,248,.3)">Complete tasks to unlock!</span>';
+    el.innerHTML = '<span style="font-size:11px;color:var(--text-lo);font-family:var(--font-mono);letter-spacing:.5px">Complete experiments to unlock</span>';
     return;
   }
   profile.cards.slice(-8).forEach(e => {
@@ -1947,20 +2134,23 @@ function fireFireworks() {
 function renderWelcome() {
   const profile = getProfile();
   const bc = Math.min(profile.blocks, STATION_TOTAL);
-  document.getElementById('blockCount').textContent = `${bc} / ${STATION_TOTAL}`;
+  document.getElementById('blockCount').textContent = `${bc} / ${STATION_TOTAL} blocks`;
   document.getElementById('coinCount').textContent = profile.minecoins || 0;
-  renderStationGrid('stationGrid', bc);
+  renderStationSVG('stationSVG', bc);
+  renderRoomsStrip(document.getElementById('stationGrid_rooms'), bc);
   renderMiniCards('miniCards');
   document.getElementById('muteBtn').style.display = 'flex';
   const poems = activePoems();
   const badge = document.getElementById('poesieBtnBadge');
   if (badge) {
+    const fr = S.lang === 'FR';
     if (poems.length) {
       const urgent = poems.filter(p => p.deadline && (p.deadline - Date.now()) < 86400000 * 2);
-      badge.textContent = urgent.length ? `· ${poems.length} (🎤 soon!)` : `· ${poems.length} in progress`;
-      badge.style.color = urgent.length ? '#ff8080' : 'rgba(224,240,248,.5)';
+      badge.textContent = urgent.length ? `${poems.length} poems · 🎤 soon!` : `${poems.length} ${fr?'en cours':'in progress'}`;
+      badge.style.color = urgent.length ? 'var(--error)' : '';
     } else {
-      badge.textContent = '';
+      badge.textContent = fr ? 'Récite & apprends' : 'Recite & learn';
+      badge.style.color = '';
     }
   }
   // Show resume banner if there's an active session
@@ -2055,7 +2245,7 @@ function renderParentMode() {
       ${statCard('📚 Sessions',sessions.length)}
       ${statCard('⏱️ Total time',`${totalMins} min`)}
       ${statCard('💡 Hints used',totalHints)}
-      ${statCard('🎴 Cards',profile.cards.length+' / '+CREATURES.length)}
+      ${statCard('🧪 Specimens',profile.cards.length+' / '+CREATURES.length)}
       ${statCard('🧱 Blocks',Math.min(profile.blocks,STATION_TOTAL)+' / '+STATION_TOTAL)}
       ${statCard('⛏️ Minecoins',profile.minecoins||0)}
       ${statCard('📖 Top subject',topSubject?topSubject[0]:'—')}
@@ -2238,7 +2428,7 @@ function renderMission() {
   document.getElementById('mm').textContent = `${hw.subjectEmoji} ${hw.subject} · ~${hw.totalEstimatedMinutes} min`;
   document.getElementById('mb').textContent = `"${personalize(hw.missionBriefing)}"`;
   document.getElementById('pl2').textContent = fr ? 'Progression' : 'Progress';
-  document.getElementById('pc').textContent = `${S.done.length}/${hw.tasks.length} ${fr?'tâches':'tasks'}`;
+  document.getElementById('pc').textContent = `${S.done.length}/${hw.tasks.length} ${fr?'expériences':'experiments'}`;
   document.getElementById('pf').style.width = `${(S.done.length/hw.tasks.length)*100}%`;
   const tl = document.getElementById('tl'); tl.innerHTML = '';
   hw.tasks.forEach((t, i) => {
@@ -2284,7 +2474,7 @@ function startTask() {
   S.conv = []; S.hintCount = 0; S.taskStartTime = Date.now();
   const cm = document.getElementById('cm'); cm.innerHTML = '';
   document.getElementById('te').textContent = task.emoji;
-  document.getElementById('tm').textContent = fr ? `Tâche ${S.tIdx+1}/${S.hw.tasks.length}` : `Task ${S.tIdx+1}/${S.hw.tasks.length}`;
+  document.getElementById('tm').textContent = fr ? `Expérience ${S.tIdx+1}/${S.hw.tasks.length}` : `Experiment ${S.tIdx+1}/${S.hw.tasks.length}`;
   document.getElementById('tl2').textContent = task.label;
   document.getElementById('ci').placeholder = fr ? 'Réponds à Ink...' : 'Reply to Ink...';
   document.getElementById('db').textContent = `✅ ${fr?'Tâche terminée !':'Task Done!'}`;
@@ -2359,8 +2549,8 @@ function addMsg(role, text, isVenk=false) {
   if (role === 'a') {
     d.className = isVenk ? 'venk-bubble su' : 'ibub su';
     const label = isVenk
-      ? `<span class="venk-label">💀 VENK (aka Ink) 🐙</span>`
-      : `<span class="ink-label">Ink 🐙</span>`;
+      ? `<span class="venk-label">VENK ⚡</span>`
+      : `<span class="ink-label">INK</span>`;
     d.innerHTML = `${label}<span class="msg-text"></span>`;
     const btn = document.createElement('button');
     btn.textContent = '🔊';
@@ -2381,17 +2571,188 @@ function addTyping() {
   const d = document.createElement('div'); d.id = 'ty';
   const isVenk = S.hintCount >= 2;
   d.className = isVenk ? 'venk-bubble' : 'ibub';
-  const label = isVenk ? `<span class="venk-label">💀 VENK 🐙</span>` : `<span class="ink-label">Ink 🐙</span>`;
+  const label = isVenk ? `<span class="venk-label">VENK ⚡</span>` : `<span class="ink-label">INK</span>`;
   d.innerHTML = `${label}<span class="dot d1"></span><span class="dot d2"></span><span class="dot d3"></span>`;
   cm.appendChild(d); cm.scrollTop = cm.scrollHeight;
 }
 
-// Ink pose image map. Poses we don't have yet fall back to happy (Venk also uses
-// a CSS hue-rotate filter, so happy.png + filter gives the red evil look).
-const INK_IMG = { happy:'01_happy.png', bounce:'02_excited.png', think:'03_thinking.png', venk:'01_happy.png' };
+// ═════════ INK — parametric SVG character (from Claude Design) ═════════
+// One body, swapped expressions + accessories per mood. 6 moods + venk palette.
+// Returns a data URI so existing <img src=""> tags keep working unchanged.
+const INK_PAL = {
+  normal: { body:'#f5e4c2', hi:'#fff4dc', lo:'#d9c090', loDeep:'#a8845a',
+    ring:'#2de0c6', ringGlow:'#6bf2df', ringEdge:'#0f7d6e', outline:'#1a2438',
+    eyeWhite:'#ffffff', pupil:'#1a2438', glint:'#ffffff',
+    gf:'#1a2438', gg:'#5ac8ff', ggHi:'#c4ecff', mouth:'#3a1426', teeth:'#fff4dc' },
+  venk:   { body:'#f2d9b0', hi:'#ffecc8', lo:'#caa878', loDeep:'#8f6a3b',
+    ring:'#ff3d6e', ringGlow:'#ff6b94', ringEdge:'#a60030', outline:'#1a0a14',
+    eyeWhite:'#ffdce4', pupil:'#ff3d6e', glint:'#ffb6c7',
+    gf:'#1a0a14', gg:'#ff3d6e', ggHi:'#ffb6c7', mouth:'#2b0712', teeth:'#ffecc8' },
+};
+const INK_EXP = {
+  happy:    { eye:'openSoft', brow:'neutral',      mouth:'smileSoft', gog:'up',        tent:'calm',     extra:null },
+  excited:  { eye:'openBig',  brow:'raised',       mouth:'openGrin',  gog:'up',        tent:'armsUp',   extra:'sparks' },
+  thinking: { eye:'squint',   brow:'furrowed',     mouth:'pursed',    gog:'down',      tent:'chin',     extra:'q' },
+  proud:    { eye:'closed',   brow:'raised',       mouth:'smirk',     gog:'up',        tent:'hipsFlex', extra:'medal' },
+  confused: { eye:'wonky',    brow:'oneUp',        mouth:'wobble',    gog:'crooked',   tent:'scratch',  extra:'swirls' },
+  venk:     { eye:'evil',     brow:'furrowedHard', mouth:'fangs',     gog:'downGlow',  tent:'menace',   extra:'sparks' },
+};
+function inkTentacles(set, C) {
+  const T = (d) => `<path d="${d}" fill="${C.body}" stroke="${C.outline}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+  const R = (list) => list.map(([cx,cy,r]) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${C.ring}" stroke-width="1.6" opacity="0.85"/>`).join('');
+  const sets = {
+    calm: [
+      'M50 130 C 40 146, 28 156, 22 170 C 30 172, 44 168, 54 160 C 62 154, 62 142, 58 136 Z',
+      'M66 142 C 60 160, 54 172, 46 182 C 58 184, 70 180, 78 170 C 82 162, 78 148, 72 144 Z',
+      'M134 142 C 140 160, 146 172, 154 182 C 142 184, 130 180, 122 170 C 118 162, 122 148, 128 144 Z',
+      'M150 130 C 160 146, 172 156, 178 170 C 170 172, 156 168, 146 160 C 138 154, 138 142, 142 136 Z',
+      'M86 144 C 82 168, 78 180, 80 188 C 90 188, 96 180, 98 170 C 98 156, 94 146, 90 144 Z',
+      'M114 144 C 118 168, 122 180, 120 188 C 110 188, 104 180, 102 170 C 102 156, 106 146, 110 144 Z',
+    ],
+    armsUp: [
+      'M52 112 C 28 96, 14 74, 18 58 C 30 56, 46 70, 56 86 C 62 96, 60 110, 58 118 Z',
+      'M148 112 C 172 96, 186 74, 182 58 C 170 56, 154 70, 144 86 C 138 96, 140 110, 142 118 Z',
+      'M70 142 C 58 168, 54 180, 58 190 C 70 188, 80 178, 82 166 C 82 154, 78 144, 72 142 Z',
+      'M90 146 C 86 172, 84 184, 88 192 C 98 190, 104 180, 104 168 C 104 156, 98 146, 92 144 Z',
+      'M110 146 C 114 172, 116 184, 112 192 C 102 190, 96 180, 96 168 C 96 156, 102 146, 108 144 Z',
+      'M130 142 C 142 168, 146 180, 142 190 C 130 188, 120 178, 118 166 C 118 154, 122 144, 128 142 Z',
+    ],
+    chin: [
+      'M90 138 C 86 120, 92 108, 100 106 C 108 108, 112 118, 110 128 C 108 134, 104 136, 100 134 C 96 134, 94 136, 94 140 Z',
+      'M50 130 C 40 146, 28 156, 22 170 C 30 172, 44 168, 54 160 C 62 154, 62 142, 58 136 Z',
+      'M66 142 C 60 160, 54 172, 46 182 C 58 184, 70 180, 78 170 C 82 162, 78 148, 72 144 Z',
+      'M134 142 C 140 160, 146 172, 154 182 C 142 184, 130 180, 122 170 C 118 162, 122 148, 128 144 Z',
+      'M150 130 C 160 146, 172 156, 178 170 C 170 172, 156 168, 146 160 C 138 154, 138 142, 142 136 Z',
+      'M116 144 C 120 168, 124 180, 122 188 C 112 188, 106 180, 104 170 C 104 156, 108 146, 112 144 Z',
+    ],
+    hipsFlex: [
+      'M44 108 C 30 112, 22 126, 22 142 C 32 144, 48 138, 56 128 C 60 120, 56 110, 50 106 Z',
+      'M156 108 C 170 112, 178 126, 178 142 C 168 144, 152 138, 144 128 C 140 120, 144 110, 150 106 Z',
+      'M70 142 C 62 168, 58 180, 62 190 C 74 188, 82 178, 84 166 C 84 154, 80 144, 74 142 Z',
+      'M92 146 C 88 172, 86 184, 90 192 C 100 190, 104 180, 104 168 C 104 156, 98 146, 92 144 Z',
+      'M108 146 C 112 172, 114 184, 110 192 C 100 190, 96 180, 96 168 C 96 156, 102 146, 108 144 Z',
+      'M130 142 C 138 168, 142 180, 138 190 C 126 188, 118 178, 116 166 C 116 154, 120 144, 126 142 Z',
+    ],
+    scratch: [
+      'M128 62 C 140 48, 152 46, 160 52 C 156 62, 146 70, 138 72 C 132 74, 128 70, 128 66 Z',
+      'M50 130 C 40 146, 28 156, 22 170 C 30 172, 44 168, 54 160 C 62 154, 62 142, 58 136 Z',
+      'M66 142 C 60 160, 54 172, 46 182 C 58 184, 70 180, 78 170 C 82 162, 78 148, 72 144 Z',
+      'M150 130 C 160 146, 172 156, 178 170 C 170 172, 156 168, 146 160 C 138 154, 138 142, 142 136 Z',
+      'M86 144 C 82 168, 78 180, 80 188 C 90 188, 96 180, 98 170 C 98 156, 94 146, 90 144 Z',
+      'M114 144 C 118 168, 122 180, 120 188 C 110 188, 104 180, 102 170 C 102 156, 106 146, 110 144 Z',
+    ],
+    menace: [
+      'M40 108 C 18 86, 8 62, 12 42 C 28 44, 46 62, 56 82 C 62 94, 60 110, 56 118 Z',
+      'M158 118 C 172 128, 184 140, 182 156 C 170 160, 152 150, 146 138 C 142 130, 148 122, 154 120 Z',
+      'M70 142 C 60 168, 56 180, 60 190 C 74 188, 82 178, 84 166 C 84 152, 78 144, 72 142 Z',
+      'M90 146 C 84 172, 82 184, 86 192 C 98 190, 104 180, 104 168 C 104 156, 98 146, 92 144 Z',
+      'M110 146 C 116 172, 118 184, 114 192 C 102 190, 96 180, 96 168 C 96 156, 102 146, 108 144 Z',
+      'M130 142 C 140 168, 142 180, 138 190 C 126 188, 118 178, 116 166 C 116 152, 122 144, 128 142 Z',
+    ],
+  };
+  const ringSets = {
+    calm:[[36,158,2],[54,162,1.8],[74,172,2],[152,172,2],[166,158,1.8],[86,176,1.8],[114,176,1.8]],
+    armsUp:[[28,76,2],[46,90,1.8],[172,76,2],[154,90,1.8],[66,170,1.8],[94,178,1.6],[106,178,1.6],[134,170,1.8]],
+    chin:[[36,158,2],[74,172,2],[152,172,2],[166,158,1.8],[118,176,1.8],[100,118,1.6]],
+    hipsFlex:[[32,130,1.8],[168,130,1.8],[66,170,1.8],[134,170,1.8],[94,178,1.6],[106,178,1.6]],
+    scratch:[[36,158,2],[74,172,2],[166,158,1.8],[86,176,1.8],[114,176,1.8],[150,56,1.6]],
+    menace:[[22,58,2.2],[44,80,2],[162,138,2],[176,150,1.8],[70,170,1.8],[130,170,1.8]],
+  };
+  return (sets[set]||[]).map(T).join('') + R(ringSets[set]||[]);
+}
+function inkRings(C, filter) {
+  const rings = [[72,62,5.5],[88,52,4],[112,58,6],[134,72,5],[58,92,4.5],[144,98,4],[66,116,3.5],[138,124,4],[96,82,3],[120,108,3.5]];
+  const body = rings.map(([cx,cy,r])=>
+    `<circle cx="${cx}" cy="${cy}" r="${r+1.8}" fill="${C.ring}" opacity="0.22"/>`+
+    `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${C.ringEdge}" stroke-width="1.4"/>`+
+    `<circle cx="${cx}" cy="${cy}" r="${r-1.6}" fill="${C.ringGlow}"/>`+
+    `<circle cx="${cx}" cy="${cy}" r="${r-3}" fill="${C.ring}" opacity="0.9"/>`
+  ).join('');
+  return `<g filter="${filter}">${body}</g>`;
+}
+function inkEyes(shape, C) {
+  const eye = (cx,cy,rx,ry,px=0,py=0) =>
+    `<ellipse cx="${cx}" cy="${cy}" rx="${rx+0.8}" ry="${ry+0.8}" fill="${C.outline}"/>`+
+    `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${C.eyeWhite}"/>`+
+    `<ellipse cx="${cx+px}" cy="${cy+py}" rx="${rx*0.55}" ry="${ry*0.8}" fill="${C.pupil}"/>`+
+    `<circle cx="${cx+px-rx*0.2}" cy="${cy+py-ry*0.3}" r="${rx*0.22}" fill="${C.glint}"/>`;
+  const closed = (cx,cy,w) => `<path d="M${cx-w} ${cy} Q${cx} ${cy-w*0.7}, ${cx+w} ${cy}" fill="none" stroke="${C.outline}" stroke-width="2.5" stroke-linecap="round"/>`;
+  if (shape==='openSoft') return eye(82,98,6,7)+eye(118,98,6,7);
+  if (shape==='openBig')  return eye(80,96,8,9,0,1)+eye(120,96,8,9,0,1);
+  if (shape==='squint')   return `<ellipse cx="82" cy="100" rx="6" ry="3" fill="${C.outline}"/><ellipse cx="82" cy="99.5" rx="3" ry="1.8" fill="${C.pupil}"/><ellipse cx="118" cy="100" rx="6" ry="3" fill="${C.outline}"/><ellipse cx="118" cy="99.5" rx="3" ry="1.8" fill="${C.pupil}"/>`;
+  if (shape==='closed')   return closed(82,100,7)+closed(118,100,7);
+  if (shape==='wonky')    return eye(82,98,8,9,-1,0)+closed(118,100,6);
+  if (shape==='evil')     return `<path d="M72 98 L92 95 L92 101 L72 103 Z" fill="${C.outline}"/><circle cx="84" cy="99" r="3" fill="${C.pupil}"/><circle cx="85" cy="98" r="1.2" fill="${C.glint}"/><path d="M128 98 L108 95 L108 101 L128 103 Z" fill="${C.outline}"/><circle cx="116" cy="99" r="3" fill="${C.pupil}"/><circle cx="117" cy="98" r="1.2" fill="${C.glint}"/>`;
+  return eye(82,98,6,7)+eye(118,98,6,7);
+}
+function inkBrows(angle, C) {
+  const b=(x1,y1,x2,y2)=>`<path d="M${x1} ${y1} L${x2} ${y2}" stroke="${C.outline}" stroke-width="2.8" stroke-linecap="round" fill="none"/>`;
+  if (angle==='neutral')      return b(74,88,90,87)+b(110,87,126,88);
+  if (angle==='raised')       return b(74,84,90,82)+b(110,82,126,84);
+  if (angle==='furrowed')     return b(76,86,90,90)+b(110,90,124,86);
+  if (angle==='furrowedHard') return b(72,82,94,92)+b(106,92,128,82);
+  if (angle==='oneUp')        return b(74,84,90,82)+b(110,90,126,86);
+  return '';
+}
+function inkMouth(kind, C) {
+  if (kind==='smileSoft') return `<path d="M90 114 Q100 122, 110 114" stroke="${C.outline}" stroke-width="2.5" stroke-linecap="round" fill="none"/>`;
+  if (kind==='openGrin')  return `<path d="M86 112 Q100 128, 114 112 Q108 122, 100 122 Q92 122, 86 112 Z" fill="${C.mouth}" stroke="${C.outline}" stroke-width="2.2" stroke-linejoin="round"/><path d="M92 114 Q100 118, 108 114" stroke="${C.teeth}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
+  if (kind==='pursed')    return `<ellipse cx="100" cy="116" rx="3.5" ry="2.2" fill="${C.mouth}" stroke="${C.outline}" stroke-width="2"/>`;
+  if (kind==='smirk')     return `<path d="M90 116 Q102 122, 112 112" stroke="${C.outline}" stroke-width="2.6" stroke-linecap="round" fill="none"/>`;
+  if (kind==='wobble')    return `<path d="M88 115 Q94 118, 100 115 Q106 112, 112 115" stroke="${C.outline}" stroke-width="2.4" stroke-linecap="round" fill="none"/>`;
+  if (kind==='fangs')     return `<path d="M82 110 Q100 130, 118 110 Q112 124, 100 124 Q88 124, 82 110 Z" fill="${C.mouth}" stroke="${C.outline}" stroke-width="2.2" stroke-linejoin="round"/><path d="M88 112 L92 120 L96 112 Z" fill="${C.teeth}"/><path d="M104 112 L108 120 L112 112 Z" fill="${C.teeth}"/>`;
+  return '';
+}
+function inkGoggles(pos, C) {
+  const lens=(cx,cy,glow=false)=>`<circle cx="${cx}" cy="${cy}" r="12" fill="${C.gf}"/><circle cx="${cx}" cy="${cy}" r="9" fill="${C.gg}"/><ellipse cx="${cx-3}" cy="${cy-3}" rx="3" ry="2" fill="${C.ggHi}" opacity="0.8"/>${glow?`<circle cx="${cx}" cy="${cy}" r="9" fill="${C.gg}" opacity="0.7"/>`:''}`;
+  const strap=(d)=>`<path d="${d}" stroke="${C.gf}" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  if (pos==='up') return `<ellipse cx="82" cy="62" rx="10" ry="8" fill="${C.gf}"/><ellipse cx="118" cy="62" rx="10" ry="8" fill="${C.gf}"/><ellipse cx="82" cy="62" rx="7" ry="5.5" fill="${C.gg}"/><ellipse cx="118" cy="62" rx="7" ry="5.5" fill="${C.gg}"/><ellipse cx="80" cy="60" rx="2.5" ry="1.5" fill="${C.ggHi}" opacity="0.8"/><ellipse cx="116" cy="60" rx="2.5" ry="1.5" fill="${C.ggHi}" opacity="0.8"/><path d="M92 62 Q100 58, 108 62" stroke="${C.gf}" stroke-width="2.5" fill="none"/>${strap('M72 62 Q48 64, 40 80')}${strap('M128 62 Q152 64, 160 80')}`;
+  if (pos==='down') return `${lens(82,98)}${lens(118,98)}<path d="M94 98 Q100 96, 106 98" stroke="${C.gf}" stroke-width="2.5" fill="none"/>${strap('M70 98 Q50 100, 42 112')}${strap('M130 98 Q150 100, 158 112')}`;
+  if (pos==='downGlow') return `${lens(82,98,true)}${lens(118,98,true)}<path d="M94 98 Q100 96, 106 98" stroke="${C.gf}" stroke-width="2.5" fill="none"/>${strap('M70 98 Q50 100, 42 112')}${strap('M130 98 Q150 100, 158 112')}`;
+  if (pos==='crooked') return `<g transform="rotate(-15 100 62)"><ellipse cx="82" cy="62" rx="10" ry="8" fill="${C.gf}"/><ellipse cx="118" cy="62" rx="10" ry="8" fill="${C.gf}"/><ellipse cx="82" cy="62" rx="7" ry="5.5" fill="${C.gg}"/><ellipse cx="118" cy="62" rx="7" ry="5.5" fill="${C.gg}"/><path d="M92 62 Q100 58, 108 62" stroke="${C.gf}" stroke-width="2.5" fill="none"/>${strap('M72 62 Q48 64, 40 80')}${strap('M128 62 Q152 64, 160 80')}</g>`;
+  return '';
+}
+function inkExtras(kind, C) {
+  if (kind==='sparks') return `<path d="M30 50 L33 54 L37 50 L33 46 Z" fill="${C.ring}" opacity="0.9"/><path d="M170 46 L173 50 L177 46 L173 42 Z" fill="${C.ring}" opacity="0.9"/><path d="M28 110 L30 114 L34 112 L32 108 Z" fill="${C.ring}" opacity="0.7"/><circle cx="175" cy="100" r="2" fill="${C.ring}" opacity="0.8"/>`;
+  if (kind==='q') return `<circle cx="160" cy="50" r="16" fill="#ffffff" stroke="${C.outline}" stroke-width="2"/><text x="160" y="57" font-size="22" font-weight="900" text-anchor="middle" fill="${C.outline}" font-family="'Space Grotesk', sans-serif">?</text>`;
+  if (kind==='medal') return `<circle cx="100" cy="146" r="9" fill="#ffc94d" stroke="${C.outline}" stroke-width="2"/><path d="M95 138 L92 126 L108 126 L105 138" stroke="#ff3d6e" stroke-width="3" fill="none"/><text x="100" y="150" font-size="10" font-weight="900" text-anchor="middle" fill="${C.outline}">★</text>`;
+  if (kind==='swirls') return `<g fill="none" stroke="${C.outline}" stroke-width="2" stroke-linecap="round" opacity="0.7"><path d="M36 46 Q40 40, 44 44 Q48 48, 44 52"/><path d="M156 38 Q160 32, 164 36 Q168 40, 164 44"/></g>`;
+  return '';
+}
+function inkSVG(mood, venk=false) {
+  const isVenk = mood==='venk' || venk;
+  const C = isVenk ? INK_PAL.venk : INK_PAL.normal;
+  const exp = INK_EXP[mood] || INK_EXP.happy;
+  const uid = `ink${Math.random().toString(36).slice(2,7)}`;
+  const mantle = mood==='venk'
+    ? 'M100 32 C62 32, 38 62, 38 104 C38 132, 52 146, 66 146 L134 146 C148 146, 162 132, 162 104 C162 62, 138 32, 100 32 Z'
+    : 'M100 30 C60 30, 36 62, 36 106 C36 132, 50 146, 68 146 L132 146 C150 146, 164 132, 164 106 C164 62, 140 30, 100 30 Z';
+  return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+<defs>
+<radialGradient id="b-${uid}" cx="42%" cy="32%" r="70%"><stop offset="0%" stop-color="${C.hi}"/><stop offset="55%" stop-color="${C.body}"/><stop offset="100%" stop-color="${C.lo}"/></radialGradient>
+<radialGradient id="u-${uid}" cx="50%" cy="30%" r="80%"><stop offset="0%" stop-color="${C.lo}"/><stop offset="100%" stop-color="${C.loDeep}"/></radialGradient>
+<filter id="g-${uid}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<ellipse cx="100" cy="182" rx="44" ry="5" fill="${isVenk?'#1a0a14':'#000'}" opacity="0.25"/>
+${inkTentacles(exp.tent, C)}
+<path d="${mantle}" fill="url(#b-${uid})" stroke="${C.outline}" stroke-width="2.5" stroke-linejoin="round"/>
+${inkRings(C, `url(#g-${uid})`)}
+<path d="M70 134 C82 142, 118 142, 130 134 C128 144, 118 148, 100 148 C82 148, 72 144, 70 134 Z" fill="url(#u-${uid})" opacity="0.6"/>
+${inkBrows(exp.brow, C)}
+${inkEyes(exp.eye, C)}
+${inkMouth(exp.mouth, C)}
+${inkGoggles(exp.gog, C)}
+${inkExtras(exp.extra, C)}
+</svg>`;
+}
+function inkDataURI(mood, venk=false) {
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(inkSVG(mood, venk));
+}
+// Legacy map kept only for callers that pass short mood keys. Accepts:
+// happy|excited|thinking|proud|confused|venk|bounce (→excited)|think (→thinking)
 function inkSrc(moodWord) {
-  const key = moodWord === 'excited' ? 'bounce' : moodWord === 'thinking' ? 'think' : moodWord;
-  return INK_IMG[key] || INK_IMG.happy;
+  const m = moodWord==='bounce' ? 'excited' : moodWord==='think' ? 'thinking' : moodWord;
+  return inkDataURI(m, m==='venk');
 }
 function setInkImg(el, moodWord) { if (el) el.src = inkSrc(moodWord); }
 
@@ -2534,7 +2895,7 @@ async function handleVerifyPhoto(f) {
       if (result.complete) {
         document.getElementById('vwIcon').textContent = '✅';
         document.getElementById('vwLabel').textContent = fr ? 'Parfait !' : 'Perfect!';
-        fbEl.innerHTML = `<div class="ibub"><span class="ink-label">Ink 🐙</span>${escHtml(result.feedback)}</div>`;
+        fbEl.innerHTML = `<div class="ibub"><span class="ink-label">INK</span>${escHtml(result.feedback)}</div>`;
         speak(result.feedback);
         haptic([50,30,100]);
         document.getElementById('vwDone').style.display = 'flex';
@@ -2542,7 +2903,7 @@ async function handleVerifyPhoto(f) {
       } else {
         document.getElementById('vwIcon').textContent = '🔄';
         document.getElementById('vwLabel').textContent = fr ? 'Presque !' : 'Almost!';
-        fbEl.innerHTML = `<div class="ibub"><span class="ink-label">Ink 🐙</span>${escHtml(result.feedback)}<br><br>🔍 ${escHtml(result.needsWork||'')}</div>`;
+        fbEl.innerHTML = `<div class="ibub"><span class="ink-label">INK</span>${escHtml(result.feedback)}<br><br>🔍 ${escHtml(result.needsWork||'')}</div>`;
         speak(`${result.feedback} ${result.needsWork||''}`);
       }
     } catch(err) {
@@ -2620,12 +2981,12 @@ async function submitReading() {
       { const rI = document.getElementById('readInk'); rI.className = 'ink-img-lg mood-bounce'; setInkImg(rI,'excited'); }
       let msg = result.feedback;
       if (result.comprehensionQuestion) msg += ' ' + result.comprehensionQuestion;
-      fbEl.innerHTML = `<div class="ibub"><span class="ink-label">Ink 🐙</span>${escHtml(msg)}</div>`;
+      fbEl.innerHTML = `<div class="ibub"><span class="ink-label">INK</span>${escHtml(msg)}</div>`;
       speak(msg); haptic([50,30,100]);
       setTimeout(() => { show('t'); taskDone(); }, 3500);
     } else {
       { const rI = document.getElementById('readInk'); rI.className = 'ink-img-lg mood-happy'; setInkImg(rI,'happy'); }
-      fbEl.innerHTML = `<div class="ibub"><span class="ink-label">Ink 🐙</span>${escHtml(result.feedback)}</div>`;
+      fbEl.innerHTML = `<div class="ibub"><span class="ink-label">INK</span>${escHtml(result.feedback)}</div>`;
       speak(result.feedback);
       document.getElementById('vrSubmit').disabled = false;
       document.getElementById('vrTranscript').textContent = '';
