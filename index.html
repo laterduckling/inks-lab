@@ -2906,11 +2906,21 @@ ${inkExtras(exp.extra, C)}
 function inkDataURI(mood, venk=false) {
   return 'data:image/svg+xml;utf8,' + encodeURIComponent(inkSVG(mood, venk));
 }
-// Legacy map kept only for callers that pass short mood keys. Accepts:
-// happy|excited|thinking|proud|confused|venk|bounce (→excited)|think (→thinking)
+// Maps a mood keyword to a painted PNG pose.
+// Accepts: happy|excited|thinking|venk|sleeping|victory, plus aliases
+// bounce→excited, think→thinking, angry→venk, celebrating→victory, idle→sleeping
+const INK_POSE_FILE = {
+  happy:      'images/happy.png',
+  excited:    'images/excited.png',
+  thinking:   'images/thinking.png',
+  venk:       'images/angry.png',
+  sleeping:   'images/sleeping.png',
+  victory:    'images/victory.png',
+};
 function inkSrc(moodWord) {
-  const m = moodWord==='bounce' ? 'excited' : moodWord==='think' ? 'thinking' : moodWord;
-  return inkDataURI(m, m==='venk');
+  const alias = { bounce:'excited', think:'thinking', angry:'venk', celebrating:'victory', idle:'sleeping' };
+  const m = alias[moodWord] || moodWord;
+  return INK_POSE_FILE[m] || INK_POSE_FILE.happy;
 }
 function setInkImg(el, moodWord) { if (el) el.src = inkSrc(moodWord); }
 
