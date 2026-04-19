@@ -10,7 +10,10 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+<link rel="manifest" href="site.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -113,18 +116,58 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
 /* ── Cards ── */
 .card{background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(45,224,198,.15);border-radius:var(--r-card)}
+
+/* ── Analyze halo ── */
+.analyze-halo{position:relative;display:flex;align-items:center;justify-content:center;width:220px;height:220px}
+.analyze-halo::before{content:'';position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(45,224,198,.28),transparent 65%);animation:analyzePulse 2.4s ease-in-out infinite}
+.analyze-halo::after{content:'';position:absolute;inset:30px;border-radius:50%;border:1.5px dashed rgba(45,224,198,.25);animation:analyzeSpin 16s linear infinite}
+.analyze-halo img{position:relative;z-index:1}
+@keyframes analyzePulse{0%,100%{transform:scale(.95);opacity:.55}50%{transform:scale(1.08);opacity:.9}}
+@keyframes analyzeSpin{to{transform:rotate(360deg)}}
+.analyze-caption{background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(45,224,198,.18);border-radius:var(--r-card);padding:18px 28px;text-align:center;min-width:240px}
+
+/* ── Dashed upload card ── */
+.drop-card{background:rgba(45,224,198,.04);border:2px dashed rgba(45,224,198,.35);border-radius:var(--r-card);padding:30px 22px;cursor:pointer;transition:all .2s;text-align:center}
+.drop-card:hover{border-color:var(--biolume);background:rgba(45,224,198,.08)}
+.drop-card.active{border-color:var(--biolume);background:rgba(45,224,198,.12);box-shadow:var(--glow-teal-sm)}
+.drop-icon{width:64px;height:64px;margin:0 auto 12px;border-radius:18px;background:rgba(45,224,198,.12);border:1.5px solid rgba(45,224,198,.28);display:flex;align-items:center;justify-content:center;color:var(--biolume)}
+.drop-label{font-family:var(--font-display);font-weight:800;font-size:17px;color:var(--biolume);letter-spacing:.2px}
+.drop-sub{font-family:var(--font-mono);font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:rgba(224,240,248,.42);margin-top:6px}
+.photo-pill{position:relative;width:64px;height:64px;border-radius:14px;overflow:hidden;border:1.5px solid rgba(45,224,198,.5);box-shadow:var(--glow-teal-sm)}
+.photo-pill img{width:100%;height:100%;object-fit:cover;display:block}
+.photo-pill .rm{position:absolute;top:-4px;right:-4px;background:#ff3d6e;color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.photo-count{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:rgba(45,224,198,.12);border:1px solid rgba(45,224,198,.32);font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--biolume);letter-spacing:1.2px;text-transform:uppercase}
 .ibub{background:rgba(45,224,198,.10);border:1.5px solid rgba(45,224,198,.35);border-radius:22px 22px 22px 6px;padding:13px 17px;font-size:15px;line-height:1.55;color:#dcf7f1;position:relative;font-family:var(--font-body)}
 .ubub{background:rgba(90,200,255,.12);border:1.5px solid rgba(90,200,255,.25);border-radius:22px 22px 6px 22px;padding:11px 16px;font-size:15px;color:#cae7ff;font-family:var(--font-body)}
 .ink-label{font-size:11px;font-weight:700;color:var(--biolume);display:block;margin-bottom:4px;font-family:var(--font-mono);letter-spacing:1.5px;text-transform:uppercase}
 
 /* ── Task pills ── */
-.tpill{display:flex;align-items:center;gap:12px;padding:13px 17px;border-radius:14px;background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.09);transition:all .22s;margin-bottom:9px}
-.tpill.cur{background:rgba(0,220,200,.09);border-color:rgba(0,220,200,.38)}
-.tpill.dn{background:rgba(6,214,160,.09);border-color:rgba(6,214,160,.32)}
+.tpill{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:var(--r-card);background:rgba(255,255,255,.03);border:1.5px solid rgba(255,255,255,.08);transition:all .22s;margin-bottom:10px}
+.tpill.cur{background:rgba(45,224,198,.10);border-color:rgba(45,224,198,.45);box-shadow:var(--glow-teal-sm)}
+.tpill.dn{background:rgba(6,214,160,.07);border-color:rgba(6,214,160,.28)}
+.tpill.bn{background:rgba(255,209,102,.06);border-color:rgba(255,209,102,.26)}
+.tpill.bn.cur{background:rgba(255,209,102,.12);border-color:rgba(255,209,102,.5);box-shadow:var(--glow-gold-sm)}
+.tpill-mark{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:rgba(224,240,248,.35)}
+.tpill.cur .tpill-mark{background:rgba(45,224,198,.15);border-color:rgba(45,224,198,.4);color:var(--biolume)}
+.tpill.dn .tpill-mark{background:rgba(6,214,160,.15);border-color:rgba(6,214,160,.4);color:#06d6a0}
+.tpill.bn .tpill-mark{background:rgba(255,209,102,.12);border-color:rgba(255,209,102,.35);color:var(--gold)}
+.tpill-label{font-family:var(--font-display);font-weight:800;font-size:14px;display:flex;align-items:center;gap:6px}
+.tpill-sub{font-size:12px;color:rgba(224,240,248,.45);margin-top:3px;font-family:var(--font-body)}
+.tpill-bonus-tag{font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:1.2px;color:var(--gold);background:rgba(255,209,102,.14);padding:2px 6px;border-radius:6px;text-transform:uppercase}
 
 /* ── Progress ── */
-.pb{height:8px;background:rgba(255,255,255,.09);border-radius:4px;overflow:hidden}
-.pf{height:100%;background:linear-gradient(90deg,#00dcc6,#0080ff);border-radius:4px;transition:width .55s ease}
+.pb{height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;border:1px solid rgba(45,224,198,.1)}
+.pf{height:100%;background:linear-gradient(90deg,var(--biolume),var(--cyan));border-radius:4px;transition:width .55s ease;box-shadow:0 0 12px rgba(45,224,198,.4)}
+.pane-eyebrow{font-family:var(--font-mono);font-size:10px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase;color:rgba(45,224,198,.65);margin:0}
+
+/* ── Chat header ── */
+.chat-head{background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(45,224,198,.18);border-radius:var(--r-card);padding:12px 14px;display:flex;align-items:center;gap:12px}
+.chat-head-emoji{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(45,224,198,.08);border:1.5px solid rgba(45,224,198,.28);font-size:22px;flex-shrink:0}
+.img-bubble{padding:6px !important;align-self:flex-end;max-width:70%}
+.img-bubble img{width:100%}
+
+/* ── Reward screen polish ── */
+.reward-title{font-family:var(--font-display);font-size:34px;font-weight:900;margin-top:6px;line-height:1.1;background:linear-gradient(135deg,var(--gold),var(--amber,#ef8c4c));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 
 /* ── Inputs ── */
 .ci{background:rgba(255,255,255,.06);border:2px solid rgba(0,220,200,.28);border-radius:14px;color:#e0f0f8;font-size:16px;font-weight:700;padding:13px 16px;flex:1;outline:none;transition:border-color .2s;-webkit-appearance:none;}
@@ -135,9 +178,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .ki:focus{border-color:rgba(0,220,200,.65)}
 
 /* ── Send button ── */
-.sbtn{background:linear-gradient(135deg,#00dcc6,#0080ff);color:#fff;font-size:19px;font-weight:800;padding:13px 16px;border:none;border-radius:14px;cursor:pointer;flex-shrink:0;transition:transform .12s}
+.sbtn{background:linear-gradient(135deg,var(--biolume),var(--cyan));color:#00231c;font-size:19px;font-weight:800;padding:12px 14px;border:none;border-radius:14px;cursor:pointer;flex-shrink:0;transition:transform .12s;display:flex;align-items:center;justify-content:center;min-width:46px;min-height:46px}
 .sbtn:active{transform:scale(.9)}
 .sbtn:disabled{opacity:.38}
+.sbtn.ghost-btn{background:rgba(45,224,198,.09);color:var(--biolume);box-shadow:inset 0 0 0 1.5px rgba(45,224,198,.32)}
 
 /* ── Dots loader ── */
 .dot{width:7px;height:7px;background:#00dcc6;border-radius:50%;display:inline-block;margin:0 2px}
@@ -285,6 +329,16 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   .hero-title{font-size:84px}
   .ink-img-xl{width:260px;height:260px}
 }
+
+/* ═════════ iPad landscape two-pane welcome ═════════ */
+@media (min-width:900px) and (orientation:landscape){
+  #sw.welcome-grid{max-width:1100px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto;gap:28px 40px;align-items:start;justify-items:center;padding-top:40px}
+  #sw.welcome-grid .welcome-identity{display:flex;flex-direction:column;align-items:center;gap:14px;grid-column:1;grid-row:1}
+  #sw.welcome-grid .welcome-actions{display:flex;flex-direction:column;gap:12px;width:100%;max-width:440px;grid-column:2;grid-row:1 / 3;align-self:stretch}
+  #sw.welcome-grid .welcome-station{grid-column:1;grid-row:2;max-width:440px}
+  #sw.welcome-grid .hero-title{font-size:64px}
+  #sw.welcome-grid .ink-img-xl{width:180px;height:180px}
+}
 </style>
 </head>
 <body>
@@ -317,7 +371,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <!-- ══════════════════════════════════════
      SCREEN: WELCOME
 ══════════════════════════════════════ -->
-<div id="sw" class="screen center" style="gap:18px;padding-top:32px">
+<div id="sw" class="screen center welcome-grid" style="gap:18px;padding-top:32px">
+  <div class="welcome-identity">
   <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
     <img src="icon-180.png" class="ink-img-xl mood-happy" id="welcomeInk" alt="Ink">
     <h1 id="welcomeTitle" class="hero-title" ontouchstart="parentLongPressStart()" ontouchend="parentLongPressEnd()" onmousedown="parentLongPressStart()" onmouseup="parentLongPressEnd()">INK'S LAB</h1>
@@ -330,6 +385,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <span class="amt" id="coinCount">0</span>
     <span class="lbl">MINECOINS</span>
   </div>
+  </div>
+  <div class="welcome-actions">
 
   <!-- Resume mission button (shown when there's a paused session) -->
   <div id="resumeBanner" class="card" style="padding:18px 22px;width:100%;max-width:420px;display:none;background:linear-gradient(135deg,rgba(45,224,198,.08),rgba(90,200,255,.08));border:2px solid rgba(45,224,198,.35)">
@@ -373,9 +430,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <span class="mb-arrow">→</span>
     </button>
   </div>
+  </div><!-- /welcome-actions -->
 
   <!-- Station card with cross-section -->
-  <div class="station-card" style="width:100%;max-width:420px">
+  <div class="welcome-station station-card" style="width:100%;max-width:420px">
     <div class="station-head">
       <span class="t">◈ Your Station</span>
       <span class="b" id="blockCount">0 / 30 blocks</span>
@@ -393,22 +451,23 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
      SCREEN: UPLOAD
 ══════════════════════════════════════ -->
 <div id="su" class="screen center" style="gap:22px;padding-top:40px">
-  <div>
-    <img src="icon-180.png" class="ink-img-lg mood-happy" alt="Ink">
-    <h2 id="ut" style="font-size:27px;font-weight:900;margin-top:10px"></h2>
-    <p id="us" style="color:rgba(224,240,248,.5);margin-top:6px;font-size:14px;line-height:1.5"></p>
+  <div style="text-align:center">
+    <p class="pane-eyebrow">SCANNING BAY</p>
+    <img src="icon-180.png" class="ink-img-lg mood-happy" alt="Ink" style="margin-top:8px">
+    <h2 id="ut" style="font-size:27px;font-weight:900;margin-top:10px;font-family:var(--font-display);letter-spacing:-.3px"></h2>
+    <p id="us" style="color:rgba(224,240,248,.55);margin-top:6px;font-size:14px;line-height:1.5"></p>
   </div>
-  <div id="dz" class="card" onclick="document.getElementById('fi').click()"
-    ondragover="event.preventDefault();this.style.borderColor='#00dcc6'"
-    ondragleave="this.style.borderColor='rgba(0,220,200,.28)'"
-    ondrop="event.preventDefault();addUploadFile(event.dataTransfer.files[0]);this.style.borderColor='rgba(0,220,200,.28)'"
-    style="width:100%;padding:36px 24px;border:2px dashed rgba(0,220,200,.28);cursor:pointer;transition:all .2s">
-    <div style="font-size:52px">📸</div>
-    <p id="dl" style="margin-top:12px;font-size:19px;font-weight:900;color:#00dcc6"></p>
-    <p id="ds" style="font-size:13px;color:rgba(224,240,248,.35);margin-top:6px"></p>
+  <div id="dz" class="drop-card" onclick="document.getElementById('fi').click()"
+    ondragover="event.preventDefault();this.classList.add('active')"
+    ondragleave="this.classList.remove('active')"
+    ondrop="event.preventDefault();addUploadFile(event.dataTransfer.files[0]);this.classList.remove('active')"
+    style="width:100%">
+    <div class="drop-icon" id="dzIcon"></div>
+    <p id="dl" class="drop-label"></p>
+    <p id="ds" class="drop-sub"></p>
   </div>
   <!-- Photo thumbnails -->
-  <div id="photoThumbs" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center"></div>
+  <div id="photoThumbs" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center"></div>
   <!-- Analyze button (shown after 1+ photos) -->
   <button class="btn bp" id="analyzeBtn" style="display:none" onclick="analyzeAllPhotos()"></button>
   <input id="fi" type="file" accept="image/*" capture="environment" style="display:none" onchange="addUploadFile(this.files[0])">
@@ -417,26 +476,31 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <!-- ══════════════════════════════════════
      SCREEN: ANALYZING
 ══════════════════════════════════════ -->
-<div id="sa" class="screen center" style="gap:26px">
-  <img src="icon-180.png" class="ink-img-xl mood-think" alt="Ink">
-  <div class="card" style="padding:20px 34px">
-    <p id="am" style="font-size:18px;font-weight:800"></p>
-    <div style="margin-top:12px;display:flex;justify-content:center">
+<div id="sa" class="screen center" style="gap:28px">
+  <div class="analyze-halo">
+    <img src="icon-180.png" class="ink-img-xl mood-think" alt="Ink">
+  </div>
+  <div class="analyze-caption">
+    <p id="am" style="font-size:18px;font-weight:800;font-family:var(--font-display);letter-spacing:.2px"></p>
+    <div style="margin-top:14px;display:flex;justify-content:center;gap:6px">
       <span class="dot d1"></span><span class="dot d2"></span><span class="dot d3"></span>
     </div>
   </div>
-  <button class="btn" id="cancelAnalyze" onclick="clearInterval(aiv);show('u')" style="background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.15);color:rgba(224,240,248,.6);font-size:15px;padding:12px;margin-top:8px">← Cancel</button>
+  <button class="btn" id="cancelAnalyze" onclick="clearInterval(aiv);show('u')" style="background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.12);color:rgba(224,240,248,.55);font-size:14px;padding:11px;margin-top:4px;font-family:var(--font-mono);letter-spacing:1.5px;text-transform:uppercase">← Cancel</button>
 </div>
 
 <!-- ══════════════════════════════════════
      SCREEN: MISSION BRIEF
 ══════════════════════════════════════ -->
 <div id="sm" class="screen" style="gap:16px;padding-top:24px">
-  <div style="display:flex;align-items:center;gap:14px">
-    <img src="icon-180.png" class="ink-img mood-happy" alt="Ink">
-    <div>
-      <h2 id="mt" style="font-size:22px;font-weight:900"></h2>
-      <p id="mm" style="font-size:13px;color:rgba(224,240,248,.5);margin-top:3px"></p>
+  <div>
+    <p class="pane-eyebrow">MISSION BRIEF</p>
+    <div style="display:flex;align-items:center;gap:14px;margin-top:6px">
+      <img src="icon-180.png" class="ink-img mood-happy" alt="Ink">
+      <div style="flex:1;min-width:0">
+        <h2 id="mt" style="font-size:22px;font-weight:900;font-family:var(--font-display);line-height:1.15"></h2>
+        <p id="mm" style="font-size:13px;color:rgba(224,240,248,.55);margin-top:3px;font-family:var(--font-mono);letter-spacing:.3px"></p>
+      </div>
     </div>
   </div>
   <div class="ibub">
@@ -445,7 +509,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <button onclick="reSpeak('mb')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-left:8px;opacity:.6" title="Hear again">🔊</button>
   </div>
   <div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;color:rgba(224,240,248,.42);font-weight:700">
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:11px;color:rgba(224,240,248,.5);font-weight:700;font-family:var(--font-mono);letter-spacing:1.2px;text-transform:uppercase">
       <span id="pl2"></span><span id="pc"></span>
     </div>
     <div class="pb"><div class="pf" id="pf" style="width:0%"></div></div>
@@ -459,11 +523,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 ══════════════════════════════════════ -->
 <div id="st" class="screen" style="gap:12px;padding-top:16px;padding-bottom:20px">
   <!-- Task header -->
-  <div class="card" style="padding:11px 16px;display:flex;align-items:center;gap:10px">
-    <span id="te" style="font-size:26px"></span>
-    <div style="flex:1">
-      <p id="tm" style="font-weight:800;font-size:12px;color:#00dcc6;text-transform:uppercase;letter-spacing:.8px"></p>
-      <p id="tl2" style="font-size:13px;color:rgba(224,240,248,.7);margin-top:2px"></p>
+  <div class="chat-head">
+    <div class="chat-head-emoji" id="te"></div>
+    <div style="flex:1;min-width:0">
+      <p id="tm" class="pane-eyebrow"></p>
+      <p id="tl2" style="font-size:14px;color:var(--text-hi);margin-top:3px;font-family:var(--font-display);font-weight:700;line-height:1.25"></p>
     </div>
     <img id="ti" src="icon-180.png" class="ink-img mood-happy" alt="Ink">
   </div>
@@ -477,10 +541,12 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   </div>
 
   <!-- Input row -->
-  <div style="display:flex;gap:9px">
+  <div style="display:flex;gap:9px;align-items:center">
+    <button class="sbtn ghost-btn" id="attachBtn" onclick="document.getElementById('chatPhoto').click()" title="Attach photo of written work"></button>
     <input class="ci" id="ci" placeholder="" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}">
-    <button class="sbtn" id="sb" onclick="sendMsg()">➤</button>
+    <button class="sbtn" id="sb" onclick="sendMsg()"></button>
   </div>
+  <input id="chatPhoto" type="file" accept="image/*" capture="environment" style="display:none" onchange="attachChatPhoto(this.files[0])">
 
   <!-- Verify / Done buttons -->
   <div id="actionBtns" style="display:flex;flex-direction:column;gap:9px">
@@ -537,11 +603,12 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <!-- ══════════════════════════════════════
      SCREEN: REWARD (creature card)
 ══════════════════════════════════════ -->
-<div id="srew" class="screen center" style="gap:22px;padding-top:32px">
-  <div>
-    <p id="rewSub" style="font-size:14px;color:rgba(224,240,248,.5);font-weight:700"></p>
-    <h2 id="rewTitle" style="font-size:26px;font-weight:900;margin-top:4px;color:#ffd166"></h2>
-    <div id="rewCeleb" class="ibub" style="margin-top:12px;font-size:14px;text-align:left"><span class="ink-label">INK</span><span id="rewCelebText"></span></div>
+<div id="srew" class="screen center" style="gap:22px;padding-top:32px;position:relative">
+  <div style="text-align:center;position:relative;z-index:1">
+    <img src="icon-180.png" class="ink-img-xl mood-bounce" alt="Ink" id="rewInk">
+    <p id="rewSub" class="pane-eyebrow" style="margin-top:10px"></p>
+    <h2 id="rewTitle" class="reward-title"></h2>
+    <div id="rewCeleb" class="ibub" style="margin-top:14px;font-size:14px;text-align:left"><span class="ink-label">INK</span><span id="rewCelebText"></span></div>
   </div>
   <!-- Room unlock banner (conditional) -->
   <div id="rewRoomUnlock" style="display:none;width:100%"></div>
@@ -574,9 +641,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 ══════════════════════════════════════ -->
 <div id="ss" class="screen" style="gap:20px;padding-top:26px;padding-bottom:34px">
   <div style="text-align:center">
-    <img src="icon-180.png" class="ink-img-xl mood-bounce" alt="Ink">
-    <h2 id="sth" style="font-size:30px;font-weight:900;background:linear-gradient(135deg,#ffd166,#ef8c4c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-top:8px"></h2>
-    <p id="ssb" style="font-size:14px;color:rgba(224,240,248,.5);margin-top:4px"></p>
+    <p class="pane-eyebrow">DAILY LOG</p>
+    <img src="icon-180.png" class="ink-img-xl mood-bounce" alt="Ink" style="margin-top:6px">
+    <h2 id="sth" class="reward-title" style="margin-top:8px"></h2>
+    <p id="ssb" style="font-size:14px;color:rgba(224,240,248,.55);margin-top:4px"></p>
   </div>
   <!-- Updated station -->
   <div class="card gw" style="padding:0 0 4px">
@@ -727,9 +795,12 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
      SCREEN: PARENT MODE
 ══════════════════════════════════════ -->
 <div id="spar" class="screen" style="gap:16px;padding-top:24px">
-  <div style="display:flex;align-items:center;justify-content:space-between">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
     <h2 style="font-size:22px;font-weight:900">🔒 Parent View</h2>
-    <div style="display:flex;gap:10px;align-items:center">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <button onclick="exportProfile()" style="background:rgba(0,220,200,.12);border:1px solid rgba(0,220,200,.3);color:#00dcc6;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer">💾 Export</button>
+      <button onclick="document.getElementById('importFile').click()" style="background:rgba(0,220,200,.12);border:1px solid rgba(0,220,200,.3);color:#00dcc6;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer">📥 Import</button>
+      <input id="importFile" type="file" accept="application/json,.json" style="display:none" onchange="importProfile(this.files[0]);this.value=''">
       <button onclick="forgetKey()" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.3);color:#ff8080;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer">🗑 Forget key</button>
       <button onclick="forgetWebhook()" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.3);color:#ff8080;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer">🗑 Webhook</button>
       <button onclick="forgetOaiKey()" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.3);color:#ff8080;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer">🗑 Voice</button>
@@ -746,6 +817,17 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div id="webhookActive" style="display:none">
       <p style="font-size:14px;color:#06d6a0">✅ Email reports active</p>
       <button onclick="testWebhook()" style="background:rgba(0,220,200,.1);border:1px solid rgba(0,220,200,.3);color:#00dcc6;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer;margin-top:8px">📧 Send test email</button>
+    </div>
+  </div>
+  <div class="card" id="parBackup" style="padding:18px 20px">
+    <p style="font-size:12px;font-weight:800;color:rgba(224,240,248,.38);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">🔐 Encrypted Backup</p>
+    <p style="font-size:13px;color:rgba(224,240,248,.5);margin-bottom:10px;line-height:1.5">Set a password to encrypt backups so they can safely include API keys and the webhook URL. <strong style="color:#ffd166">Write it down</strong> — if you forget it, encrypted backups can't be decrypted.</p>
+    <div id="backupPwdStatus" style="font-size:14px;margin-bottom:10px;color:rgba(224,240,248,.7)"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button id="setPwdBtn" onclick="setBackupPassword()" style="background:rgba(0,220,200,.12);border:1px solid rgba(0,220,200,.3);color:#00dcc6;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer">🔑 Set password</button>
+      <button id="changePwdBtn" onclick="setBackupPassword()" style="background:rgba(0,220,200,.12);border:1px solid rgba(0,220,200,.3);color:#00dcc6;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer;display:none">🔑 Change password</button>
+      <button id="clearPwdBtn" onclick="clearBackupPassword()" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.3);color:#ff8080;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer;display:none">🗑 Forget password</button>
+      <button id="restoreCloudBtn" onclick="restoreFromCloudManual()" style="background:rgba(0,220,200,.12);border:1px solid rgba(0,220,200,.3);color:#00dcc6;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer;display:none">☁️ Restore from cloud</button>
     </div>
   </div>
   <div class="card" id="parVoice" style="padding:18px 20px">
@@ -818,6 +900,22 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div id="parSessions"></div>
   </div>
   <div class="card" id="parInsights" style="padding:18px 20px;display:none"></div>
+</div>
+
+<!-- Password modal — real form + autocomplete attrs so iOS Passwords will offer to save/autofill -->
+<div id="pwdModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(2,8,20,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px">
+  <form id="pwdForm" action="#" method="post" autocomplete="on" style="background:linear-gradient(180deg,#0a1428,#050a18);border:1.5px solid rgba(0,220,200,.3);border-radius:20px;padding:24px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.6)">
+    <h3 id="pwdTitle" style="font-size:18px;font-weight:900;color:#e0f0f8;margin-bottom:8px">🔐 Backup Password</h3>
+    <p id="pwdMessage" style="font-size:13px;color:rgba(224,240,248,.6);line-height:1.5;margin-bottom:14px"></p>
+    <input id="pwdUser" type="text" readonly value="Ink's Lab Backup" autocomplete="username" style="width:100%;padding:10px 12px;margin-bottom:10px;background:rgba(255,255,255,.04);border:1px solid rgba(224,240,248,.12);border-radius:10px;color:rgba(224,240,248,.55);font-size:12px;box-sizing:border-box">
+    <input id="pwdInput" type="password" autocomplete="current-password" placeholder="Password" style="width:100%;padding:12px;margin-bottom:10px;background:rgba(255,255,255,.06);border:1.5px solid rgba(0,220,200,.28);border-radius:10px;color:#e0f0f8;font-size:14px;font-weight:600;outline:none;box-sizing:border-box">
+    <input id="pwdConfirm" type="password" autocomplete="new-password" placeholder="Confirm password" style="display:none;width:100%;padding:12px;margin-bottom:10px;background:rgba(255,255,255,.06);border:1.5px solid rgba(0,220,200,.28);border-radius:10px;color:#e0f0f8;font-size:14px;font-weight:600;outline:none;box-sizing:border-box">
+    <div id="pwdError" style="display:none;color:#ff8080;font-size:12px;margin-bottom:10px"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+      <button type="button" onclick="pwdCancel()" style="background:rgba(224,240,248,.08);border:1px solid rgba(224,240,248,.15);color:#e0f0f8;font-size:13px;font-weight:800;padding:10px 18px;border-radius:10px;cursor:pointer">Cancel</button>
+      <button type="submit" style="background:linear-gradient(135deg,#00dcc6,#06d6a0);border:none;color:#041018;font-size:13px;font-weight:900;padding:10px 20px;border-radius:10px;cursor:pointer">OK</button>
+    </div>
+  </form>
 </div>
 
 <script>
@@ -1278,6 +1376,51 @@ async function verifyWrittenWork(b64, task) {
   ]}],null,200);
   try { return JSON.parse(t.replace(/```json|```/g,'').trim()); }
   catch { return {complete:true,feedback:S.lang==='FR'?'Super travail !':'Great work!',needsWork:null}; }
+}
+
+async function reviewHandwrittenInChat(b64, task) {
+  const L = S.lang==='FR' ? 'French' : 'English';
+  const systemPersona = `You are Ink, a curious bioluminescent octopus tutor helping a 6-year-old with homework. Stay warm, specific, and encouraging. Always answer in ${L}.`;
+  const t = await api([{role:'user',content:[
+    {type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},
+    {type:'text',text:`Task context: "${task.instruction}" (subject: ${S.hw.subject}).\n\nThe child just shared this photo of their written work in the middle of our chat. Look carefully at what's on the paper. Respond in 1–3 short sentences in ${L} as Ink: celebrate something specific you can see, then if anything looks off (wrong letter, missed step, etc.) mention just ONE thing to check. No JSON, just a natural reply a 6-year-old can understand.`}
+  ]}], systemPersona, 280);
+  return t.trim();
+}
+
+async function attachChatPhoto(f) {
+  if (!f || !f.type.startsWith('image/')) return;
+  const fr = S.lang==='FR';
+  document.getElementById('chatPhoto').value = '';
+  clearIdleTimer();
+  try {
+    const b64 = await compressImage(f);
+    addImgMsg(b64);
+    addTyping();
+    setMood('thinking');
+    const reply = await reviewHandwrittenInChat(b64, S.hw.tasks[S.tIdx]);
+    document.getElementById('ty')?.remove();
+    addMsg('a', reply);
+    S.conv.push({role:'assistant', content: reply});
+    speak(reply);
+    setMood('happy');
+    S.userMsgCount = (S.userMsgCount||0) + 1;
+    if (S.userMsgCount >= 1) showTaskButtons();
+    startIdleTimer();
+  } catch(err) {
+    console.error(err);
+    document.getElementById('ty')?.remove();
+    const msg = fr ? 'Oups, Ink n\'a pas pu lire la photo — réessaie !' : "Oops, Ink couldn't read the photo — try again!";
+    addMsg('a', msg);
+  }
+}
+
+function addImgMsg(b64) {
+  const cm = document.getElementById('cm');
+  const d = document.createElement('div');
+  d.className = 'ubub su img-bubble';
+  d.innerHTML = `<img src="data:image/jpeg;base64,${b64}" style="display:block;max-width:180px;max-height:200px;border-radius:10px;object-fit:cover">`;
+  cm.appendChild(d); cm.scrollTop = cm.scrollHeight;
 }
 
 async function verifyReading(transcript, task) {
@@ -2205,6 +2348,7 @@ function updateParentEdits() {
 
 function renderParentMode() {
   renderWebhookUI();
+  renderBackupUI();
   renderParentPoems();
   const profile = getProfile();
   document.getElementById('coinEdit').value = profile.minecoins || 0;
@@ -2310,12 +2454,10 @@ function setKey() {
 function go(l) {
   S.lang = l; const fr = l==='FR';
   uploadedPhotos = [];
-  document.getElementById('photoThumbs').innerHTML = '';
-  document.getElementById('analyzeBtn').style.display = 'none';
-  document.getElementById('ut').textContent = fr ? 'Photo des devoirs !' : 'Homework Photo!';
-  document.getElementById('us').textContent = fr ? "Prends une ou plusieurs photos de tes devoirs 📸" : "Take one or more photos of your homework 📸";
-  document.getElementById('dl').textContent = fr ? 'Appuie pour prendre une photo' : 'Tap to take a photo';
-  document.getElementById('ds').textContent = fr ? "tu peux en ajouter plusieurs !" : 'you can add multiple!';
+  document.getElementById('ut').textContent = fr ? 'Scanne tes devoirs' : 'Scan your homework';
+  document.getElementById('us').textContent = fr ? 'Une ou plusieurs photos — Ink analyse tout' : 'One or more photos — Ink analyzes it all';
+  document.getElementById('dzIcon').innerHTML = icon('camera', 32, 'currentColor', 2);
+  renderPhotoThumbs();
   show('u');
 }
 
@@ -2357,23 +2499,30 @@ function addUploadFile(f) {
 function renderPhotoThumbs() {
   const fr = S.lang==='FR';
   const el = document.getElementById('photoThumbs');
+  const dzIcon = document.getElementById('dzIcon');
+  if (dzIcon && !dzIcon.firstChild) dzIcon.innerHTML = icon('camera', 32, 'currentColor', 2);
   el.innerHTML = '';
   uploadedPhotos.forEach((b64, i) => {
     const thumb = document.createElement('div');
-    thumb.style.cssText = 'position:relative;width:64px;height:64px;border-radius:10px;overflow:hidden;border:2px solid rgba(0,220,200,.4)';
-    thumb.innerHTML = `<img src="data:image/jpeg;base64,${b64}" style="width:100%;height:100%;object-fit:cover">
-      <button onclick="event.stopPropagation();uploadedPhotos.splice(${i},1);renderPhotoThumbs()" style="position:absolute;top:-2px;right:-2px;background:rgba(255,80,80,.9);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:20px">✕</button>`;
+    thumb.className = 'photo-pill';
+    thumb.innerHTML = `<img src="data:image/jpeg;base64,${b64}">
+      <button class="rm" onclick="event.stopPropagation();uploadedPhotos.splice(${i},1);renderPhotoThumbs()">${icon('x',12,'#fff',2.5)}</button>`;
     el.appendChild(thumb);
   });
-  // Update upload zone text
   if (uploadedPhotos.length > 0) {
-    document.getElementById('dl').textContent = fr ? `${uploadedPhotos.length} photo${uploadedPhotos.length>1?'s':''} — ajouter une autre ?` : `${uploadedPhotos.length} photo${uploadedPhotos.length>1?'s':''} — add another?`;
-    document.getElementById('ds').textContent = fr ? 'ou appuie sur Analyser !' : 'or tap Analyze!';
+    const count = document.createElement('span');
+    count.className = 'photo-count';
+    count.innerHTML = `${icon('check',12,'currentColor',2.5)} ${uploadedPhotos.length} ${fr?'photo':'photo'}${uploadedPhotos.length>1?'s':''}`;
+    el.appendChild(count);
+  }
+  if (uploadedPhotos.length > 0) {
+    document.getElementById('dl').textContent = fr ? 'Ajouter une autre ?' : 'Add another?';
+    document.getElementById('ds').textContent = fr ? 'ou appuie sur Analyser' : 'or tap Analyze';
     document.getElementById('analyzeBtn').style.display = 'flex';
     document.getElementById('analyzeBtn').textContent = fr ? `🚀 Analyser ${uploadedPhotos.length} photo${uploadedPhotos.length>1?'s':''}` : `🚀 Analyze ${uploadedPhotos.length} photo${uploadedPhotos.length>1?'s':''}`;
   } else {
-    document.getElementById('dl').textContent = fr ? 'Appuie pour prendre une photo' : 'Tap to take a photo';
-    document.getElementById('ds').textContent = fr ? "ou glisse l'image ici" : 'or drag & drop here';
+    document.getElementById('dl').textContent = fr ? 'Appuie pour scanner' : 'Tap to scan';
+    document.getElementById('ds').textContent = fr ? 'OU GLISSE UNE PHOTO' : 'OR DROP A PHOTO';
     document.getElementById('analyzeBtn').style.display = 'none';
   }
 }
@@ -2382,8 +2531,8 @@ function analyzeAllPhotos() {
   if (!uploadedPhotos.length) return;
   const fr = S.lang==='FR';
   const msgs = fr
-    ? ['Ink scanne les devoirs... 🔬','Ink prépare la mission... 🗺️','Station spatiale en ligne... 🚀']
-    : ['Ink is scanning the homework... 🔬','Ink is planning the mission... 🗺️','Space station coming online... 🚀'];
+    ? ['Ink ajuste ses lunettes…','Décodage du brief…','Inventaire des expériences…','Station en ligne…']
+    : ['Adjusting goggles…','Decoding mission brief…','Cataloguing experiments…','Station coming online…'];
   let mi = 0; const el = document.getElementById('am'); el.textContent = msgs[0];
   clearInterval(aiv); aiv = setInterval(() => { mi=(mi+1)%msgs.length; el.textContent=msgs[mi]; }, 1700);
   show('a');
@@ -2434,10 +2583,16 @@ function renderMission() {
   hw.tasks.forEach((t, i) => {
     const isDone = S.done.includes(t.id); const isCur = i===S.tIdx && !isDone;
     const isBonus = t.bonus;
-    const d = document.createElement('div'); d.className = `tpill${isDone?' dn':isCur?' cur':''}`;
-    if (isBonus) d.style.borderColor = 'rgba(255,209,102,.3)';
-    const bonusTag = isBonus ? `<span style="font-size:10px;font-weight:900;color:#ffd166;background:rgba(255,209,102,.15);padding:2px 6px;border-radius:6px;margin-left:6px">⛏️ BONUS</span>` : '';
-    d.innerHTML = `<span style="font-size:26px">${isDone?'✅':isCur?t.emoji:'🔒'}</span><div style="flex:1"><p style="font-weight:800;font-size:14px;color:${isDone?'#06d6a0':isCur?(isBonus?'#ffd166':'#00dcc6'):'rgba(224,240,248,.3)'}">${t.label}${bonusTag}</p>${isCur?`<p style="font-size:12px;color:rgba(224,240,248,.45);margin-top:2px">${t.instruction}</p>`:''}</div>${isDone?'<span style="font-size:16px">⭐</span>':''}`;
+    const cls = ['tpill', isBonus?'bn':'', isDone?'dn':'', isCur?'cur':''].filter(Boolean).join(' ');
+    const d = document.createElement('div'); d.className = cls;
+    const markInner = isDone
+      ? icon('check', 18, 'currentColor', 2.5)
+      : isCur ? `<span style="font-size:18px">${t.emoji}</span>`
+      : icon('lock', 16, 'currentColor', 2);
+    const labelColor = isDone?'#06d6a0':isCur?(isBonus?'var(--gold)':'var(--biolume)'):'rgba(224,240,248,.35)';
+    const bonusTag = isBonus ? `<span class="tpill-bonus-tag">BONUS</span>` : '';
+    const trailing = isDone ? icon('star', 16, 'var(--gold)', 2) : '';
+    d.innerHTML = `<div class="tpill-mark">${markInner}</div><div style="flex:1;min-width:0"><div class="tpill-label" style="color:${labelColor}">${t.label}${bonusTag}</div>${isCur?`<div class="tpill-sub">${t.instruction}</div>`:''}</div>${trailing?`<div style="flex-shrink:0;color:var(--gold)">${trailing}</div>`:''}`;
     tl.appendChild(d);
   });
   const mc = document.getElementById('mc');
@@ -2474,6 +2629,9 @@ function startTask() {
   S.conv = []; S.hintCount = 0; S.taskStartTime = Date.now();
   const cm = document.getElementById('cm'); cm.innerHTML = '';
   document.getElementById('te').textContent = task.emoji;
+  // Set send + attach icons once per task start
+  document.getElementById('sb').innerHTML = icon('send', 18, 'currentColor', 2);
+  document.getElementById('attachBtn').innerHTML = icon('camera', 18, 'currentColor', 2);
   document.getElementById('tm').textContent = fr ? `Expérience ${S.tIdx+1}/${S.hw.tasks.length}` : `Experiment ${S.tIdx+1}/${S.hw.tasks.length}`;
   document.getElementById('tl2').textContent = task.label;
   document.getElementById('ci').placeholder = fr ? 'Réponds à Ink...' : 'Reply to Ink...';
@@ -2755,6 +2913,42 @@ function inkSrc(moodWord) {
   return inkDataURI(m, m==='venk');
 }
 function setInkImg(el, moodWord) { if (el) el.src = inkSrc(moodWord); }
+
+// ═══ Stroked SVG icon set (24x24, currentColor strokes) ═══
+const ICON_PATHS = {
+  camera:   '<path d="M3 8a2 2 0 0 1 2-2h2l2-2h6l2 2h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8Z"/><circle cx="12" cy="13" r="4"/>',
+  upload:   '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/>',
+  mic:      '<rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 12a7 7 0 0 0 14 0M12 19v3"/>',
+  send:     '<path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7Z"/>',
+  bulb:     '<path d="M9 21h6M10 17h4M12 3a6 6 0 0 0-4 10.5c1 1 1.5 2 1.5 3.5h5c0-1.5.5-2.5 1.5-3.5A6 6 0 0 0 12 3Z"/>',
+  home:     '<path d="M3 12l9-9 9 9M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/>',
+  mute:     '<path d="M11 5L6 9H2v6h4l5 4V5Z"/><path d="M23 9l-6 6M17 9l6 6"/>',
+  sound:    '<path d="M11 5L6 9H2v6h4l5 4V5Z"/><path d="M19 12a7 7 0 0 0-3-5.7M16 8a3 3 0 0 1 0 8"/>',
+  check:    '<path d="M5 12l4 4L19 6"/>',
+  x:        '<path d="M18 6L6 18M6 6l12 12"/>',
+  sparkle:  '<path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2 2-6Z"/>',
+  coin:     '<circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/>',
+  book:     '<path d="M4 4a2 2 0 0 1 2-2h14v18H6a2 2 0 0 0-2 2V4Z"/><path d="M4 18a2 2 0 0 1 2-2h14"/>',
+  scroll:   '<path d="M8 3h10a2 2 0 0 1 2 2v12a4 4 0 0 1-4 4H6a2 2 0 0 0 0-4h10a2 2 0 0 0 2-2V5"/><path d="M4 5a2 2 0 0 1 4 0v12"/>',
+  observe:  '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',
+  creature: '<path d="M7 6a5 5 0 0 1 10 0v3a5 5 0 0 1-10 0V6Z"/><path d="M8 10l-2 5M12 11v5M16 10l2 5"/>',
+  vault:    '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M12 8v1M12 15v1M8 12h1M15 12h1"/>',
+  launch:   '<path d="M12 2c3 3 5 7 5 11v5H7v-5c0-4 2-8 5-11Z"/><path d="M9 15h6M7 22l3-5M17 22l-3-5"/><circle cx="12" cy="10" r="1.5"/>',
+  garden:   '<path d="M12 22v-8M12 14c-4 0-6-3-6-6 4 0 6 3 6 6ZM12 14c4 0 6-3 6-6-4 0-6 3-6 6ZM12 11c0-3 2-5 4-5 0 3-2 5-4 5Z"/>',
+  throne:   '<path d="M5 8l2-5h10l2 5v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8Z"/><path d="M9 20v2M15 20v2M9 3L7 8h10l-2-5"/>',
+  arrow:    '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  arrowL:   '<path d="M19 12H5M11 6l-6 6 6 6"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M20 12a8 8 0 0 0-.3-2l2-1.5-2-3.5-2.3.9a8 8 0 0 0-3.4-2L13.5 2h-3L10 3.9a8 8 0 0 0-3.4 2L4.3 5 2.3 8.5l2 1.5a8 8 0 0 0 0 4l-2 1.5 2 3.5 2.3-.9a8 8 0 0 0 3.4 2l.5 2h3l.5-1.9a8 8 0 0 0 3.4-2l2.3.9 2-3.5-2-1.5a8 8 0 0 0 .3-2Z"/>',
+  flag:     '<path d="M4 21V4h13l-3 5 3 5H4"/>',
+  plus:     '<path d="M12 5v14M5 12h14"/>',
+  star:     '<path d="M12 2l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1 3-7Z"/>',
+  lock:     '<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+  trash:    '<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>',
+};
+function icon(name, size=20, color='currentColor', stroke=2) {
+  const p = ICON_PATHS[name]; if (!p) return '';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0">${p}</svg>`;
+}
 
 function setMood(m) {
   const el = document.getElementById('ti');
@@ -3045,8 +3239,8 @@ function taskDone() {
     : CELEBRATIONS_EN[Math.floor(Math.random()*CELEBRATIONS_EN.length)];
 
   // Render reward screen
-  document.getElementById('rewSub').textContent = fr ? `Tâche ${S.tIdx+1} terminée !` : `Task ${S.tIdx+1} complete!`;
-  document.getElementById('rewTitle').textContent = fr ? '🎉 Station agrandie !' : '🎉 Station expanded!';
+  document.getElementById('rewSub').textContent = fr ? `EXPÉRIENCE ${S.tIdx+1} VALIDÉE` : `EXPERIMENT ${S.tIdx+1} LOGGED`;
+  document.getElementById('rewTitle').textContent = fr ? 'Bravo, explorateur !' : 'Brilliant work!';
   const blockEmojis = '🧱'.repeat(Math.min(4, profile.blocks));
   document.getElementById('rewBlocks').textContent = blockEmojis;
   document.getElementById('rewBlockLabel').textContent = fr ? `+1 module ajouté (${profile.blocks}/${STATION_TOTAL} total)` : `+1 module added (${profile.blocks}/${STATION_TOTAL} total)`;
@@ -3148,6 +3342,7 @@ async function afterReward() {
       tip: summary?.tip||null, insight: summary?.insight||null,
       teacherTasks: summary?.teacherTasks||null
     });
+    backupProfileToWebhook();
     show('s');
   } else {
     S.tIdx++; S.conv = []; S.hintCount = 0;
@@ -3315,6 +3510,7 @@ function renderWebhookUI() {
   document.getElementById('oaiActive').style.display = hasOai ? 'block' : 'none';
   const vs = document.getElementById('voiceSelect'); if (vs) vs.value = OAIVOICE;
   const vf = document.getElementById('voiceSelectFR'); if (vf) vf.value = OAIVOICE_FR;
+  if (typeof renderBackupUI === 'function') renderBackupUI();
 }
 function saveOaiKey() {
   const k = document.getElementById('oaiKeyInput').value.trim();
@@ -3330,6 +3526,326 @@ function forgetOaiKey() {
     localStorage.removeItem('ink_oai_key');
     renderWebhookUI();
   }
+}
+
+// ═══════════════════════════════════════
+// PASSWORD MODAL
+// Real <form> with autocomplete attrs so iOS Passwords app will
+// offer to save on "new-password" submits and autofill on
+// "current-password" prompts. Falls back to window.prompt() if the
+// modal elements aren't present (shouldn't happen, but safe).
+// ═══════════════════════════════════════
+let _pwdResolve = null;
+let _pwdExpectsConfirm = false;
+function askPassword(opts) {
+  opts = opts || {};
+  const modal = document.getElementById('pwdModal');
+  if (!modal) {
+    const v = window.prompt(opts.message || 'Backup password:');
+    return Promise.resolve(v || null);
+  }
+  // Guard against concurrent opens — resolve the prior call with null
+  // (treated as cancel) instead of orphaning its promise forever.
+  if (_pwdResolve) {
+    const prior = _pwdResolve;
+    _pwdResolve = null;
+    try { prior(null); } catch {}
+  }
+  return new Promise((resolve) => {
+    _pwdResolve = resolve;
+    const input = document.getElementById('pwdInput');
+    const confirmInput = document.getElementById('pwdConfirm');
+    const titleEl = document.getElementById('pwdTitle');
+    const msgEl = document.getElementById('pwdMessage');
+    const errorEl = document.getElementById('pwdError');
+    const isNew = opts.mode === 'new';
+    titleEl.textContent = opts.title || (isNew ? '🔐 Set Backup Password' : '🔐 Backup Password');
+    msgEl.textContent = opts.message || '';
+    errorEl.style.display = 'none';
+    errorEl.textContent = '';
+    input.value = '';
+    confirmInput.value = '';
+    if (isNew) {
+      input.setAttribute('autocomplete', 'new-password');
+      input.placeholder = 'New password';
+      confirmInput.style.display = 'block';
+      _pwdExpectsConfirm = true;
+    } else {
+      input.setAttribute('autocomplete', 'current-password');
+      input.placeholder = 'Password';
+      confirmInput.style.display = 'none';
+      _pwdExpectsConfirm = false;
+    }
+    modal.style.display = 'flex';
+    setTimeout(() => input.focus(), 60);
+  });
+}
+function pwdSubmit() {
+  const input = document.getElementById('pwdInput');
+  const confirmInput = document.getElementById('pwdConfirm');
+  const errorEl = document.getElementById('pwdError');
+  const pwd = input.value;
+  if (!pwd || pwd.length < 4) {
+    errorEl.textContent = 'Password must be at least 4 characters.';
+    errorEl.style.display = 'block';
+    return;
+  }
+  if (_pwdExpectsConfirm && pwd !== confirmInput.value) {
+    errorEl.textContent = 'Passwords do not match.';
+    errorEl.style.display = 'block';
+    return;
+  }
+  document.getElementById('pwdModal').style.display = 'none';
+  const resolve = _pwdResolve;
+  _pwdResolve = null;
+  if (resolve) resolve(pwd);
+}
+function pwdCancel() {
+  document.getElementById('pwdModal').style.display = 'none';
+  const resolve = _pwdResolve;
+  _pwdResolve = null;
+  if (resolve) resolve(null);
+}
+// Wire form submit — preventDefault is fine; iOS still detects the submit
+// intent on a form with autocomplete=new-password and offers to save.
+(function(){
+  const form = document.getElementById('pwdForm');
+  if (form) form.addEventListener('submit', (e) => { e.preventDefault(); pwdSubmit(); });
+})();
+
+// ═══════════════════════════════════════
+// BACKUP / RESTORE (AES-GCM encrypted)
+// Backups include API keys + webhook URL, encrypted with a password
+// the parent chooses. The password is kept in localStorage so auto-
+// backup runs silently; when localStorage gets wiped (iOS ITP, device
+// migration) the parent types it once to decrypt the cloud copy or an
+// export file.
+// ═══════════════════════════════════════
+const BACKUP_KEYS = [
+  'ink_v2', 'ink_poems', 'ink_session',
+  'ink_api_key', 'ink_oai_key', 'ink_webhook',
+  'ink_oai_voice', 'ink_oai_voice_fr'
+];
+function getStoredBackupPassword() { return localStorage.getItem('ink_backup_pwd') || ''; }
+function b64enc(bytes) { let s=''; for (const b of bytes) s += String.fromCharCode(b); return btoa(s); }
+function b64dec(str) { const s = atob(str); const a = new Uint8Array(s.length); for (let i=0;i<s.length;i++) a[i]=s.charCodeAt(i); return a; }
+async function deriveKey(password, salt) {
+  const keyMat = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    { name:'PBKDF2', salt, iterations:120000, hash:'SHA-256' },
+    keyMat,
+    { name:'AES-GCM', length:256 },
+    false, ['encrypt','decrypt']
+  );
+}
+async function encryptJSON(obj, password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv   = crypto.getRandomValues(new Uint8Array(12));
+  const key  = await deriveKey(password, salt);
+  const ct   = await crypto.subtle.encrypt(
+    { name:'AES-GCM', iv }, key,
+    new TextEncoder().encode(JSON.stringify(obj))
+  );
+  return { v:1, type:'inks-lab-backup-enc', savedAt:Date.now(),
+           salt:b64enc(salt), iv:b64enc(iv), ct:b64enc(new Uint8Array(ct)) };
+}
+async function decryptJSON(envelope, password) {
+  const salt = b64dec(envelope.salt);
+  const iv   = b64dec(envelope.iv);
+  const ct   = b64dec(envelope.ct);
+  const key  = await deriveKey(password, salt);
+  const pt   = await crypto.subtle.decrypt({ name:'AES-GCM', iv }, key, ct);
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+function buildBackupData() {
+  const data = {};
+  for (const k of BACKUP_KEYS) {
+    const v = localStorage.getItem(k);
+    if (v != null) data[k] = v;
+  }
+  return data;
+}
+function applyBackupData(data) {
+  for (const k of BACKUP_KEYS) {
+    if (data[k] != null) localStorage.setItem(k, data[k]);
+  }
+}
+async function ensureBackupPassword() {
+  let pwd = getStoredBackupPassword();
+  if (pwd) return pwd;
+  pwd = await askPassword({
+    mode: 'new',
+    title: '🔐 Set Backup Password',
+    message: 'Encrypts your backups so they can include API keys + webhook. Write it down — if you forget it, encrypted backups can\'t be recovered. iOS will offer to save it to your Passwords app.'
+  });
+  if (!pwd) return '';
+  localStorage.setItem('ink_backup_pwd', pwd);
+  renderBackupUI();
+  return pwd;
+}
+async function exportProfile() {
+  const pwd = await ensureBackupPassword();
+  if (!pwd) return;
+  const envelope = await encryptJSON({ data: buildBackupData() }, pwd);
+  const blob = new Blob([JSON.stringify(envelope, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const d = new Date();
+  const stamp = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  a.href = url;
+  a.download = `inks-lab-backup-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+async function importProfile(file) {
+  if (!file) return;
+  const text = await file.text();
+  let obj;
+  try { obj = JSON.parse(text); }
+  catch { alert('Could not read that file.'); return; }
+  if (!obj || typeof obj !== 'object') { alert('That file does not look like an Ink\'s Lab backup.'); return; }
+  const savedStamp = obj.savedAt ? new Date(obj.savedAt).toLocaleString() : 'unknown date';
+  let data;
+  let pendingPwd = null; // persist only if restore is actually confirmed
+  if (obj.type === 'inks-lab-backup-enc') {
+    const storedPwd = getStoredBackupPassword();
+    const pwd = storedPwd || await askPassword({
+      mode: 'enter',
+      title: '🔐 Decrypt Backup',
+      message: `Backup from ${savedStamp}. Enter the password used when this backup was created.`
+    });
+    if (!pwd) return;
+    try {
+      const decrypted = await decryptJSON(obj, pwd);
+      data = decrypted.data || decrypted;
+    } catch {
+      alert('Wrong password. Nothing was changed.');
+      return;
+    }
+    if (!storedPwd) pendingPwd = pwd;
+  } else if (obj.type === 'inks-lab-backup' && obj.data) {
+    data = obj.data;
+  } else {
+    alert('That file does not look like an Ink\'s Lab backup.'); return;
+  }
+  if (!confirm(`Restore backup from ${savedStamp}?\n\nThis will overwrite Jules\'s current progress (coins, blocks, achievements, poems) and saved keys.`)) return;
+  if (pendingPwd) localStorage.setItem('ink_backup_pwd', pendingPwd);
+  applyBackupData(data);
+  alert('Backup restored! Reloading…');
+  location.reload();
+}
+async function backupProfileToWebhook() {
+  const url = getWebhookUrl();
+  if (!url) return;
+  const pwd = getStoredBackupPassword();
+  if (!pwd) return; // No password set → skip silent backup. Parent has to opt in via Export.
+  try {
+    const envelope = await encryptJSON({ data: buildBackupData() }, pwd);
+    fetch(url, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ type: 'backup', savedAt: envelope.savedAt, envelope })
+    }).catch(() => {});
+  } catch (e) { console.warn('[Ink] backup encrypt failed', e); }
+}
+async function fetchCloudBackup() {
+  const url = getWebhookUrl();
+  if (!url) return null;
+  try {
+    const res = await fetch(url + '?action=restore');
+    if (!res.ok) return null;
+    const obj = await res.json();
+    return obj && (obj.envelope || obj.profile) ? obj : null;
+  } catch { return null; }
+}
+async function tryRestoreFromWebhook() {
+  const obj = await fetchCloudBackup();
+  if (!obj) return false;
+  // Encrypted envelope
+  if (obj.envelope && obj.envelope.type === 'inks-lab-backup-enc') {
+    const pwd = getStoredBackupPassword();
+    if (!pwd) return false; // Can't silently decrypt without a password on this device
+    try {
+      const decrypted = await decryptJSON(obj.envelope, pwd);
+      applyBackupData(decrypted.data || decrypted);
+      return true;
+    } catch { return false; }
+  }
+  // Legacy plaintext (before encryption was added)
+  if (obj.profile) { applyBackupData(obj.profile); return true; }
+  return false;
+}
+async function restoreFromCloudManual() {
+  const url = getWebhookUrl();
+  if (!url) { alert('No webhook URL saved. Add one first so Ink can find your cloud backup.'); return; }
+  const obj = await fetchCloudBackup();
+  if (!obj) { alert('No cloud backup found, or the webhook URL is unreachable.'); return; }
+  const savedStamp = obj.savedAt ? new Date(obj.savedAt).toLocaleString() : 'unknown date';
+  let data;
+  let pendingPwd = null; // persist only if restore is actually confirmed
+  if (obj.envelope && obj.envelope.type === 'inks-lab-backup-enc') {
+    const storedPwd = getStoredBackupPassword();
+    const pwd = storedPwd || await askPassword({
+      mode: 'enter',
+      title: '🔐 Decrypt Cloud Backup',
+      message: `Cloud backup from ${savedStamp}. Enter the backup password to decrypt.`
+    });
+    if (!pwd) return;
+    try {
+      const decrypted = await decryptJSON(obj.envelope, pwd);
+      data = decrypted.data || decrypted;
+    } catch { alert('Wrong password. Nothing was changed.'); return; }
+    if (!storedPwd) pendingPwd = pwd;
+  } else if (obj.profile) {
+    data = obj.profile;
+  } else {
+    alert('Cloud backup is in an unexpected format.'); return;
+  }
+  if (!confirm(`Restore cloud backup from ${savedStamp}?\n\nThis will overwrite Jules\'s current progress and saved keys.`)) return;
+  if (pendingPwd) localStorage.setItem('ink_backup_pwd', pendingPwd);
+  applyBackupData(data);
+  alert('Backup restored! Reloading…');
+  location.reload();
+}
+async function setBackupPassword() {
+  const existing = getStoredBackupPassword();
+  const pwd = await askPassword({
+    mode: 'new',
+    title: existing ? '🔐 Change Backup Password' : '🔐 Set Backup Password',
+    message: existing
+      ? 'Any cloud/file backup encrypted with the old password will be unreadable unless you re-export after changing.'
+      : 'Encrypts your backups so they can include API keys + webhook. iOS will offer to save this to your Passwords app.'
+  });
+  if (!pwd) return;
+  localStorage.setItem('ink_backup_pwd', pwd);
+  renderBackupUI();
+  alert(existing
+    ? 'Password changed. Run Export now to save a fresh encrypted backup.'
+    : 'Password set. Backups will now be encrypted automatically.');
+}
+function clearBackupPassword() {
+  if (!confirm('Remove backup password from this device?\n\nAuto-backup will stop until you set one again. Existing encrypted backups stay safe — you\'ll need the password to decrypt them.')) return;
+  localStorage.removeItem('ink_backup_pwd');
+  renderBackupUI();
+}
+function renderBackupUI() {
+  const hasPwd = !!getStoredBackupPassword();
+  const hasWebhook = !!getWebhookUrl();
+  const statusEl = document.getElementById('backupPwdStatus');
+  if (statusEl) {
+    statusEl.innerHTML = hasPwd
+      ? '<span style="color:#06d6a0">✅ Password set — backups are encrypted</span>'
+      : '<span style="color:#ffd166">⚠️ No password yet — set one to enable encrypted backups</span>';
+  }
+  const show = (id, on) => { const el = document.getElementById(id); if (el) el.style.display = on ? 'inline-block' : 'none'; };
+  show('setPwdBtn',     !hasPwd);
+  show('changePwdBtn',   hasPwd);
+  show('clearPwdBtn',    hasPwd);
+  show('restoreCloudBtn', hasWebhook);
 }
 function testVoice(lang) {
   ttsTestMode = true;
@@ -3382,13 +3898,45 @@ function resumeSession(saved) {
 }
 
 // Auto-load saved keys on startup
-(function(){
+(async function(){
   const oai = localStorage.getItem('ink_oai_key');
   if (oai && oai.startsWith('sk-')) OAIKEY = oai;
   const savedVoice = localStorage.getItem('ink_oai_voice');
   if (savedVoice) OAIVOICE = savedVoice;
   const savedVoiceFR = localStorage.getItem('ink_oai_voice_fr');
   if (savedVoiceFR) OAIVOICE_FR = savedVoiceFR;
+
+  // If profile is missing but we have a webhook, try to restore a cloud backup.
+  // Catches iOS ITP 7-day purge, PWA bucket shifts, device migration.
+  if (!localStorage.getItem('ink_v2') && getWebhookUrl()) {
+    const restored = await tryRestoreFromWebhook();
+    if (restored) console.log('[Ink] Restored profile from cloud backup');
+    else {
+      // Silent restore failed. If there IS a cloud backup but we couldn't
+      // decrypt it (no password on this device), prompt the parent instead
+      // of leaving them on a blank fresh-install state.
+      const obj = await fetchCloudBackup();
+      if (obj && obj.envelope && obj.envelope.type === 'inks-lab-backup-enc') {
+        const savedStamp = obj.savedAt ? new Date(obj.savedAt).toLocaleString() : 'unknown date';
+        const pwd = await askPassword({
+          mode: 'enter',
+          title: '☁️ Cloud Backup Found',
+          message: `Jules\'s progress from ${savedStamp} is in the cloud. Enter the backup password to restore it.`
+        });
+        if (pwd) {
+          try {
+            const decrypted = await decryptJSON(obj.envelope, pwd);
+            applyBackupData(decrypted.data || decrypted);
+            localStorage.setItem('ink_backup_pwd', pwd);
+            console.log('[Ink] Restored profile from cloud backup after password prompt');
+          } catch {
+            alert('Wrong password. Starting fresh — you can try again from Parent View > Restore from cloud.');
+          }
+        }
+      }
+    }
+  }
+
   const saved = localStorage.getItem('ink_api_key');
   if (saved && saved.startsWith('sk-')) {
     KEY = saved;

@@ -12,13 +12,31 @@ const TEACHER_EN = ''; // English teacher email (leave empty to skip)
 const TEACHER_FR = ''; // French teacher email (leave empty to skip)
 // While testing, you can set these to your own email
 
-// Receive session report from the app (POST webhook)
+// Receive session report OR profile backup from the app (POST webhook)
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
-
-    // Store session for weekly digest
     const store = PropertiesService.getScriptProperties();
+
+    // Profile backup — store latest snapshot of Jules's progress.
+    // The app POSTs this after every completed mission so the data
+    // survives device wipes and iOS ITP storage purges.
+    //
+    // The payload is AES-GCM encrypted on the client: we just store
+    // the opaque blob. We can't read it. If you lose the password,
+    // the backup is unrecoverable (by design).
+    if (data && data.type === 'backup') {
+      store.setProperty('latestBackup', JSON.stringify({
+        type: 'backup',
+        savedAt: data.savedAt || Date.now(),
+        envelope: data.envelope || null,   // new encrypted format
+        profile: data.profile || null      // legacy plaintext (pre-encryption)
+      }));
+      return ContentService.createTextOutput(JSON.stringify({ ok: true, kind: 'backup' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Session report (default) — store for digests + send immediate email.
     const sessions = JSON.parse(store.getProperty('sessions') || '[]');
     sessions.push({ ...data, receivedAt: new Date().toISOString() });
     // Keep last 50 sessions
@@ -29,6 +47,28 @@ function doPost(e) {
     sendSessionEmail(data);
 
     return ContentService.createTextOutput(JSON.stringify({ ok: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Serve latest profile backup (GET ?action=restore)
+function doGet(e) {
+  try {
+    const action = e && e.parameter && e.parameter.action;
+    if (action === 'restore') {
+      const store = PropertiesService.getScriptProperties();
+      const raw = store.getProperty('latestBackup');
+      if (!raw) {
+        return ContentService.createTextOutput(JSON.stringify({ ok: false, reason: 'no-backup' }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+      return ContentService.createTextOutput(raw)
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    return ContentService.createTextOutput(JSON.stringify({ ok: true, status: 'Ink\'s Lab webhook live' }))
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ error: err.message }))
@@ -364,4 +404,27 @@ For questions, please contact Jules's parents.
 // - An email after every homework session (automatic)
 // - A weekly summary every Sunday evening (automatic)
 // - Teacher reports every Friday (split by language)
+//
+// ─────────────────────────────────────────────
+// UPGRADING AN EXISTING DEPLOYMENT (backup/restore)
+// ─────────────────────────────────────────────
+// If you already had the script deployed and are pasting this new
+// version over the old one, you MUST redeploy so the new doGet /
+// backup handling takes effect. Apps Script serves the version that
+// was live at deploy time — saving the editor is not enough.
+//
+// Steps:
+//   1. Replace the old code with this file and hit Save (cmd+S).
+//   2. Click "Deploy" > "Manage deployments".
+//   3. Next to your existing deployment, click the pencil (Edit).
+//   4. Under "Version", choose "New version" and give it a note
+//      (e.g. "add backup/restore").
+//   5. Click Deploy. The URL stays the same, so the app keeps
+//      working — no change needed inside Ink's Lab.
+//
+// What this adds:
+// - doPost now accepts `{type:'backup', profile:{...}}` and stores
+//   the latest snapshot in ScriptProperties ("latestBackup").
+// - doGet answers `?action=restore` with the latest backup JSON, so
+//   the app can self-heal if iOS wipes localStorage after 7 days.
 // ═══════════════════════════════════════════════════════
