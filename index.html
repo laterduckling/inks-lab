@@ -1014,7 +1014,7 @@ function loadSession() {
 // PERSISTENCE
 // ═══════════════════════════════════════
 function getProfile() {
-  const defaults = {blocks:0,cards:[],sessions:[],minecoins:0,lastWeekendMission:0,cognitiveProfile:null,cognitiveProfileDate:0,childName:'Jules',streak:0,lastStreakDate:null,venomUnlocked:false,dragonUnlocked:false};
+  const defaults = {blocks:0,cards:[],sessions:[],minecoins:0,lastWeekendMission:0,cognitiveProfile:null,cognitiveProfileDate:0,childName:'Jules',streak:0,lastStreakDate:null,dragonUnlocked:false,venomWeekStart:null,weekSchoolNights:[],venomUnlockedThisWeek:false};
   try { const p = JSON.parse(localStorage.getItem('ink_v2') || '{}'); return Object.assign({}, defaults, p); }
   catch { return Object.assign({}, defaults); }
 }
@@ -1033,6 +1033,14 @@ function personalize(text) {
 function dayKey(date) {
   const d = new Date(date);
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function mondayOf(date) {
+  const d = new Date(date);
+  d.setHours(0,0,0,0);
+  const dow = d.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  const back = dow === 0 ? 6 : dow - 1;
+  d.setDate(d.getDate() - back);
+  return dayKey(d);
 }
 function isSchoolNight(date) {
   const d = new Date(date).getDay();
@@ -1070,6 +1078,36 @@ function applyStreakUpdate(profile, now = new Date()) {
   profile.streak = streak;
   profile.lastStreakDate = today;
   return streakBonusFor(streak);
+}
+
+// ─── Weekly Venom challenge ─────────────────────────────────────────────
+// Unlocked when all 4 Mon-Thu school nights have sessions in the current week.
+// Catch-up: if 3/4 by weekend, completing the weekend mission fills the gap.
+// Resets every Monday.
+function updateVenomWeekly(profile, now = new Date(), weekendJustCompleted = false) {
+  const weekStart = mondayOf(now);
+  if (profile.venomWeekStart !== weekStart) {
+    profile.venomWeekStart = weekStart;
+    profile.weekSchoolNights = [];
+    profile.venomUnlockedThisWeek = false;
+  }
+  const dow = new Date(now).getDay(); // 0=Sun, 1..6
+  const nights = Array.isArray(profile.weekSchoolNights) ? profile.weekSchoolNights : [];
+  if (dow >= 1 && dow <= 4 && !nights.includes(dow)) {
+    nights.push(dow);
+    profile.weekSchoolNights = nights;
+  }
+  if (nights.length >= 4) profile.venomUnlockedThisWeek = true;
+  // Catch-up: on Fri/Sat/Sun, a weekend mission fills the missing 4th night
+  if (weekendJustCompleted && nights.length === 3 && (dow === 5 || dow === 6 || dow === 0)) {
+    profile.venomUnlockedThisWeek = true;
+  }
+}
+function venomWeekState(profile, now = new Date()) {
+  const weekStart = mondayOf(now);
+  const live = profile.venomWeekStart === weekStart;
+  const nights = live && Array.isArray(profile.weekSchoolNights) ? profile.weekSchoolNights : [];
+  return { weekStart, live, count: nights.length, unlocked: live && profile.venomUnlockedThisWeek === true };
 }
 
 // ═══════════════════════════════════════
@@ -3006,42 +3044,48 @@ function inkSrc(moodWord) {
 // ═══════════════════════════════════════
 // INK'S MOODS GALLERY + UNLOCKS
 // ═══════════════════════════════════════
-const VENOM_UNLOCK_STREAK = 4; // full school week Mon-Thu
 const GALLERY_POSES = [
-  { key:'happy',    nameEN:'Happy',      nameFR:'Heureux',  hint:null },
-  { key:'excited',  nameEN:'Excited',    nameFR:'Excité',   hint:null },
-  { key:'thinking', nameEN:'Thinking',   nameFR:'Pensif',   hint:null },
-  { key:'sleeping', nameEN:'Sleeping',   nameFR:'Endormi',  hint:null },
-  { key:'victory',  nameEN:'Victory',    nameFR:'Victoire', hint:null },
-  { key:'venk',     nameEN:'Venom',      nameFR:'Venom',
-    hintEN:`Do homework ${VENOM_UNLOCK_STREAK} school nights in a row to unlock!`,
-    hintFR:`Fais tes devoirs ${VENOM_UNLOCK_STREAK} soirs d'école d'affilée pour le débloquer !` },
-  { key:'dragon',   nameEN:'Dragon-Fire',nameFR:'Dragon de Feu',
-    hintEN:'Finish a weekend bonus mission to unlock!',
-    hintFR:'Termine une mission bonus du week-end !' },
+  { key:'happy',    nameEN:'Happy',      nameFR:'Heureux'  },
+  { key:'excited',  nameEN:'Excited',    nameFR:'Excité'   },
+  { key:'thinking', nameEN:'Thinking',   nameFR:'Pensif'   },
+  { key:'sleeping', nameEN:'Sleeping',   nameFR:'Endormi'  },
+  { key:'victory',  nameEN:'Victory',    nameFR:'Victoire' },
+  { key:'venk',     nameEN:'Venom',      nameFR:'Venom'    },
+  { key:'dragon',   nameEN:'Dragon-Fire',nameFR:'Dragon de Feu' },
 ];
 function isPoseUnlocked(key, profile) {
-  if (key === 'venk')   return (profile.venomUnlocked === true) || (profile.streak || 0) >= VENOM_UNLOCK_STREAK;
+  if (key === 'venk')   return venomWeekState(profile).unlocked;
   if (key === 'dragon') return profile.dragonUnlocked === true;
   return true;
 }
-// Call after any streak update to persist the venom unlock (once unlocked, stays unlocked)
-function maybeUnlockVenom(profile) {
-  if (!profile.venomUnlocked && (profile.streak || 0) >= VENOM_UNLOCK_STREAK) {
-    profile.venomUnlocked = true;
-  }
+function venomHint(profile, fr) {
+  const s = venomWeekState(profile);
+  if (s.unlocked) return fr ? 'Débloqué cette semaine !' : 'Unlocked this week!';
+  if (s.count >= 3) return fr
+    ? `${s.count}/4 cette semaine — termine la mission bonus du week-end pour rattraper !`
+    : `${s.count}/4 this week — finish the weekend bonus mission to catch up!`;
+  if (s.count >= 1) return fr
+    ? `${s.count}/4 cette semaine — continue les soirs d'école !`
+    : `${s.count}/4 this week — keep going Mon-Thu!`;
+  return fr
+    ? 'Fais tes devoirs les 4 soirs d\'école cette semaine !'
+    : 'Do homework all 4 school nights this week to unlock!';
+}
+function dragonHint(profile, fr) {
+  if (profile.dragonUnlocked) return fr ? 'Débloqué !' : 'Unlocked!';
+  return fr ? 'Termine une mission bonus du week-end !' : 'Finish a weekend bonus mission to unlock!';
 }
 function openGallery() { renderGallery(); show('gallery'); }
 function renderGallery() {
   const profile = getProfile();
-  maybeUnlockVenom(profile);
-  saveProfile(profile);
   const fr = S.lang === 'FR';
   const grid = document.getElementById('galleryGrid');
   grid.innerHTML = GALLERY_POSES.map(p => {
     const unlocked = isPoseUnlocked(p.key, profile);
     const name = fr ? p.nameFR : p.nameEN;
-    const hint = unlocked ? '' : (fr ? p.hintFR : p.hintEN) || '';
+    let hint = '';
+    if (!unlocked && p.key === 'venk')   hint = venomHint(profile, fr);
+    if (!unlocked && p.key === 'dragon') hint = dragonHint(profile, fr);
     const imgStyle = unlocked
       ? 'width:100%;height:120px;object-fit:contain'
       : 'width:100%;height:120px;object-fit:contain;filter:grayscale(1) brightness(.25) contrast(1.4);opacity:.5';
@@ -3531,18 +3575,21 @@ async function afterReward() {
     if (profile.sessions.length > 20) profile.sessions = profile.sessions.slice(-20);
     // Weekend bonus
     S.weekendBonusAwarded = false;
+    S.dragonJustUnlocked = false;
     if (S.isWeekendMission) {
       profile.minecoins = (profile.minecoins||0) + 25;
       profile.lastWeekendMission = Date.now();
-      profile.dragonUnlocked = true; // permanent dragon unlock
+      if (!profile.dragonUnlocked) { profile.dragonUnlocked = true; S.dragonJustUnlocked = true; }
       S.weekendBonusAwarded = true;
       S.isWeekendMission = false;
     }
     // Silent streak bonus (school nights only; child sees only the reward)
     S.streakBonus = applyStreakUpdate(profile);
     if (S.streakBonus > 0) profile.minecoins = (profile.minecoins||0) + S.streakBonus;
-    // Persist venom unlock once coins cross the threshold (stays unlocked forever)
-    maybeUnlockVenom(profile);
+    // Weekly Venom challenge: counts this school night or weekend catch-up
+    const venomBefore = !!profile.venomUnlockedThisWeek;
+    updateVenomWeekly(profile, new Date(), S.weekendBonusAwarded);
+    S.venomJustUnlocked = !venomBefore && !!profile.venomUnlockedThisWeek;
     // Enrich the just-added session with shone/struggled from summary (for profile gen)
     saveProfile(profile);
     let summary = null;
@@ -3623,6 +3670,18 @@ function renderSummary(s, profile) {
     funMessages.push(fr
       ? `🌟 Super semaine d'efforts ! +${S.streakBonus} coins bonus !`
       : `🌟 Amazing week of effort! +${S.streakBonus} bonus coins!`);
+  }
+  // Venom unlock reveal
+  if (S.venomJustUnlocked) {
+    funMessages.push(fr
+      ? `🐙 Nouveau ! Tu as débloqué la forme Venom ! Va voir les moods d'Ink !`
+      : `🐙 New! You unlocked Venom form! Check out Ink's Moods!`);
+  }
+  // Dragon unlock reveal (first time only)
+  if (S.dragonJustUnlocked) {
+    funMessages.push(fr
+      ? `🔥 Nouvelle forme légendaire débloquée : Dragon de Feu ! Va voir les moods d'Ink !`
+      : `🔥 Legendary new form unlocked: Dragon-Fire! Check out Ink's Moods!`);
   }
 
   recap.innerHTML = `
