@@ -331,7 +331,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 }
 
 /* ═════════ iPad landscape two-pane welcome ═════════ */
-@media (min-width:900px) and (orientation:landscape){
+@media (min-width:700px) and (orientation:landscape){
   #sw.welcome-grid{max-width:1100px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto;gap:28px 40px;align-items:start;justify-items:center;padding-top:40px}
   #sw.welcome-grid .welcome-identity{display:flex;flex-direction:column;align-items:center;gap:14px;grid-column:1;grid-row:1}
   #sw.welcome-grid .welcome-actions{display:flex;flex-direction:column;gap:12px;width:100%;max-width:440px;grid-column:2;grid-row:1 / 3;align-self:stretch}
@@ -915,6 +915,14 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <div id="galleryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-top:8px"></div>
 </div>
 
+<!-- Pose modal — full-screen view when Jules taps a gallery pose -->
+<div id="poseModal" onclick="closePoseModal()" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(2,8,20,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);align-items:center;justify-content:center;flex-direction:column;padding:20px;gap:14px;cursor:pointer">
+  <img id="poseModalImg" src="" alt="" style="max-width:92%;max-height:60vh;object-fit:contain;filter:drop-shadow(0 10px 30px rgba(0,0,0,.6))">
+  <div id="poseModalName" style="font-family:var(--font-display);font-size:28px;font-weight:900;color:#e0f0f8;text-align:center"></div>
+  <div id="poseModalLine" style="font-size:16px;color:rgba(224,240,248,.75);text-align:center;max-width:420px;line-height:1.5;font-style:italic"></div>
+  <div style="font-size:11px;color:rgba(224,240,248,.4);margin-top:4px;letter-spacing:1px;text-transform:uppercase">Tap anywhere to close</div>
+</div>
+
 <!-- Password modal — real form + autocomplete attrs so iOS Passwords will offer to save/autofill -->
 <div id="pwdModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(2,8,20,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px">
   <form id="pwdForm" action="#" method="post" autocomplete="on" style="background:linear-gradient(180deg,#0a1428,#050a18);border:1.5px solid rgba(0,220,200,.3);border-radius:20px;padding:24px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.6)">
@@ -1006,8 +1014,9 @@ function loadSession() {
 // PERSISTENCE
 // ═══════════════════════════════════════
 function getProfile() {
-  try { const p = JSON.parse(localStorage.getItem('ink_v2') || '{}'); return {blocks:p.blocks||0,cards:p.cards||[],sessions:p.sessions||[],minecoins:p.minecoins||0,lastWeekendMission:p.lastWeekendMission||0,cognitiveProfile:p.cognitiveProfile||null,cognitiveProfileDate:p.cognitiveProfileDate||0,childName:p.childName||'Jules'}; }
-  catch { return {blocks:0,cards:[],sessions:[],minecoins:0,lastWeekendMission:0,cognitiveProfile:null,cognitiveProfileDate:0,childName:'Jules'}; }
+  const defaults = {blocks:0,cards:[],sessions:[],minecoins:0,lastWeekendMission:0,cognitiveProfile:null,cognitiveProfileDate:0,childName:'Jules',streak:0,lastStreakDate:null,venomUnlocked:false,dragonUnlocked:false};
+  try { const p = JSON.parse(localStorage.getItem('ink_v2') || '{}'); return Object.assign({}, defaults, p); }
+  catch { return Object.assign({}, defaults); }
 }
 function saveProfile(p) {
   try { localStorage.setItem('ink_v2', JSON.stringify(p)); } catch {}
@@ -3036,13 +3045,42 @@ function renderGallery() {
     const imgStyle = unlocked
       ? 'width:100%;height:120px;object-fit:contain'
       : 'width:100%;height:120px;object-fit:contain;filter:grayscale(1) brightness(.25) contrast(1.4);opacity:.5';
+    const cursor = unlocked ? 'cursor:pointer' : 'cursor:default';
+    const onclick = unlocked ? `onclick="openPoseModal('${p.key}')"` : '';
     return `
-      <div style="background:rgba(16,36,72,.45);border:1px solid rgba(45,224,198,.18);border-radius:14px;padding:12px;text-align:center">
+      <div ${onclick} style="background:rgba(16,36,72,.45);border:1px solid rgba(45,224,198,.18);border-radius:14px;padding:12px;text-align:center;${cursor};transition:transform .15s,border-color .15s" ${unlocked?'onmouseover="this.style.transform=\'scale(1.03)\';this.style.borderColor=\'rgba(199,168,255,.5)\'" onmouseout="this.style.transform=\'scale(1)\';this.style.borderColor=\'rgba(45,224,198,.18)\'"':''}>
         <img src="${INK_POSE_FILE[p.key]}" alt="${escHtml(name)}" style="${imgStyle}">
         <div style="font-size:14px;font-weight:800;color:${unlocked?'#e0f0f8':'rgba(224,240,248,.45)'};margin-top:6px">${unlocked?'':'🔒 '}${escHtml(name)}</div>
         ${hint ? `<div style="font-size:11px;color:rgba(224,240,248,.5);margin-top:3px;line-height:1.3">${escHtml(hint)}</div>` : ''}
       </div>`;
   }).join('');
+}
+const POSE_VOICE_LINES = {
+  happy:    { en: "That's my happy face!",                               fr: "C'est ma tête contente !" },
+  excited:  { en: "WOOHOO! Excited mode activated!",                      fr: "WOUHOU ! Mode excité activé !" },
+  thinking: { en: "Hmm... let me think about it.",                        fr: "Hmm... laisse-moi réfléchir." },
+  sleeping: { en: "Shhh... I was just taking a nap.",                     fr: "Chut... je faisais juste une petite sieste." },
+  victory:  { en: "YES! We did it!",                                      fr: "OUI ! On a réussi !" },
+  venk:     { en: "Careful. This is my venom form. Do NOT touch.",        fr: "Attention. C'est ma forme venimeuse. Ne touche PAS." },
+  dragon:   { en: "Behold — the legendary dragon-fire form!",             fr: "Contemple — la forme légendaire du dragon de feu !" },
+};
+function openPoseModal(key) {
+  haptic([15]);
+  const fr = S.lang === 'FR';
+  const pose = GALLERY_POSES.find(p => p.key === key);
+  const name = fr ? pose.nameFR : pose.nameEN;
+  const line = POSE_VOICE_LINES[key] ? (fr ? POSE_VOICE_LINES[key].fr : POSE_VOICE_LINES[key].en) : name;
+  const modal = document.getElementById('poseModal');
+  document.getElementById('poseModalImg').src = INK_POSE_FILE[key];
+  document.getElementById('poseModalName').textContent = name;
+  document.getElementById('poseModalLine').textContent = line;
+  modal.style.display = 'flex';
+  try { speak(line); } catch {}
+}
+function closePoseModal() {
+  const modal = document.getElementById('poseModal');
+  modal.style.display = 'none';
+  stopSpeaking();
 }
 function setInkImg(el, moodWord) { if (el) el.src = inkSrc(moodWord); }
 
