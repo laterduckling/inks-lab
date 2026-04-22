@@ -330,8 +330,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   .ink-img-xl{width:260px;height:260px}
 }
 
-/* ═════════ iPad landscape two-pane welcome ═════════ */
-@media (min-width:700px) and (orientation:landscape){
+/* ═════════ Two-pane welcome for wide viewports (iPad landscape and up) ═════════ */
+/* Uses width only — orientation media queries are flaky in iOS standalone PWAs. */
+@media (min-width:900px){
   #sw.welcome-grid{max-width:1100px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto;gap:28px 40px;align-items:start;justify-items:center;padding-top:40px}
   #sw.welcome-grid .welcome-identity{display:flex;flex-direction:column;align-items:center;gap:14px;grid-column:1;grid-row:1}
   #sw.welcome-grid .welcome-actions{display:flex;flex-direction:column;gap:12px;width:100%;max-width:440px;grid-column:2;grid-row:1 / 3;align-self:stretch}
@@ -1141,7 +1142,7 @@ if (window.speechSynthesis) {
 
 let currentAudio = null;
 
-function speak(text) {
+function speak(text, instructions = null) {
   if (MUTED) return;
   // Swap {{NAME}} → real name (OK for OpenAI TTS)
   text = personalize(text);
@@ -1150,20 +1151,23 @@ function speak(text) {
   if (!clean) return;
   // Try OpenAI TTS first if key is available
   if (OAIKEY) {
-    speakOpenAI(clean);
+    speakOpenAI(clean, instructions);
   } else {
     speakBrowser(clean);
   }
 }
 
 let ttsTestMode = false;
-async function speakOpenAI(text) {
+async function speakOpenAI(text, instructions = null) {
   try {
     stopSpeaking();
+    const model = instructions ? 'gpt-4o-mini-tts' : 'tts-1';
+    const body = { model, input: text, voice: (S.lang === 'FR' ? OAIVOICE_FR : OAIVOICE), speed: 0.95 };
+    if (instructions) body.instructions = instructions;
     const r = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${OAIKEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'tts-1', input: text, voice: (S.lang === 'FR' ? OAIVOICE_FR : OAIVOICE), speed: 0.95 })
+      body: JSON.stringify(body)
     });
     if (!r.ok) {
       const err = await r.text().catch(()=>'unknown error');
@@ -3108,6 +3112,16 @@ const POSE_VOICE_LINES = {
   venk:     { en: "Careful. This is my venom form. Do NOT touch.",        fr: "Attention. C'est ma forme venimeuse. Ne touche PAS." },
   dragon:   { en: "Behold — the legendary dragon-fire form!",             fr: "Contemple — la forme légendaire du dragon de feu !" },
 };
+// Per-mood TTS shaping (OpenAI gpt-4o-mini-tts 'instructions' field)
+const POSE_VOICE_STYLE = {
+  happy:    "Warm, bright, friendly. Slightly higher pitch, like greeting a good friend. Cheerful energy.",
+  excited:  "Very high energy, breathless with joy, exclamatory. Fast pace. Shouting with delight.",
+  thinking: "Slow, thoughtful, curious. Slightly lower pitch. Trailing off mid-thought, as if pondering.",
+  sleeping: "Very soft, whispery, drowsy. Low energy. Half-asleep. Barely above a murmur, almost yawning.",
+  victory:  "Triumphant, loud, celebratory. Big emphasis and pride. Like shouting 'we won!' from a mountaintop.",
+  venk:     "Deep, menacing, predatory whisper. Low pitch. Slightly growly. A dangerous warning edge — still playful enough for a kid, but clearly the villain mode.",
+  dragon:   "Deep, epic, legendary boss-reveal voice. Booming but smooth. Grand and theatrical — a mythical dragon speaking for the first time.",
+};
 function openPoseModal(key) {
   haptic([15]);
   const fr = S.lang === 'FR';
@@ -3119,7 +3133,7 @@ function openPoseModal(key) {
   document.getElementById('poseModalName').textContent = name;
   document.getElementById('poseModalLine').textContent = line;
   modal.style.display = 'flex';
-  try { speak(line); } catch {}
+  try { speak(line, POSE_VOICE_STYLE[key] || null); } catch {}
 }
 function closePoseModal() {
   const modal = document.getElementById('poseModal');
