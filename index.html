@@ -3006,7 +3006,7 @@ function inkSrc(moodWord) {
 // ═══════════════════════════════════════
 // INK'S MOODS GALLERY + UNLOCKS
 // ═══════════════════════════════════════
-const VENOM_UNLOCK_COINS = 50;
+const VENOM_UNLOCK_STREAK = 4; // full school week Mon-Thu
 const GALLERY_POSES = [
   { key:'happy',    nameEN:'Happy',      nameFR:'Heureux',  hint:null },
   { key:'excited',  nameEN:'Excited',    nameFR:'Excité',   hint:null },
@@ -3014,20 +3014,20 @@ const GALLERY_POSES = [
   { key:'sleeping', nameEN:'Sleeping',   nameFR:'Endormi',  hint:null },
   { key:'victory',  nameEN:'Victory',    nameFR:'Victoire', hint:null },
   { key:'venk',     nameEN:'Venom',      nameFR:'Venom',
-    hintEN:`Unlock at ${VENOM_UNLOCK_COINS} Minecoins`,
-    hintFR:`Débloqué à ${VENOM_UNLOCK_COINS} Minecoins` },
+    hintEN:`Do homework ${VENOM_UNLOCK_STREAK} school nights in a row to unlock!`,
+    hintFR:`Fais tes devoirs ${VENOM_UNLOCK_STREAK} soirs d'école d'affilée pour le débloquer !` },
   { key:'dragon',   nameEN:'Dragon-Fire',nameFR:'Dragon de Feu',
     hintEN:'Finish a weekend bonus mission to unlock!',
     hintFR:'Termine une mission bonus du week-end !' },
 ];
 function isPoseUnlocked(key, profile) {
-  if (key === 'venk')   return (profile.venomUnlocked === true) || (profile.minecoins || 0) >= VENOM_UNLOCK_COINS;
+  if (key === 'venk')   return (profile.venomUnlocked === true) || (profile.streak || 0) >= VENOM_UNLOCK_STREAK;
   if (key === 'dragon') return profile.dragonUnlocked === true;
   return true;
 }
-// Call after any minecoins change to persist the venom unlock (once unlocked, stays unlocked)
+// Call after any streak update to persist the venom unlock (once unlocked, stays unlocked)
 function maybeUnlockVenom(profile) {
-  if (!profile.venomUnlocked && (profile.minecoins || 0) >= VENOM_UNLOCK_COINS) {
+  if (!profile.venomUnlocked && (profile.streak || 0) >= VENOM_UNLOCK_STREAK) {
     profile.venomUnlocked = true;
   }
 }
