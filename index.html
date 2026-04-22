@@ -429,6 +429,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       </div>
       <span class="mb-arrow">→</span>
     </button>
+    <button onclick="openGallery()" style="margin-top:6px;padding:10px 14px;background:rgba(16,36,72,.35);border:1px solid rgba(199,168,255,.25);border-radius:12px;color:rgba(224,240,248,.75);font-size:13px;font-weight:700;font-family:var(--font-mono);letter-spacing:1.5px;text-transform:uppercase;cursor:pointer">🎭 Ink's Moods</button>
   </div>
   </div><!-- /welcome-actions -->
 
@@ -902,6 +903,18 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <div class="card" id="parInsights" style="padding:18px 20px;display:none"></div>
 </div>
 
+<!-- ══════════════════════════════════════
+     SCREEN: INK'S MOODS (gallery)
+══════════════════════════════════════ -->
+<div id="sgallery" class="screen" style="gap:16px;padding-top:24px;padding-bottom:28px">
+  <div style="display:flex;align-items:center;gap:12px">
+    <button onclick="show('w')" style="background:rgba(16,36,72,.6);border:1px solid rgba(45,224,198,.2);border-radius:10px;padding:8px 12px;color:#e0f0f8;font-weight:700;cursor:pointer">← Back</button>
+    <h2 style="font-size:26px;font-weight:900;font-family:var(--font-display)">🎭 Ink's Moods</h2>
+  </div>
+  <p style="font-size:13px;color:rgba(224,240,248,.55);line-height:1.5">All of Ink's faces. Some you've already unlocked — others are waiting for you!</p>
+  <div id="galleryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-top:8px"></div>
+</div>
+
 <!-- Password modal — real form + autocomplete attrs so iOS Passwords will offer to save/autofill -->
 <div id="pwdModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(2,8,20,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px">
   <form id="pwdForm" action="#" method="post" autocomplete="on" style="background:linear-gradient(180deg,#0a1428,#050a18);border:1.5px solid rgba(0,220,200,.3);border-radius:20px;padding:24px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.6)">
@@ -1003,6 +1016,51 @@ function getChildName() { return (getProfile().childName || 'Jules'); }
 function personalize(text) {
   if (!text) return text;
   return String(text).replace(/\{\{NAME\}\}/g, getChildName());
+}
+
+// ═══════════════════════════════════════
+// SILENT STREAK (Mon–Thu only, 1-day grace, no visible counter for child)
+// ═══════════════════════════════════════
+function dayKey(date) {
+  const d = new Date(date);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function isSchoolNight(date) {
+  const d = new Date(date).getDay();
+  return d >= 1 && d <= 4; // Mon-Thu
+}
+function schoolNightsBetween(aDayKey, bDayKey) {
+  if (!aDayKey || aDayKey >= bDayKey) return 0;
+  const a = new Date(aDayKey + 'T00:00:00');
+  const b = new Date(bDayKey + 'T00:00:00');
+  let count = 0;
+  const d = new Date(a); d.setDate(d.getDate() + 1);
+  while (d < b) {
+    if (isSchoolNight(d)) count++;
+    d.setDate(d.getDate() + 1);
+  }
+  return count;
+}
+function streakBonusFor(streak) {
+  if (streak >= 30) return 50;
+  if (streak >= 14) return 20;
+  if (streak >= 7)  return 10;
+  if (streak >= 3)  return 3;
+  return 0;
+}
+// Mutates profile; returns bonus coins for this session. Non-school-nights: inert.
+function applyStreakUpdate(profile, now = new Date()) {
+  if (!isSchoolNight(now)) return 0;
+  const today = dayKey(now);
+  const last = profile.lastStreakDate || null;
+  if (last === today) return streakBonusFor(profile.streak || 0);
+  const missed = last ? schoolNightsBetween(last, today) : 999;
+  let streak = profile.streak || 0;
+  if (missed <= 1) streak += 1;
+  else streak = 1;
+  profile.streak = streak;
+  profile.lastStreakDate = today;
+  return streakBonusFor(streak);
 }
 
 // ═══════════════════════════════════════
@@ -2274,6 +2332,17 @@ function fireFireworks() {
 // ═══════════════════════════════════════
 // WELCOME SCREEN
 // ═══════════════════════════════════════
+let _greetedThisLaunch = false;
+function greetOnWelcome() {
+  if (_greetedThisLaunch) return;
+  _greetedThisLaunch = true;
+  const name = getChildName();
+  const fr = (S.lang === 'FR');
+  const line = fr ? `Salut ${name} !` : `Hi ${name}!`;
+  // Small delay lets the welcome screen mount before TTS fires
+  setTimeout(() => { try { speak(line); } catch {} }, 450);
+}
+
 function renderWelcome() {
   const profile = getProfile();
   const bc = Math.min(profile.blocks, STATION_TOTAL);
@@ -2314,6 +2383,7 @@ function renderWelcome() {
   } else {
     wm.style.display = 'none';
   }
+  greetOnWelcome();
 }
 
 function getWeekStart() {
@@ -2916,11 +2986,63 @@ const INK_POSE_FILE = {
   venk:       'images/angry.png',
   sleeping:   'images/sleeping.png',
   victory:    'images/victory.png',
+  dragon:     'images/dragon.png',
 };
 function inkSrc(moodWord) {
-  const alias = { bounce:'excited', think:'thinking', angry:'venk', celebrating:'victory', idle:'sleeping' };
+  const alias = { bounce:'excited', think:'thinking', angry:'venk', celebrating:'victory', idle:'sleeping', fire:'dragon' };
   const m = alias[moodWord] || moodWord;
   return INK_POSE_FILE[m] || INK_POSE_FILE.happy;
+}
+
+// ═══════════════════════════════════════
+// INK'S MOODS GALLERY + UNLOCKS
+// ═══════════════════════════════════════
+const VENOM_UNLOCK_COINS = 50;
+const GALLERY_POSES = [
+  { key:'happy',    nameEN:'Happy',      nameFR:'Heureux',  hint:null },
+  { key:'excited',  nameEN:'Excited',    nameFR:'Excité',   hint:null },
+  { key:'thinking', nameEN:'Thinking',   nameFR:'Pensif',   hint:null },
+  { key:'sleeping', nameEN:'Sleeping',   nameFR:'Endormi',  hint:null },
+  { key:'victory',  nameEN:'Victory',    nameFR:'Victoire', hint:null },
+  { key:'venk',     nameEN:'Venom',      nameFR:'Venom',
+    hintEN:`Unlock at ${VENOM_UNLOCK_COINS} Minecoins`,
+    hintFR:`Débloqué à ${VENOM_UNLOCK_COINS} Minecoins` },
+  { key:'dragon',   nameEN:'Dragon-Fire',nameFR:'Dragon de Feu',
+    hintEN:'Finish a weekend bonus mission to unlock!',
+    hintFR:'Termine une mission bonus du week-end !' },
+];
+function isPoseUnlocked(key, profile) {
+  if (key === 'venk')   return (profile.venomUnlocked === true) || (profile.minecoins || 0) >= VENOM_UNLOCK_COINS;
+  if (key === 'dragon') return profile.dragonUnlocked === true;
+  return true;
+}
+// Call after any minecoins change to persist the venom unlock (once unlocked, stays unlocked)
+function maybeUnlockVenom(profile) {
+  if (!profile.venomUnlocked && (profile.minecoins || 0) >= VENOM_UNLOCK_COINS) {
+    profile.venomUnlocked = true;
+  }
+}
+function openGallery() { renderGallery(); show('gallery'); }
+function renderGallery() {
+  const profile = getProfile();
+  maybeUnlockVenom(profile);
+  saveProfile(profile);
+  const fr = S.lang === 'FR';
+  const grid = document.getElementById('galleryGrid');
+  grid.innerHTML = GALLERY_POSES.map(p => {
+    const unlocked = isPoseUnlocked(p.key, profile);
+    const name = fr ? p.nameFR : p.nameEN;
+    const hint = unlocked ? '' : (fr ? p.hintFR : p.hintEN) || '';
+    const imgStyle = unlocked
+      ? 'width:100%;height:120px;object-fit:contain'
+      : 'width:100%;height:120px;object-fit:contain;filter:grayscale(1) brightness(.25) contrast(1.4);opacity:.5';
+    return `
+      <div style="background:rgba(16,36,72,.45);border:1px solid rgba(45,224,198,.18);border-radius:14px;padding:12px;text-align:center">
+        <img src="${INK_POSE_FILE[p.key]}" alt="${escHtml(name)}" style="${imgStyle}">
+        <div style="font-size:14px;font-weight:800;color:${unlocked?'#e0f0f8':'rgba(224,240,248,.45)'};margin-top:6px">${unlocked?'':'🔒 '}${escHtml(name)}</div>
+        ${hint ? `<div style="font-size:11px;color:rgba(224,240,248,.5);margin-top:3px;line-height:1.3">${escHtml(hint)}</div>` : ''}
+      </div>`;
+  }).join('');
 }
 function setInkImg(el, moodWord) { if (el) el.src = inkSrc(moodWord); }
 
@@ -3056,12 +3178,70 @@ const IDLE_LINES_FR = [
   "🐙 Le tentacule n°3 vient de déposer une plainte officielle. Les RH sont impliqués.",
   "☄️ Une comète vient de passer. Elle a fait signe. Ink a fait signe avec 8 tentacules. C'était beaucoup.",
 ];
+
+// Verified octopus facts — pitched at a curious 9–10yo level. All strictly true.
+// If any claim here is ever flagged as wrong, REMOVE it rather than rewrite.
+const OCT_FACTS_EN = [
+  "🧪 Did you know? Blue-ringed octopuses carry tetrodotoxin — the same neurotoxin pufferfish have. One bite can kill a grown adult in minutes, and there is still no antivenom.",
+  "❤️ Fun one: octopuses have three hearts. Two pump blood through the gills, one through the rest of the body. The main heart actually stops when they swim — that's why they prefer to crawl.",
+  "💙 Octopus blood is blue because it uses copper-based hemocyanin instead of iron-based hemoglobin. Hemocyanin carries oxygen better in cold, deep, low-oxygen water.",
+  "🧠 An octopus has nine brain-like clusters: one central brain, plus a big ganglion in each of its eight arms. Each arm can figure things out on its own.",
+  "🧬 Octopuses can edit their own RNA — changing how their proteins are built on the fly. Almost no other animal does this. Scientists think it helps them adapt to different waters fast.",
+  "🎭 The mimic octopus can impersonate over 15 other sea creatures — lionfish, flatfish, sea snakes — by changing shape, color, and movement to match.",
+  "👁️ Octopuses are color-blind — they see in grayscale. But they camouflage perfectly to any color. Researchers think they may sense color through light-reading proteins in their skin.",
+  "🥚 A mother octopus guards her eggs for months without eating. When they hatch, a gland in her brain triggers her body to shut down. She doesn't survive long after.",
+  "👅 Every sucker on an octopus arm can taste and smell what it touches. Imagine tasting everything you pick up with your hands.",
+  "🥥 Coconut octopuses collect coconut shell halves, carry them along the seafloor, and snap them shut to hide inside — one of the only invertebrates known to use tools.",
+  "🕳️ An octopus can squeeze through any hole bigger than its beak — the only hard part of its body. A 600-pound giant Pacific octopus can fit through a gap the size of an orange.",
+  "🎨 Octopus skin has chromatophores — tiny pigment sacs controlled by muscles. They can change color and pattern in less than a second.",
+  "⚠️ When threatened, a blue-ringed octopus flashes its rings in about a third of a second — a warning that its bite is deadly. That fast flash is the whole point of the rings.",
+  "🦑 Giant Pacific octopuses can grow over 5 meters from tentacle tip to tentacle tip — but they only live 3 to 5 years, and most of that time alone.",
+  "🧸 Octopuses have been filmed playing — pushing plastic bottles into a tank current, catching them, releasing them again. Play is rare in the animal world; it usually means high intelligence.",
+];
+const OCT_FACTS_FR = [
+  "🧪 Le savais-tu ? Le poulpe aux anneaux bleus contient de la tétrodotoxine — le même poison mortel que le poisson-globe. Une morsure peut tuer un adulte en quelques minutes, et il n'existe toujours aucun antidote.",
+  "❤️ Marrant : les poulpes ont trois cœurs. Deux envoient le sang dans les branchies, un dans le reste du corps. Le cœur principal s'arrête quand ils nagent — c'est pour ça qu'ils préfèrent ramper.",
+  "💙 Le sang du poulpe est bleu parce qu'il utilise de l'hémocyanine (à base de cuivre) au lieu de l'hémoglobine (fer). L'hémocyanine transporte mieux l'oxygène dans l'eau froide et profonde.",
+  "🧠 Le poulpe a neuf regroupements de neurones : un cerveau central, plus un gros ganglion dans chacun de ses huit bras. Chaque bras peut réfléchir un peu tout seul.",
+  "🧬 Les poulpes savent modifier leur propre ARN — ils changent la façon dont leurs protéines sont fabriquées en direct. Presque aucun autre animal ne fait ça. Ça les aide à s'adapter vite à des milieux différents.",
+  "🎭 Le poulpe mime peut imiter plus de 15 créatures marines — rascasse, poisson plat, serpent de mer — en changeant sa forme, sa couleur et ses mouvements.",
+  "👁️ Les poulpes sont daltoniens — ils voient en noir et blanc. Mais ils se camouflent parfaitement en n'importe quelle couleur. Les scientifiques pensent qu'ils 'voient' les couleurs grâce à des protéines dans leur peau.",
+  "🥚 La maman poulpe protège ses œufs pendant des mois sans manger. Quand ils éclosent, une glande dans son cerveau déclenche l'arrêt de son corps. Elle ne survit pas très longtemps après.",
+  "👅 Chaque ventouse sur un bras de poulpe peut goûter et sentir ce qu'elle touche. Imagine goûter tout ce que tu prends avec tes mains.",
+  "🥥 Le poulpe noix de coco ramasse des demi-coquilles de noix de coco, les transporte, et les referme pour se cacher dedans — un des seuls invertébrés connus à utiliser des outils.",
+  "🕳️ Un poulpe peut passer par n'importe quel trou plus grand que son bec — la seule partie dure de son corps. Un poulpe géant de 270 kg peut se glisser par un trou de la taille d'une orange.",
+  "🎨 La peau du poulpe contient des chromatophores — de petits sacs de pigment contrôlés par des muscles. Ils changent de couleur et de motif en moins d'une seconde.",
+  "⚠️ Quand il se sent menacé, le poulpe aux anneaux bleus fait clignoter ses anneaux en environ un tiers de seconde — un signal d'alerte qu'une morsure est mortelle.",
+  "🦑 Le poulpe géant du Pacifique peut mesurer plus de 5 mètres d'une pointe de tentacule à l'autre — mais il ne vit que 3 à 5 ans, souvent en solitaire.",
+  "🧸 Des poulpes ont été filmés en train de jouer — ils poussent des bouteilles en plastique dans le courant d'un aquarium, les rattrapent, recommencent. Le jeu est rare chez les animaux et signe souvent d'une grande intelligence.",
+];
+
+function pickNextFact(lang) {
+  const key = lang === 'FR' ? 'ink_shown_facts_fr' : 'ink_shown_facts_en';
+  const pool = lang === 'FR' ? OCT_FACTS_FR : OCT_FACTS_EN;
+  let shown = [];
+  try { shown = JSON.parse(localStorage.getItem(key) || '[]'); } catch {}
+  if (!Array.isArray(shown) || shown.length >= pool.length) shown = [];
+  const available = pool.map((_, i) => i).filter(i => !shown.includes(i));
+  const idx = available[Math.floor(Math.random() * available.length)];
+  shown.push(idx);
+  try { localStorage.setItem(key, JSON.stringify(shown)); } catch {}
+  return pool[idx];
+}
+
 let idleIdx = 0;
 function startIdleTimer() {
   clearIdleTimer();
   idleTimer = setTimeout(() => {
-    const lines = S.lang==='FR' ? IDLE_LINES_FR : IDLE_LINES_EN;
-    const line = lines[idleIdx % lines.length]; idleIdx++;
+    // 60% fact, 40% humor line
+    const useFact = Math.random() < 0.6;
+    let line;
+    if (useFact) {
+      line = pickNextFact(S.lang);
+    } else {
+      const lines = S.lang==='FR' ? IDLE_LINES_FR : IDLE_LINES_EN;
+      line = lines[idleIdx % lines.length]; idleIdx++;
+    }
     const isVenk = S.hintCount >= 2;
     addMsg('a', line, isVenk);
     speak(line);
@@ -3312,11 +3492,19 @@ async function afterReward() {
     profile.sessions.push({date:Date.now(),lang:S.lang,subject:S.hw.subject,minutes:mins,tasksCount:S.hw.tasks.length,totalHints:S.taskHints.reduce((a,b)=>a+b,0),avgHints:Math.round(avgHints*10)/10});
     if (profile.sessions.length > 20) profile.sessions = profile.sessions.slice(-20);
     // Weekend bonus
+    S.weekendBonusAwarded = false;
     if (S.isWeekendMission) {
       profile.minecoins = (profile.minecoins||0) + 25;
       profile.lastWeekendMission = Date.now();
+      profile.dragonUnlocked = true; // permanent dragon unlock
+      S.weekendBonusAwarded = true;
       S.isWeekendMission = false;
     }
+    // Silent streak bonus (school nights only; child sees only the reward)
+    S.streakBonus = applyStreakUpdate(profile);
+    if (S.streakBonus > 0) profile.minecoins = (profile.minecoins||0) + S.streakBonus;
+    // Persist venom unlock once coins cross the threshold (stays unlocked forever)
+    maybeUnlockVenom(profile);
     // Enrich the just-added session with shone/struggled from summary (for profile gen)
     saveProfile(profile);
     let summary = null;
@@ -3392,12 +3580,20 @@ function renderSummary(s, profile) {
        `📝 ${tasksCount} task${tasksCount>1?'s':''} completed`,
        shone ? `⭐ ${escHtml(shone)}` : '⭐ You were super focused today!'];
 
+  // Silent streak: surprise bonus line, no counter, no loss framing
+  if ((S.streakBonus || 0) > 0) {
+    funMessages.push(fr
+      ? `🌟 Super semaine d'efforts ! +${S.streakBonus} coins bonus !`
+      : `🌟 Amazing week of effort! +${S.streakBonus} bonus coins!`);
+  }
+
   recap.innerHTML = `
     <p style="font-size:18px;font-weight:900;color:#ffd166;margin-bottom:14px">${escHtml(headline)}</p>
     ${funMessages.map(m=>`<p style="font-size:15px;margin-bottom:8px;line-height:1.5">${m}</p>`).join('')}`;
 
-  // Minecoins total for session
-  const totalCoins = S.taskHints ? S.taskHints.reduce((h,c) => h + (c===0?15:c===1?10:5), 0) : 0;
+  // Minecoins total for session (tasks + weekend + streak bonuses)
+  const taskCoins = S.taskHints ? S.taskHints.reduce((h,c) => h + (c===0?15:c===1?10:5), 0) : 0;
+  const totalCoins = taskCoins + (S.streakBonus||0) + (S.weekendBonusAwarded ? 25 : 0);
   document.getElementById('sumCoins').innerHTML = `
     <p style="font-size:24px;font-weight:900;color:#ffd166">⛏️ +${totalCoins} Minecoins</p>
     <p style="font-size:13px;color:rgba(255,209,102,.7);margin-top:4px">${fr?'Total':'Total'}: ${profile.minecoins} ⛏️</p>`;
