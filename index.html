@@ -453,9 +453,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <span class="b" id="blockCount">0 / 18 crew</span>
     </div>
     <div id="crewStrip" style="padding:0 14px 14px;display:grid;grid-template-columns:repeat(6,1fr);gap:6px"></div>
-    <div style="padding:0 18px 14px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(45,224,198,.08);padding-top:10px">
-      <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-lo);letter-spacing:2px;text-transform:uppercase;font-weight:500">Tap to open</span>
-      <div class="mini-cards" id="miniCards"></div>
+    <div style="padding:0 18px 14px;display:flex;justify-content:center;align-items:center;border-top:1px solid rgba(45,224,198,.08);padding-top:10px">
+      <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-lo);letter-spacing:2px;text-transform:uppercase;font-weight:500">Tap to explore</span>
     </div>
   </div>
 </div>
@@ -635,16 +634,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <p style="font-size:28px;font-weight:900;color:#ffd166" id="rewCoinsAmount">⛏️ +15</p>
     <p style="font-size:13px;color:rgba(255,209,102,.7);margin-top:4px" id="rewCoinsLabel">Minecoins earned!</p>
     <p style="font-size:12px;color:rgba(224,240,248,.35);margin-top:6px" id="rewCoinsTotal">Total: 15 ⛏️</p>
-  </div>
-  <!-- Creature card (conditional) -->
-  <div id="cardWrap" style="display:none;width:100%">
-    <p id="cardTitle" style="font-size:13px;font-weight:800;color:rgba(224,240,248,.45);text-align:center;margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px"></p>
-    <div class="creature-card flip-in">
-      <span class="creature-emoji" id="cardEmoji"></span>
-      <div class="rarity-badge" id="cardRarity"></div>
-      <p id="cardName" style="font-size:22px;font-weight:900;margin-bottom:8px"></p>
-      <p id="cardFact" style="font-size:14px;color:rgba(224,240,248,.65);line-height:1.5"></p>
-    </div>
   </div>
   <button class="btn bp" id="rewNext" onclick="afterReward()"></button>
 </div>
@@ -1032,7 +1021,7 @@ function loadSession() {
 // PERSISTENCE
 // ═══════════════════════════════════════
 function getProfile() {
-  const defaults = {blocks:0,cards:[],sessions:[],minecoins:0,lastWeekendMission:0,cognitiveProfile:null,cognitiveProfileDate:0,childName:'Jules',streak:0,lastStreakDate:null,dragonUnlocked:false,venomWeekStart:null,weekSchoolNights:[],venomUnlockedThisWeek:false};
+  const defaults = {blocks:0,cards:[],sessions:[],minecoins:0,lastWeekendMission:0,cognitiveProfile:null,cognitiveProfileDate:0,childName:'Jules',streak:0,lastStreakDate:null,dragonUnlocked:false,venomWeekStart:null,weekSchoolNights:[],venomUnlockedThisWeek:false,crewThemeMigrated:false};
   try { const p = JSON.parse(localStorage.getItem('ink_v2') || '{}'); return Object.assign({}, defaults, p); }
   catch { return Object.assign({}, defaults); }
 }
@@ -2456,7 +2445,6 @@ function renderWelcome() {
   document.getElementById('blockCount').textContent = `${unlockedCrew} / ${totalCrew} crew`;
   document.getElementById('coinCount').textContent = profile.minecoins || 0;
   renderCrewStrip(profile);
-  renderMiniCards('miniCards');
   document.getElementById('muteBtn').style.display = 'flex';
   const poems = activePoems();
   const badge = document.getElementById('poesieBtnBadge');
@@ -2565,8 +2553,8 @@ function renderParentMode() {
       ${statCard('📚 Sessions',sessions.length)}
       ${statCard('⏱️ Total time',`${totalMins} min`)}
       ${statCard('💡 Hints used',totalHints)}
-      ${statCard('🧪 Specimens',profile.cards.length+' / '+CREATURES.length)}
-      ${statCard('🧱 Blocks',Math.min(profile.blocks,STATION_TOTAL)+' / '+STATION_TOTAL)}
+      ${statCard('🐙 Crew unlocked',crewUnlockedCount(profile)+' / '+CREW.length)}
+      ${statCard('🧩 Tasks done',profile.blocks||0)}
       ${statCard('⛏️ Minecoins',profile.minecoins||0)}
       ${statCard('📖 Top subject',topSubject?topSubject[0]:'—')}
     </div>`;
@@ -3112,129 +3100,129 @@ const CREW = [
     nameEN:'Baby Octopus', nameFR:'Bébé Poulpe',
     blurbEN:'Tiny, curious, and full of bubbles.',
     blurbFR:'Minuscule, curieux, et plein de bulles.',
-    voiceEN:'Blub! Hi there!',
-    voiceFR:'Blub ! Salut !',
+    factEN:'Baby octopuses are about the size of a grain of rice when they hatch. They drift as plankton near the surface for weeks before they\'re big enough to settle to the seafloor.',
+    factFR:'Les bébés poulpes ont à peu près la taille d\'un grain de riz quand ils éclosent. Ils dérivent en plancton près de la surface pendant des semaines avant de descendre au fond.',
     style:'Very high-pitched baby voice, breathy and giggly. Small and cute.' },
   { key:'mama',         file:'images/mama.png',         unlockAt:4,
     nameEN:'Mama Ink', nameFR:'Maman Ink',
     blurbEN:'Warm, wise, the heart of the family.',
     blurbFR:'Chaleureuse, sage, le cœur de la famille.',
-    voiceEN:'Hello, sweetheart. I\'m so proud of you.',
-    voiceFR:'Bonjour mon chéri. Je suis si fière de toi.',
+    factEN:'Mother octopuses guard their eggs for months without eating. A blue-ringed octopus mom will literally starve to keep her babies safe until they hatch.',
+    factFR:'Les mamans poulpes gardent leurs œufs pendant des mois sans manger. Une maman poulpe aux anneaux bleus se laisse littéralement mourir de faim pour protéger ses bébés jusqu\'à l\'éclosion.',
     style:'Warm, soft, motherly voice. Calm and loving. Slight smile in the tone.' },
   { key:'papa',         file:'images/papa.png',         unlockAt:9,
     nameEN:'Papa Ink', nameFR:'Papa Ink',
     blurbEN:'Adventurer. Compass in one tentacle, map in another.',
     blurbFR:'Aventurier. Boussole dans un tentacule, carte dans l\'autre.',
-    voiceEN:'Alright explorer — let\'s go see the world.',
-    voiceFR:'Allez explorateur, on va découvrir le monde.',
+    factEN:'Most male octopuses live only 1 to 2 years, and many die shortly after mating. A wandering explorer-dad octopus is extremely rare.',
+    factFR:'La plupart des poulpes mâles ne vivent que 1 à 2 ans, et beaucoup meurent peu après l\'accouplement. Un papa poulpe explorateur qui voyage est extrêmement rare.',
     style:'Confident, warm, dad-adventurer voice. Slightly rugged. Like an explorer who\'s excited to share.' },
   { key:'grandma',      file:'images/grandma.png',      unlockAt:14,
     nameEN:'Grandma Ink', nameFR:'Mamie Ink',
     blurbEN:'Knitting tentacles. Infinite snacks. Best stories.',
     blurbFR:'Tentacules qui tricotent. Plein de goûters. Meilleures histoires.',
-    voiceEN:'Come here, little one. Let me tell you a story.',
-    voiceFR:'Viens ici mon petit. Je vais te raconter une histoire.',
+    factEN:'Blue-ringed octopuses typically live just 1 or 2 years. An octopus that lives long enough to have grandchildren is almost never seen by scientists.',
+    factFR:'Les poulpes aux anneaux bleus vivent en général seulement 1 ou 2 ans. Un poulpe qui vit assez longtemps pour avoir des petits-enfants, les scientifiques n\'en voient presque jamais.',
     style:'Kind elderly grandmother voice. Soft, slightly frail, very warm. Laughter lines in the voice.' },
   { key:'grandpa',      file:'images/grandpa.png',      unlockAt:22,
     nameEN:'Grandpa Ink', nameFR:'Papi Ink',
     blurbEN:'Old sea-captain. Has seen things. Will tell you about them.',
     blurbFR:'Vieux capitaine. Il a tout vu. Et il va te le raconter.',
-    voiceEN:'Ahh, back in my day, the ocean was even bigger...',
-    voiceFR:'Ah, de mon temps, l\'océan était encore plus grand...',
+    factEN:'An octopus\'s brain rewires itself every time it learns something new. By the time you\'re a grandpa octopus, your brain has been reorganized thousands of times.',
+    factFR:'Le cerveau du poulpe se réorganise à chaque fois qu\'il apprend quelque chose de nouveau. Quand tu es devenu un papi poulpe, ton cerveau a été réécrit des milliers de fois.',
     style:'Old sea-captain voice. Gruff but warm, slightly hoarse, mischievous. Like a grandfather telling an exaggerated story.' },
   // ─── Other octopus species ────────────────────────────────────
   { key:'giant-pacific',file:'images/giant-pacific.png',unlockAt:2,
     nameEN:'Giant Pacific', nameFR:'Poulpe Géant du Pacifique',
     blurbEN:'The largest octopus species — 5m arm-span.',
     blurbFR:'La plus grande espèce de poulpe — 5 m d\'envergure.',
-    voiceEN:'Hello. I am very large. Please respect that.',
-    voiceFR:'Bonjour. Je suis très grand. Respecte ça.',
+    factEN:'The giant Pacific octopus is the biggest octopus on Earth. A single one has about 2,200 suckers across its eight arms — every sucker can taste, smell, AND grip on its own.',
+    factFR:'Le poulpe géant du Pacifique est le plus grand poulpe du monde. Un seul a environ 2 200 ventouses sur ses huit bras — chacune peut goûter, sentir et saisir toute seule.',
     style:'Deep, slow, old wise giant voice. Calm but powerful. Like a benevolent kraken.' },
   { key:'mimic',        file:'images/mimic.png',        unlockAt:6,
     nameEN:'Mimic Octopus', nameFR:'Poulpe Mime',
     blurbEN:'Can impersonate 15+ different sea creatures.',
     blurbFR:'Peut imiter plus de 15 créatures marines.',
-    voiceEN:'Who am I? Flatfish? Snake? I can be anyone.',
-    voiceFR:'Qui suis-je ? Poisson plat ? Serpent ? Je peux être n\'importe qui.',
+    factEN:'The mimic octopus can impersonate over 15 different sea creatures — flatfish, lionfish, sea snakes — by changing its shape, color, AND movement to match.',
+    factFR:'Le poulpe mime peut imiter plus de 15 créatures marines — poissons plats, rascasses, serpents de mer — en changeant sa forme, sa couleur ET ses mouvements.',
     style:'Sly, clever, trickster voice. Slightly theatrical, shifting tone mid-sentence.' },
   { key:'coconut',      file:'images/coconut.png',      unlockAt:10,
     nameEN:'Coconut Octopus', nameFR:'Poulpe Noix de Coco',
     blurbEN:'Carries half a coconut as portable armor.',
     blurbFR:'Transporte une moitié de noix de coco comme armure.',
-    voiceEN:'This shell is mine. I found it. Back off.',
-    voiceFR:'Cette coquille est à moi. Je l\'ai trouvée. Dégage.',
+    factEN:'The coconut octopus carries halves of coconut shells along the seafloor and snaps them shut around itself for shelter. It\'s one of the only invertebrates known to use tools.',
+    factFR:'Le poulpe noix de coco transporte des moitiés de noix de coco sur le fond marin et les referme autour de lui pour se cacher. C\'est un des seuls invertébrés connus à utiliser des outils.',
     style:'Small, tough, slightly paranoid little hustler voice. Protective of its stuff.' },
   { key:'flapjack',     file:'images/flapjack.png',     unlockAt:18,
     nameEN:'Flapjack Octopus', nameFR:'Poulpe Crêpe',
     blurbEN:'Flat pink pancake of the deep sea. Somehow real.',
     blurbFR:'Crêpe rose plate des abysses. Vraiment vraie.',
-    voiceEN:'Hi! I am round! And flat! I love it here!',
-    voiceFR:'Coucou ! Je suis rond ! Et plat ! J\'adore ça !',
+    factEN:'Flapjack octopuses live thousands of meters deep where there\'s almost no food. Their flat pancake shape lets them drift slowly and save energy in the near-freezing dark.',
+    factFR:'Les poulpes crêpes vivent à des milliers de mètres de profondeur où il n\'y a presque rien à manger. Leur forme plate leur permet de dériver lentement et d\'économiser de l\'énergie dans le noir glacé.',
     style:'Bubbly, innocent, squeaky-happy voice. Permanently delighted.' },
   { key:'argonaut',     file:'images/argonaut.png',     unlockAt:25,
     nameEN:'Argonaut', nameFR:'Argonaute',
     blurbEN:'Grows her own translucent shell in the open sea.',
     blurbFR:'Fabrique sa propre coquille translucide en pleine mer.',
-    voiceEN:'Drifting. Always drifting. Watch the moonlight.',
-    voiceFR:'Je dérive. Toujours. Regarde le clair de lune.',
+    factEN:'Argonauts are the only octopuses that live in the open ocean. Females secrete their own thin paper-like white shell to carry their eggs, and sometimes they hitch rides on jellyfish.',
+    factFR:'Les argonautes sont les seuls poulpes qui vivent en pleine mer. Les femelles fabriquent elles-mêmes une fine coquille blanche et s\'accrochent parfois à des méduses pour voyager.',
     style:'Ethereal, soft, dreamy female voice. Breathy and poetic, like someone half-asleep.' },
   { key:'wunderpus',    file:'images/wunderpus.png',    unlockAt:30,
     nameEN:'Wunderpus', nameFR:'Wunderpus',
     blurbEN:'Flamboyant orange-striped cousin of the mimic octopus.',
     blurbFR:'Cousin flamboyant du poulpe mime, rayé orange et blanc.',
-    voiceEN:'Look at me. LOOK. Aren\'t I stunning?',
-    voiceFR:'Regarde-moi. REGARDE. Je suis pas magnifique ?',
+    factEN:'Every wunderpus has a unique pattern of orange and white stripes, like a fingerprint. Scientists can identify individual wunderpuses from photos just by matching the stripes.',
+    factFR:'Chaque wunderpus a un motif unique de rayures orange et blanches, comme une empreinte digitale. Les scientifiques peuvent identifier chaque individu juste en regardant ses rayures.',
     style:'Flamboyant, theatrical, show-off voice. Every sentence is a dramatic reveal.' },
   // ─── Other sea creatures ──────────────────────────────────────
   { key:'hammerhead',   file:'images/hammerhead.png',   unlockAt:3,
     nameEN:'Hammerhead Shark', nameFR:'Requin Marteau',
     blurbEN:'Eyes on the ends of a hammer. 360° vision.',
     blurbFR:'Yeux aux extrémités d\'un marteau. Vision 360°.',
-    voiceEN:'Stay calm. I see everything. All of it.',
-    voiceFR:'Reste calme. Je vois tout. Absolument tout.',
+    factEN:'Hammerhead sharks have eyes on the ends of their hammer, giving them almost 360-degree vision. They can see above AND below themselves at the same time.',
+    factFR:'Les requins marteaux ont les yeux aux extrémités du marteau, ce qui leur donne une vision presque à 360 degrés. Ils peuvent voir au-dessus et en dessous d\'eux en même temps.',
     style:'Cool, measured, watchful predator voice. Like a sniper giving advice.' },
   { key:'cuttlefish',   file:'images/cuttlefish.png',   unlockAt:5,
     nameEN:'Cuttlefish', nameFR:'Seiche',
     blurbEN:'Skin flashes hypnotic color patterns in real time.',
     blurbFR:'La peau clignote en motifs colorés hypnotiques.',
-    voiceEN:'Watch my skin. Watch the colors. Focus on the colors.',
-    voiceFR:'Regarde ma peau. Regarde les couleurs. Concentre-toi sur les couleurs.',
+    factEN:'A cuttlefish can put a rival to sleep with a hypnotic light-show on its skin. Some cuttlefish even show male colors on one side and female colors on the other at the same time.',
+    factFR:'Une seiche peut endormir un rival avec un spectacle hypnotique de couleurs. Certaines seiches montrent même des couleurs de mâle d\'un côté et de femelle de l\'autre en même temps.',
     style:'Smooth, hypnotic, slightly mysterious voice. Drawing you in.' },
   { key:'whale-shark',  file:'images/whale-shark.png',  unlockAt:7,
     nameEN:'Whale Shark', nameFR:'Requin-Baleine',
     blurbEN:'The biggest fish in the ocean. Eats tiny plankton. Gentle giant.',
     blurbFR:'Le plus grand poisson de l\'océan. Mange du plancton. Gentil géant.',
-    voiceEN:'Hello, little one. Do not worry. I only eat the tiny things.',
-    voiceFR:'Salut mon petit. T\'inquiète pas. Je ne mange que les choses minuscules.',
+    factEN:'The whale shark is the biggest fish in the ocean — up to 18 meters long, about the length of a school bus — but it only eats plankton and tiny fish. Each one\'s spot pattern is unique, like a fingerprint.',
+    factFR:'Le requin-baleine est le plus grand poisson de l\'océan — jusqu\'à 18 mètres, à peu près la taille d\'un bus scolaire — mais il ne mange que du plancton et de tout petits poissons. Chaque individu a un motif de taches unique, comme une empreinte digitale.',
     style:'Huge, deep, slow, very friendly voice. Like an enormous but peaceful old friend.' },
   { key:'dumbo',        file:'images/dumbo.png',        unlockAt:12,
     nameEN:'Dumbo Octopus', nameFR:'Poulpe Dumbo',
     blurbEN:'Ear-like fins flap through pitch-black deep sea.',
     blurbFR:'De petites ailerons en oreilles battent dans les abysses.',
-    voiceEN:'I fly through the dark. It is peaceful down here.',
-    voiceFR:'Je vole dans le noir. C\'est tranquille ici en bas.',
+    factEN:'The dumbo octopus lives deeper than any other octopus — over 4 kilometers down — where the water pressure would crush a human. It "flies" by flapping its ear-like fins.',
+    factFR:'Le poulpe Dumbo vit plus profondément que tous les autres poulpes — à plus de 4 kilomètres de profondeur — là où la pression de l\'eau écraserait un humain. Il « vole » en battant ses nageoires qui ressemblent à des oreilles.',
     style:'Soft, dreamy, innocent voice — almost whispering. Peaceful and otherworldly.' },
   { key:'giant-squid',  file:'images/giant-squid.png',  unlockAt:16,
     nameEN:'Giant Squid', nameFR:'Calmar Géant',
     blurbEN:'13 meters long. Eyes the size of dinner plates.',
     blurbFR:'13 mètres de long. Yeux grands comme des assiettes.',
-    voiceEN:'I am rarely seen. You are lucky.',
-    voiceFR:'On me voit rarement. Tu as de la chance.',
+    factEN:'The giant squid has the largest eye of any animal — about the size of a basketball — to catch faint flashes of bioluminescent light in the pitch-black deep sea.',
+    factFR:'Le calmar géant a le plus grand œil du règne animal — environ la taille d\'un ballon de basket — pour capter les faibles flashs de lumière bioluminescente dans les abysses noirs.',
     style:'Deep, mysterious, ancient voice. Like something speaking up from the abyss.' },
   { key:'nautilus',     file:'images/nautilus.png',     unlockAt:20,
     nameEN:'Nautilus', nameFR:'Nautile',
     blurbEN:'A living fossil. Older than the dinosaurs.',
     blurbFR:'Un fossile vivant. Plus vieux que les dinosaures.',
-    voiceEN:'I am... very... old. Much older than you think.',
-    voiceFR:'Je suis... très... vieux. Bien plus vieux que tu ne crois.',
+    factEN:'The nautilus is a living fossil. Its relatives have been swimming in Earth\'s oceans for over 500 million years — older than dinosaurs, older than trees, older than almost anything still alive today.',
+    factFR:'Le nautile est un fossile vivant. Ses cousins nagent dans les océans de la Terre depuis plus de 500 millions d\'années — plus vieux que les dinosaures, plus vieux que les arbres, plus vieux que presque tout ce qui vit encore.',
     style:'Extremely slow, dusty, archaic voice. Each word feels carved from stone.' },
   { key:'colossal-squid',file:'images/colossal-squid.png',unlockAt:30,
     nameEN:'Colossal Squid', nameFR:'Calmar Colossal',
     blurbEN:'Largest eyes of any animal ever. Hooks on its tentacles.',
     blurbFR:'Les plus grands yeux de tout le règne animal. Crochets aux tentacules.',
-    voiceEN:'You woke the wrong thing.',
-    voiceFR:'Tu as réveillé la mauvaise créature.',
+    factEN:'The colossal squid has the LARGEST eye ever measured in any animal — up to 30 centimeters across. And unlike other squids, its tentacles have sharp rotating hooks instead of just suction cups.',
+    factFR:'Le calmar colossal a le PLUS GRAND œil jamais mesuré chez un animal — jusqu\'à 30 centimètres de diamètre. Et contrairement aux autres calmars, ses tentacules ont des crochets rotatifs tranchants au lieu de simples ventouses.',
     style:'Deep, slow, menacing leviathan voice. Growly, apex-predator calm. Slight reverb feel.' },
 ];
 function isCrewUnlocked(key, profile) {
@@ -3359,19 +3347,21 @@ function galleryCard({ imgSrc, name, hint, unlocked, onclick }) {
       ${hint ? `<div style="font-size:11px;color:rgba(224,240,248,.55);margin-top:3px;line-height:1.3">${escHtml(hint)}</div>` : ''}
     </div>`;
 }
-// Crew modal reuses the existing pose modal DOM.
+// Crew modal reuses the existing pose modal DOM. Speaks the fact with the
+// character's voice style; shows blurb as subtitle + fact as the main body.
 function openCrewModal(key) {
   haptic([15]);
   const c = CREW.find(m => m.key === key);
   if (!c) return;
   const fr = S.lang === 'FR';
   const name = fr ? c.nameFR : c.nameEN;
-  const line = fr ? c.voiceFR : c.voiceEN;
+  const blurb = fr ? c.blurbFR : c.blurbEN;
+  const fact = fr ? c.factFR : c.factEN;
   document.getElementById('poseModalImg').src = c.file;
   document.getElementById('poseModalName').textContent = name;
-  document.getElementById('poseModalLine').textContent = line;
+  document.getElementById('poseModalLine').textContent = blurb + ' — ' + fact;
   document.getElementById('poseModal').style.display = 'flex';
-  try { speak(line, c.style); } catch {}
+  try { speak(fact, c.style); } catch {}
 }
 const POSE_VOICE_LINES = {
   happy:    { en: "That's my happy face!",                               fr: "C'est ma tête contente !" },
@@ -3916,9 +3906,6 @@ function taskDone() {
   const wasBlocks = profile.blocks;
   profile.blocks = Math.min(STATION_TOTAL, profile.blocks + 1);
   const unlockedRoom = STATION_ROOMS.find(r => wasBlocks < r.at && profile.blocks >= r.at);
-  const {card, isNew} = pickCard(profile);
-  S.newCard = {card, isNew};
-  if (isNew) profile.cards.push(card.e);
   const isBonus = S.hw.tasks[S.tIdx]?.bonus;
   const baseCoins = S.hintCount === 0 ? 15 : S.hintCount === 1 ? 10 : 5;
   const coinsEarned = isBonus ? baseCoins + 10 : baseCoins;
@@ -3978,24 +3965,6 @@ function taskDone() {
     ruEl.innerHTML = '';
   }
   setTimeout(() => speak(celeb), 400);
-
-  const cardWrap = document.getElementById('cardWrap');
-  if (isNew) {
-    cardWrap.style.display = 'block';
-    const isFR = S.lang==='FR';
-    document.getElementById('cardTitle').textContent = isFR ? '🎴 Nouvelle carte débloquée !' : '🎴 New card unlocked!';
-    document.getElementById('cardEmoji').textContent = card.e;
-    document.getElementById('cardRarity').className = `rarity-badge rarity-${card.r}`;
-    document.getElementById('cardRarity').textContent = isFR
-      ? (card.r==='legendary'?'Légendaire':card.r==='rare'?'Rare':'Commun')
-      : card.r.charAt(0).toUpperCase()+card.r.slice(1);
-    document.getElementById('cardName').textContent = isFR ? card.nF : card.n;
-    document.getElementById('cardFact').textContent = isFR ? card.fF : card.f;
-    speak(isFR ? `Nouvelle carte : ${card.nF} ! ${card.fF}` : `New card: ${card.n}! ${card.f}`);
-  } else {
-    cardWrap.style.display = 'none';
-    speak(fr ? 'Super ! Un nouveau bloc pour la station !' : 'Awesome! One more block for the station!');
-  }
 
   const isLast = S.tIdx + 1 >= S.hw.tasks.length;
   document.getElementById('rewNext').textContent = isLast
@@ -4651,6 +4620,23 @@ function resumeSession(saved) {
 }
 
 // Auto-load saved keys on startup
+// One-time migration: starting fresh with the new Crew theme.
+// Resets blocks + cards + station/room progress once, keeping minecoins
+// and all other profile state intact. Marker flag prevents re-runs.
+(function migrateToCrewTheme(){
+  try {
+    const raw = localStorage.getItem('ink_v2');
+    if (!raw) return;
+    const p = JSON.parse(raw);
+    if (p.crewThemeMigrated) return;
+    p.blocks = 0;
+    p.cards = [];
+    p.crewThemeMigrated = true;
+    localStorage.setItem('ink_v2', JSON.stringify(p));
+    console.log('[Ink] Migrated profile to Crew theme — blocks reset, minecoins preserved');
+  } catch {}
+})();
+
 (async function(){
   const oai = localStorage.getItem('ink_oai_key');
   if (oai && oai.startsWith('sk-')) OAIKEY = oai;
