@@ -1,7 +1,7 @@
 {
-  "name": "Ink's Lab",
-  "short_name": "Ink's Lab",
-  "description": "Bioluminescent research station — homework companion for young explorers.",
+  "name": "Ink's World",
+  "short_name": "Ink's World",
+  "description": "Homework companion starring Ink the blue-ringed octopus and his crew.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

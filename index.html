@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Ink's Lab">
+<meta name="apple-mobile-web-app-title" content="Ink's World">
 <meta name="theme-color" content="#05080f">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<title>Ink's Lab 🐙</title>
+<title>Ink's World 🐙</title>
 <style>
 /* ═════════ Design Tokens (from Claude Design) ═════════ */
 :root{
@@ -369,14 +369,14 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <div id="sk" class="screen center active" style="gap:24px">
   <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
     <img src="icon-180.png" class="ink-img-xl mood-happy" alt="Ink">
-    <h1 class="hero-title">INK'S LAB</h1>
-    <div class="hero-sub">◢ Bioluminescent Research Station ◣</div>
+    <h1 class="hero-title">INK'S WORLD</h1>
+    <div class="hero-sub">◢ Deep Sea Adventures ◣</div>
   </div>
   <div class="card" style="padding:26px;width:100%;max-width:380px">
     <p style="font-size:13px;font-weight:800;color:rgba(224,240,248,.8);margin-bottom:4px">Anthropic API Key</p>
     <p style="font-size:12px;color:rgba(224,240,248,.38);margin-bottom:14px;line-height:1.5">Stays in memory only — never saved.<br>Get yours at <span style="color:#00dcc6">console.anthropic.com</span></p>
     <input class="ki" id="apikey" type="password" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
-    <button class="btn bp" style="margin-top:14px;font-size:17px" onclick="setKey()">🚀 Launch Ink's Lab</button>
+    <button class="btn bp" style="margin-top:14px;font-size:17px" onclick="setKey()">🚀 Launch Ink's World</button>
   </div>
   <p style="font-size:11px;color:rgba(224,240,248,.16)">For young explorers, age 6 🐙</p>
 </div>
@@ -388,8 +388,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <div class="welcome-identity">
   <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
     <img src="icon-180.png" class="ink-img-xl mood-happy" id="welcomeInk" alt="Ink">
-    <h1 id="welcomeTitle" class="hero-title" ontouchstart="parentLongPressStart()" ontouchend="parentLongPressEnd()" onmousedown="parentLongPressStart()" onmouseup="parentLongPressEnd()">INK'S LAB</h1>
-    <div class="hero-sub">◢ Bioluminescent Research Station ◣</div>
+    <h1 id="welcomeTitle" class="hero-title" ontouchstart="parentLongPressStart()" ontouchend="parentLongPressEnd()" onmousedown="parentLongPressStart()" onmouseup="parentLongPressEnd()">INK'S WORLD</h1>
+    <div class="hero-sub">◢ Deep Sea Adventures ◣</div>
   </div>
 
   <!-- Minecoin pill (front + center) -->
@@ -944,7 +944,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <form id="pwdForm" action="" method="post" autocomplete="on" style="background:linear-gradient(180deg,#0a1428,#050a18);border:1.5px solid rgba(0,220,200,.3);border-radius:20px;padding:24px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.6)">
     <h3 id="pwdTitle" style="font-size:18px;font-weight:900;color:#e0f0f8;margin-bottom:8px">🔐 Backup Password</h3>
     <p id="pwdMessage" style="font-size:13px;color:rgba(224,240,248,.6);line-height:1.5;margin-bottom:14px"></p>
-    <input id="pwdUser" name="username" type="text" value="Ink's Lab Backup" autocomplete="username" autocapitalize="off" spellcheck="false" onfocus="this.blur()" style="width:100%;padding:10px 12px;margin-bottom:10px;background:rgba(255,255,255,.04);border:1px solid rgba(224,240,248,.12);border-radius:10px;color:rgba(224,240,248,.55);font-size:12px;box-sizing:border-box">
+    <input id="pwdUser" name="username" type="text" value="Ink's World Backup" autocomplete="username" autocapitalize="off" spellcheck="false" onfocus="this.blur()" style="width:100%;padding:10px 12px;margin-bottom:10px;background:rgba(255,255,255,.04);border:1px solid rgba(224,240,248,.12);border-radius:10px;color:rgba(224,240,248,.55);font-size:12px;box-sizing:border-box">
     <input id="pwdInput" name="password" type="password" autocomplete="current-password" autocapitalize="off" spellcheck="false" placeholder="Password" style="width:100%;padding:12px;margin-bottom:10px;background:rgba(255,255,255,.06);border:1.5px solid rgba(0,220,200,.28);border-radius:10px;color:#e0f0f8;font-size:14px;font-weight:600;outline:none;box-sizing:border-box">
     <input id="pwdConfirm" name="confirm-password" type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false" placeholder="Confirm password" style="display:none;width:100%;padding:12px;margin-bottom:10px;background:rgba(255,255,255,.06);border:1.5px solid rgba(0,220,200,.28);border-radius:10px;color:#e0f0f8;font-size:14px;font-weight:600;outline:none;box-sizing:border-box">
     <div id="pwdError" style="display:none;color:#ff8080;font-size:12px;margin-bottom:10px"></div>
@@ -4218,7 +4218,7 @@ async function exportProfile() {
   const d = new Date();
   const stamp = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   a.href = url;
-  a.download = `inks-lab-backup-${stamp}.json`;
+  a.download = `inks-world-backup-${stamp}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

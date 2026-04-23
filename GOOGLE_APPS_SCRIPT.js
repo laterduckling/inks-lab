@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════
-// INK'S LAB — Parent Report Email Script
+// INK'S WORLD — Parent Report Email Script
 // Paste this entire file into Google Apps Script
 // Setup instructions are at the bottom of this file
 // ═══════════════════════════════════════════════════════
@@ -83,13 +83,13 @@ function sendSessionEmail(data) {
   const dateStr = date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   const flag = data.lang === 'FR' ? '\ud83c\uddeb\ud83c\uddf7' : '\ud83c\uddfa\ud83c\uddf8';
 
-  const subject = `\ud83d\udc19 Ink's Lab \u2014 ${flag} ${data.subject || 'Homework'} (${dateStr})`;
+  const subject = `\ud83d\udc19 Ink's World \u2014 ${flag} ${data.subject || 'Homework'} (${dateStr})`;
 
   const completed = (data.completed || []).map(c => `  \u2705 ${c}`).join('\n');
   const coinsLine = data.minecoins != null ? `\u26cf\ufe0f Minecoins earned: +${data.coinsEarned} (total: ${data.minecoins})` : '';
 
   const body = `
-Ink's Lab \u2014 Session Report
+Ink's World \u2014 Session Report
 ${'='.repeat(40)}
 
 ${flag} Language: ${data.lang === 'FR' ? 'French' : 'English'}
@@ -111,7 +111,7 @@ ${data.insight ? `\ud83e\udde0 Insight: ${data.insight}` : ''}
 \ud83e\uddf1 Station: ${data.blocks || 0} / 30 blocks
 \ud83c\udccf Cards collected: ${data.cardsCount || 0}
 ${'='.repeat(40)}
-Sent automatically from Ink's Lab
+Sent automatically from Ink's World
 `.trim();
 
   EMAILS.forEach(email => {
@@ -136,7 +136,7 @@ function sendWeeklyDigest() {
     EMAILS.forEach(email => {
       MailApp.sendEmail({
         to: email,
-        subject: "\ud83d\udc19 Ink's Lab \u2014 Weekly Summary (no sessions this week)",
+        subject: "\ud83d\udc19 Ink's World \u2014 Weekly Summary (no sessions this week)",
         body: "No homework sessions were completed this week.\n\nKeep exploring, little astronaut! \ud83d\ude80"
       });
     });
@@ -158,7 +158,7 @@ function sendWeeklyDigest() {
   const lastSession = week[week.length - 1];
 
   const body = `
-Ink's Lab \u2014 Weekly Summary
+Ink's World \u2014 Weekly Summary
 ${'='.repeat(40)}
 
 \ud83d\udcc5 Sessions this week: ${week.length}
@@ -175,13 +175,13 @@ ${hardestEntry ? `\u26a0\ufe0f Needs extra support: ${hardestEntry[0]} (${hardes
 \ud83e\uddf1 Station progress: ${lastSession.blocks || 0} / 30 blocks
 \ud83c\udccf Cards collected: ${lastSession.cardsCount || 0}
 ${'='.repeat(40)}
-Sent automatically from Ink's Lab
+Sent automatically from Ink's World
 `.trim();
 
   EMAILS.forEach(email => {
     MailApp.sendEmail({
       to: email,
-      subject: `\ud83d\udc19 Ink's Lab \u2014 Weekly Summary (${week.length} session${week.length > 1 ? 's' : ''})`,
+      subject: `\ud83d\udc19 Ink's World \u2014 Weekly Summary (${week.length} session${week.length > 1 ? 's' : ''})`,
       body: body
     });
   });
@@ -207,7 +207,7 @@ function sendDailyDigest() {
     EMAILS.forEach(email => {
       MailApp.sendEmail({
         to: email,
-        subject: `\ud83d\udc19 Ink's Lab \u2014 ${dateStr} (no session today)`,
+        subject: `\ud83d\udc19 Ink's World \u2014 ${dateStr} (no session today)`,
         body: `No homework session was completed today (${dateStr}).\n\nMaybe tomorrow! \ud83d\ude80`
       });
     });
@@ -225,7 +225,7 @@ function sendDailyDigest() {
   }).join('\n\n');
 
   const body = `
-Ink's Lab \u2014 Daily Report (${dateStr})
+Ink's World \u2014 Daily Report (${dateStr})
 ${'='.repeat(40)}
 
 Sessions today: ${todaySessions.length}
@@ -238,13 +238,13 @@ ${sessionDetails}
 \ud83e\uddf1 Station: ${lastSession.blocks || 0} / 30 blocks
 \ud83c\udccf Cards: ${lastSession.cardsCount || 0}
 ${'='.repeat(40)}
-Sent automatically from Ink's Lab
+Sent automatically from Ink's World
 `.trim();
 
   EMAILS.forEach(email => {
     MailApp.sendEmail({
       to: email,
-      subject: `\ud83d\udc19 Ink's Lab \u2014 ${dateStr} (${todaySessions.length} session${todaySessions.length > 1 ? 's' : ''})`,
+      subject: `\ud83d\udc19 Ink's World \u2014 ${dateStr} (${todaySessions.length} session${todaySessions.length > 1 ? 's' : ''})`,
       body: body
     });
   });
@@ -309,7 +309,7 @@ function sendTeacherEmail(email, language, sessions) {
   sessions.forEach(s => { if (s.subject) subjects[s.subject] = (subjects[s.subject] || 0) + 1; });
 
   const body = `
-Ink's Lab \u2014 Weekly Teacher Report
+Ink's World \u2014 Weekly Teacher Report
 ${flag} ${language} Sessions
 ${'='.repeat(50)}
 
@@ -336,14 +336,14 @@ ${hardSessions.length > 0
 Subjects covered: ${Object.entries(subjects).map(([k,v]) => `${k} (${v}x)`).join(', ')}
 
 ${'='.repeat(50)}
-This report is generated automatically by Ink's Lab,
+This report is generated automatically by Ink's World,
 a homework companion app used at home.
 For questions, please contact Jules's parents.
 `.trim();
 
   MailApp.sendEmail({
     to: email,
-    subject: `${flag} Ink's Lab \u2014 Jules's ${language} Homework Report (week of ${new Date().toLocaleDateString('en-US', {month:'short',day:'numeric'})})`,
+    subject: `${flag} Ink's World \u2014 Jules's ${language} Homework Report (week of ${new Date().toLocaleDateString('en-US', {month:'short',day:'numeric'})})`,
     body: body
   });
 }
@@ -359,14 +359,14 @@ For questions, please contact Jules's parents.
 // 5. Click "Deploy" > "New deployment"
 // 6. Click the gear icon next to "Select type" > choose "Web app"
 // 7. Set:
-//    - Description: "Ink's Lab Reports"
+//    - Description: "Ink's World Reports"
 //    - Execute as: "Me"
 //    - Who has access: "Anyone"
 // 8. Click "Deploy"
 // 9. Click "Authorize access" and allow permissions
 // 10. Copy the Web app URL — it looks like:
 //     https://script.google.com/macros/s/XXXXX.../exec
-// 11. That URL goes into the Ink's Lab app (I'll tell you where)
+// 11. That URL goes into the Ink's World app (I'll tell you where)
 //
 // For the daily digest (Mon-Thu 9pm):
 // 12. In the Apps Script editor, click the clock icon (Triggers) on the left
@@ -420,7 +420,7 @@ For questions, please contact Jules's parents.
 //   4. Under "Version", choose "New version" and give it a note
 //      (e.g. "add backup/restore").
 //   5. Click Deploy. The URL stays the same, so the app keeps
-//      working — no change needed inside Ink's Lab.
+//      working — no change needed inside Ink's World.
 //
 // What this adds:
 // - doPost now accepts `{type:'backup', profile:{...}}` and stores
