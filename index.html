@@ -333,6 +333,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   .ink-img-xl{width:260px;height:260px}
 }
 
+/* ═════════ Portrait welcome: bigger Ink (landscape rule below, unchanged) ═════════ */
+@media (max-width:899px){
+  #sw .ink-img-xl{width:min(320px,78vw);height:auto;object-fit:contain}
+}
+
 /* ═════════ Two-pane welcome for wide viewports (iPad landscape and up) ═════════ */
 /* Uses width only — orientation media queries are flaky in iOS standalone PWAs.
    Layout: LEFT = Ink + title + coins (vertically centered, spans both rows).
@@ -1152,6 +1157,7 @@ if (window.speechSynthesis) {
 
 let currentAudio = null;
 
+let pendingSpeak = null;
 function speak(text, instructions = null) {
   if (MUTED) return;
   // Swap {{NAME}} → real name (OK for OpenAI TTS)
@@ -1159,7 +1165,12 @@ function speak(text, instructions = null) {
   // Strip emojis for cleaner speech
   const clean = text.replace(/[\u{1F300}-\u{1FFFF}]|[\u{2600}-\u{27BF}]/gu,'').replace(/["""]/g,'').trim();
   if (!clean) return;
-  // Try OpenAI TTS first if key is available
+  // iOS: before the first user gesture, Audio playback is blocked.
+  // Queue the latest request instead of firing (and losing) it.
+  if (!audioUnlocked) {
+    pendingSpeak = { text: clean, instructions };
+    return;
+  }
   if (OAIKEY) {
     speakOpenAI(clean, instructions);
   } else {
@@ -1356,17 +1367,26 @@ document.addEventListener('pointerdown', (e) => {
 // iOS audio-autoplay unlock: iOS blocks programmatic Audio playback until
 // there's been a user gesture. Play a silent blob on the first tap anywhere
 // so later scheduled speak() calls (greeting, idle facts) aren't dropped.
+// Also flushes any pending speak() queued before the gesture.
 let audioUnlocked = false;
 function unlockAudioOnce() {
   if (audioUnlocked) return;
   audioUnlocked = true;
   try {
-    // 1-sample silent WAV — smallest valid payload
     const silent = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
     const a = new Audio(silent);
     a.volume = 0;
     a.play().catch(() => {});
   } catch {}
+  // Flush the most recent speak() that was blocked waiting for the gesture
+  if (pendingSpeak) {
+    const { text, instructions } = pendingSpeak;
+    pendingSpeak = null;
+    setTimeout(() => {
+      if (OAIKEY) speakOpenAI(text, instructions);
+      else speakBrowser(text);
+    }, 120);
+  }
 }
 document.addEventListener('pointerdown', unlockAudioOnce, {passive:true, once:true});
 document.addEventListener('touchstart', unlockAudioOnce, {passive:true, once:true});
@@ -1390,8 +1410,8 @@ function show(id) {
   // Show home button on all screens except welcome and API key
   const homeBtn = document.getElementById('homeBtn');
   homeBtn.style.display = (id === 'w' || id === 'k') ? 'none' : 'flex';
-  // Kick the welcome-page idle fact timer when we land on welcome
-  if (id === 'w') startWelcomeIdleTimer();
+  // Kick the welcome-page greeting + idle fact timer when we land on welcome
+  if (id === 'w') { greetOnWelcome(); startWelcomeIdleTimer(); }
 }
 
 // ═══════════════════════════════════════
@@ -4016,6 +4036,10 @@ function saveOaiKey() {
   if (!k.startsWith('sk-')) { alert('Please enter a valid OpenAI API key (starts with sk-)'); return; }
   OAIKEY = k;
   localStorage.setItem('ink_oai_key', k);
+  // Reset welcome greeting/fact one-shots so they replay with the new voice
+  _greetedThisLaunch = false;
+  welcomeFactFirstShown = false;
+  welcomeFactCount = 0;
   renderWebhookUI();
   alert('Voice key saved! Ink will now speak with a human-like voice.');
 }
