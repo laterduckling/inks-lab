@@ -95,8 +95,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 @keyframes rise{0%{transform:translate3d(0,110vh,0) scale(.7);opacity:0}10%{opacity:.7}50%{transform:translate3d(var(--sway),50vh,0) scale(1)}90%{opacity:.5}100%{transform:translate3d(calc(var(--sway) * -1),-10vh,0) scale(1.1);opacity:0}}
 .fish{position:absolute;opacity:.18;animation:swim var(--d) linear infinite;animation-delay:var(--dl);will-change:transform;filter:blur(.3px)}
 .fish.rev{animation-name:swim-rev}
-@keyframes swim{0%{transform:translate3d(-15vw,0,0)}100%{transform:translate3d(115vw,0,0)}}
-@keyframes swim-rev{0%{transform:translate3d(115vw,0,0) scaleX(-1)}100%{transform:translate3d(-15vw,0,0) scaleX(-1)}}
+/* Fish SVG is drawn facing LEFT (head on x=12, tail triangle on right),
+   so the default swim moves right→left (head-first). .rev fish flip horizontally
+   and swim left→right (also head-first, just mirrored). */
+@keyframes swim{0%{transform:translate3d(115vw,0,0)}100%{transform:translate3d(-15vw,0,0)}}
+@keyframes swim-rev{0%{transform:translate3d(-15vw,0,0) scaleX(-1)}100%{transform:translate3d(115vw,0,0) scaleX(-1)}}
 .ray{position:absolute;top:-10%;width:180px;height:140vh;background:linear-gradient(180deg,rgba(120,220,255,.09),rgba(120,220,255,.02) 60%,transparent);transform:rotate(12deg);transform-origin:top center;animation:rayShift var(--d) ease-in-out infinite alternate;animation-delay:var(--dl);filter:blur(8px);mix-blend-mode:screen}
 @keyframes rayShift{0%{opacity:.35;transform:rotate(10deg) translateX(0)}100%{opacity:.7;transform:rotate(14deg) translateX(14px)}}
 
@@ -915,6 +918,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <p style="font-size:13px;color:rgba(224,240,248,.55);line-height:1.5">All of Ink's faces. Some you've already unlocked — others are waiting for you!</p>
   <div id="galleryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-top:8px"></div>
 </div>
+
+<!-- Welcome fact toast — visible speech bubble that accompanies (or replaces) TTS -->
+<div id="factBubble" onclick="hideFactBubble()" style="display:none;cursor:pointer;position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:9997;max-width:min(540px,92vw);padding:16px 20px;background:linear-gradient(180deg,rgba(12,26,52,.96),rgba(6,14,32,.96));border:1.5px solid rgba(45,224,198,.35);border-radius:18px;box-shadow:0 14px 40px rgba(0,0,0,.55),0 0 24px rgba(45,224,198,.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#e0f0f8;font-size:14px;line-height:1.5"></div>
 
 <!-- Pose modal — full-screen view when Jules taps a gallery pose -->
 <div id="poseModal" onclick="closePoseModal()" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(2,8,20,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);align-items:center;justify-content:center;flex-direction:column;padding:20px;gap:14px;cursor:pointer">
@@ -3359,17 +3365,39 @@ function pickNextFact(lang) {
   return pool[idx];
 }
 
-// Welcome-screen idle fact timer: fires every 45s while sitting on the home screen.
-// Voice-only (no chat to post to). Cleared whenever we navigate elsewhere.
+// Welcome-screen idle fact timer: first fact at 25s, then every 45s while
+// sitting on the home screen. Shows a visible bubble + TTS. Cleared on navigation.
 let welcomeIdleTimer = null;
-function clearWelcomeIdleTimer() { if (welcomeIdleTimer) { clearTimeout(welcomeIdleTimer); welcomeIdleTimer = null; } }
+let welcomeFactFirstShown = false;
+let factBubbleHideTimer = null;
+function clearWelcomeIdleTimer() {
+  if (welcomeIdleTimer) { clearTimeout(welcomeIdleTimer); welcomeIdleTimer = null; }
+  hideFactBubble();
+}
+function showFactBubble(text) {
+  const el = document.getElementById('factBubble');
+  if (!el) return;
+  el.textContent = text;
+  el.style.display = 'block';
+  el.style.animation = 'sup .4s ease-out both';
+  if (factBubbleHideTimer) clearTimeout(factBubbleHideTimer);
+  factBubbleHideTimer = setTimeout(hideFactBubble, 14000);
+}
+function hideFactBubble() {
+  const el = document.getElementById('factBubble');
+  if (el) el.style.display = 'none';
+  if (factBubbleHideTimer) { clearTimeout(factBubbleHideTimer); factBubbleHideTimer = null; }
+}
 function startWelcomeIdleTimer() {
   clearWelcomeIdleTimer();
+  const delay = welcomeFactFirstShown ? 45000 : 25000;
   welcomeIdleTimer = setTimeout(() => {
+    welcomeFactFirstShown = true;
     const line = pickNextFact(S.lang || 'EN');
+    showFactBubble(line);
     try { speak(line); } catch {}
     startWelcomeIdleTimer();
-  }, 45000);
+  }, delay);
 }
 
 let idleIdx = 0;
