@@ -345,7 +345,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   #sw.welcome-grid.active .welcome-actions{display:flex;flex-direction:column;gap:12px;width:100%;max-width:440px;grid-column:2;grid-row:1}
   #sw.welcome-grid.active .welcome-station{grid-column:2;grid-row:2;width:100%;max-width:440px}
   #sw.welcome-grid.active .hero-title{font-size:64px}
-  #sw.welcome-grid.active .ink-img-xl{width:280px;height:280px}
+  #sw.welcome-grid.active .ink-img-xl{width:100%;max-width:480px;height:auto;aspect-ratio:16/9}
 }
 </style>
 </head>
@@ -1352,6 +1352,25 @@ document.addEventListener('pointerdown', (e) => {
   const btn = e.target.closest('button,.btn,.tap');
   if (btn) SFX.pop();
 }, {passive:true});
+
+// iOS audio-autoplay unlock: iOS blocks programmatic Audio playback until
+// there's been a user gesture. Play a silent blob on the first tap anywhere
+// so later scheduled speak() calls (greeting, idle facts) aren't dropped.
+let audioUnlocked = false;
+function unlockAudioOnce() {
+  if (audioUnlocked) return;
+  audioUnlocked = true;
+  try {
+    // 1-sample silent WAV — smallest valid payload
+    const silent = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+    const a = new Audio(silent);
+    a.volume = 0;
+    a.play().catch(() => {});
+  } catch {}
+}
+document.addEventListener('pointerdown', unlockAudioOnce, {passive:true, once:true});
+document.addEventListener('touchstart', unlockAudioOnce, {passive:true, once:true});
+document.addEventListener('keydown', unlockAudioOnce, {once:true});
 
 // ═══════════════════════════════════════
 // SCREEN MANAGEMENT
