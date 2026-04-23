@@ -3439,10 +3439,14 @@ function pickNextFact(lang) {
   return pool[idx];
 }
 
-// Welcome-screen idle fact timer: first fact at 25s, then every 45s while
-// sitting on the home screen. Shows a visible bubble + TTS. Cleared on navigation.
+// Welcome-screen idle fact timer: first fact at 15s, then every 45s while
+// sitting on the home screen. Capped at MAX_WELCOME_FACTS consecutive facts
+// to avoid burning OpenAI TTS credits if the iPad is forgotten on the
+// welcome screen. Counter resets on any tap within the welcome screen.
+const MAX_WELCOME_FACTS = 3;
 let welcomeIdleTimer = null;
 let welcomeFactFirstShown = false;
+let welcomeFactCount = 0;
 let factBubbleHideTimer = null;
 function clearWelcomeIdleTimer() {
   if (welcomeIdleTimer) { clearTimeout(welcomeIdleTimer); welcomeIdleTimer = null; }
@@ -3464,11 +3468,14 @@ function hideFactBubble() {
 }
 function startWelcomeIdleTimer() {
   clearWelcomeIdleTimer();
+  if (welcomeFactCount >= MAX_WELCOME_FACTS) {
+    console.log('[Ink] Welcome fact cap hit; pausing until next interaction');
+    return;
+  }
   const delay = welcomeFactFirstShown ? 45000 : 15000;
-  console.log('[Ink] Welcome fact timer armed:', delay, 'ms');
   welcomeIdleTimer = setTimeout(() => {
-    console.log('[Ink] Welcome fact firing');
     welcomeFactFirstShown = true;
+    welcomeFactCount++;
     const fact = pickNextFact(S.lang || 'EN');
     const line = wrapFactWithIntro(fact, S.lang || 'EN');
     showFactBubble(line);
@@ -3476,11 +3483,30 @@ function startWelcomeIdleTimer() {
     startWelcomeIdleTimer();
   }, delay);
 }
+// Reset the welcome fact cap on any tap within the welcome screen so an
+// active user keeps getting facts, but a forgotten iPad eventually goes quiet.
+(function(){
+  const sw = document.getElementById('sw');
+  if (!sw) return;
+  sw.addEventListener('pointerdown', () => {
+    if (welcomeFactCount >= MAX_WELCOME_FACTS) {
+      welcomeFactCount = 0;
+      welcomeFactFirstShown = true; // use the 45s cadence on resume, not 15s
+      startWelcomeIdleTimer();
+    } else {
+      welcomeFactCount = 0;
+    }
+  }, {passive:true});
+})();
 
 let idleIdx = 0;
+const MAX_MISSION_IDLE_TICKLES = 3;
+let missionIdleCount = 0;
 function startIdleTimer() {
   clearIdleTimer();
+  if (missionIdleCount >= MAX_MISSION_IDLE_TICKLES) return; // pause until user acts
   idleTimer = setTimeout(() => {
+    missionIdleCount++;
     // 60% fact, 40% humor line
     const useFact = Math.random() < 0.6;
     let line;
@@ -3493,10 +3519,14 @@ function startIdleTimer() {
     const isVenk = S.hintCount >= 2;
     addMsg('a', line, isVenk);
     speak(line);
-    startIdleTimer(); // reset for next idle
+    startIdleTimer(); // schedule next (will self-abort when cap is hit)
   }, 55000);
 }
-function clearIdleTimer() { if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; } }
+// Any user-triggered clear resets the idle cap — they're clearly present
+function clearIdleTimer() {
+  if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
+  missionIdleCount = 0;
+}
 function goVerify() {
   const task = S.hw.tasks[S.tIdx];
   if (task.type === 'reading') { goVerifyReading(); return; }
