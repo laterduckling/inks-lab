@@ -3443,7 +3443,7 @@ function pickNextFact(lang) {
 // sitting on the home screen. Capped at MAX_WELCOME_FACTS consecutive facts
 // to avoid burning OpenAI TTS credits if the iPad is forgotten on the
 // welcome screen. Counter resets on any tap within the welcome screen.
-const MAX_WELCOME_FACTS = 3;
+const MAX_WELCOME_FACTS = 1;
 let welcomeIdleTimer = null;
 let welcomeFactFirstShown = false;
 let welcomeFactCount = 0;
@@ -3500,7 +3500,7 @@ function startWelcomeIdleTimer() {
 })();
 
 let idleIdx = 0;
-const MAX_MISSION_IDLE_TICKLES = 3;
+const MAX_MISSION_IDLE_TICKLES = 1;
 let missionIdleCount = 0;
 function startIdleTimer() {
   clearIdleTimer();
