@@ -449,8 +449,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <!-- Crew card: replaces the old station/blocks visual with Ink's World progress -->
   <div class="welcome-station station-card" onclick="openGallery()" style="width:100%;max-width:420px;cursor:pointer">
     <div class="station-head">
-      <span class="t">◈ Ink's World</span>
-      <span class="b" id="blockCount">0 / 18 crew</span>
+      <span class="t">◈ Ink's Quest</span>
+      <span class="b" id="blockCount">0 / 18 found</span>
     </div>
     <div id="crewStrip" style="padding:0 14px 14px;display:grid;grid-template-columns:repeat(6,1fr);gap:6px"></div>
     <div style="padding:0 18px 14px;display:flex;justify-content:center;align-items:center;border-top:1px solid rgba(45,224,198,.08);padding-top:10px">
@@ -651,7 +651,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <!-- Updated station -->
   <div class="card gw" style="padding:0 0 4px">
     <div style="padding:12px 16px 6px;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:13px;font-weight:800;color:#00dcc6">🌊 Ink's World</span>
+      <span style="font-size:13px;font-weight:800;color:#00dcc6">🌊 The Quest</span>
       <span class="score-badge" id="sumBlockCount"></span>
     </div>
     <div id="sumStationGrid" style="padding:0 14px 14px;display:grid;grid-template-columns:repeat(6,1fr);gap:6px"></div>
@@ -910,7 +910,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <div id="sgallery" class="screen" style="gap:16px;padding-top:24px;padding-bottom:28px">
   <div style="display:flex;align-items:center;gap:12px">
     <button onclick="show('w')" style="background:rgba(16,36,72,.6);border:1px solid rgba(45,224,198,.2);border-radius:10px;padding:8px 12px;color:#e0f0f8;font-weight:700;cursor:pointer">← Back</button>
-    <h2 style="font-size:26px;font-weight:900;font-family:var(--font-display)">🌊 Ink's World</h2>
+    <h2 style="font-size:26px;font-weight:900;font-family:var(--font-display)">🌊 Ink's Quest</h2>
   </div>
   <p id="galleryIntro" style="font-size:13px;color:rgba(224,240,248,.55);line-height:1.5"></p>
   <h3 style="font-family:var(--font-mono);font-size:11px;color:var(--biolume);letter-spacing:2px;text-transform:uppercase;margin-top:6px">◈ Ink's Moods</h3>
@@ -2442,7 +2442,7 @@ function renderWelcome() {
   const profile = getProfile();
   const totalCrew = CREW.length;
   const unlockedCrew = crewUnlockedCount(profile);
-  document.getElementById('blockCount').textContent = `${unlockedCrew} / ${totalCrew} crew`;
+  document.getElementById('blockCount').textContent = `${unlockedCrew} / ${totalCrew} found`;
   document.getElementById('coinCount').textContent = profile.minecoins || 0;
   renderCrewStrip(profile);
   document.getElementById('muteBtn').style.display = 'flex';
@@ -3296,8 +3296,8 @@ function renderGallery() {
   const total = CREW.length;
   const unlockedCount = crewUnlockedCount(profile);
   document.getElementById('galleryIntro').textContent = fr
-    ? `Tu as débloqué ${unlockedCount} créatures sur ${total}. Continue à faire tes devoirs pour en rencontrer plus !`
-    : `You've unlocked ${unlockedCount} of ${total} creatures. Keep doing homework to meet more!`;
+    ? `Aide Ink à retrouver toute sa famille et tous ses amis ! ${unlockedCount} sur ${total} trouvés.`
+    : `Help Ink find his family and friends! ${unlockedCount} of ${total} found.`;
 
   // Moods grid
   const moodsGrid = document.getElementById('galleryGrid');
@@ -3952,8 +3952,8 @@ function taskDone() {
     const name = fr ? c.nameFR : c.nameEN;
     const blurb = fr ? c.blurbFR : c.blurbEN;
     ruEl.style.display = 'block';
-    ruEl.innerHTML = `<div class="room-unlock-banner" style="display:flex;align-items:center;gap:14px;padding:14px"><img src="${c.file}" alt="" style="width:80px;height:80px;object-fit:contain;flex-shrink:0" onerror="this.onerror=null;this.src='${CREW_SILHOUETTE_SRC}'"><div style="text-align:left;flex:1"><div class="ru-title">${fr?'🔓 Nouveau dans ton crew':'🔓 New in your crew'}</div><div class="ru-name">${escHtml(name)}</div><div style="font-size:12px;color:rgba(224,240,248,.65);margin-top:3px">${escHtml(blurb)}</div></div></div>`;
-    setTimeout(() => { SFX.success(); speak(fr ? `Nouveau membre : ${name} !` : `New crew member: ${name}!`, c.style); }, 1200);
+    ruEl.innerHTML = `<div class="room-unlock-banner" style="display:flex;align-items:center;gap:14px;padding:14px"><img src="${c.file}" alt="" style="width:80px;height:80px;object-fit:contain;flex-shrink:0" onerror="this.onerror=null;this.src='${CREW_SILHOUETTE_SRC}'"><div style="text-align:left;flex:1"><div class="ru-title">${fr?'🐙 A rejoint la quête d\'Ink':'🐙 Joined Ink\'s quest'}</div><div class="ru-name">${escHtml(name)}</div><div style="font-size:12px;color:rgba(224,240,248,.65);margin-top:3px">${escHtml(blurb)}</div></div></div>`;
+    setTimeout(() => { SFX.success(); speak(fr ? `${name} rejoint la quête d'Ink !` : `${name} joined Ink's quest!`, c.style); }, 1200);
   } else if (unlockedRoom) {
     // Legacy station-room unlock — kept for backward compat until fully deprecated
     const roomName = fr ? unlockedRoom.fr : unlockedRoom.en;
