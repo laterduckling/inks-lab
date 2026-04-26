@@ -3961,11 +3961,14 @@ function startWelcomeIdleTimer() {
   // Fact fires at 15s; nudge fires 45s after the fact (so the fact has time
   // to play and there's a natural pause before Ink redirects to homework).
   const delay = welcomeStage === 'fact' ? 15000 : 45000;
+  console.log('[Ink] welcome timer armed:', delay+'ms', 'stage='+welcomeStage);
   welcomeIdleTimer = setTimeout(() => {
+    console.log('[Ink] welcome timer fired, stage='+welcomeStage);
     if (welcomeStage === 'fact') {
       const lang = S.lang || 'EN';
       const { idx, text } = pickNextFact(lang);
       const line = wrapFactWithIntro(text, lang);
+      console.log('[Ink] playing fact', idx, 'text:', line.slice(0, 60));
       showFactBubble(line);
       playInkClipOrFallback(inkFactClipUrl(idx, lang), line);
       welcomeStage = 'nudge';
