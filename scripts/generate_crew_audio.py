@@ -486,6 +486,62 @@ for mood, langs in INK_POSE_LINES.items():
         except Exception as e:
             print(f'  ✗ {e}')
 
+# Engagement transitions — Ink chimes in at key flow moments to keep Jules engaged.
+# Some keys are language-fixed (subject buttons that switch language); others
+# follow the current S.lang so they get both EN and FR clips.
+INK_TRANSITIONS_BILINGUAL = {
+    'ready':    {'en': "Ready for some fun homework?",                                            'fr': "Prêt pour des devoirs rigolos ?"},
+    'poesie':   {'en': "Time for some poetry!",                                                  'fr': "C'est l'heure de la poésie !"},
+    'upload':   {'en': "Take a clear picture of your homework page. Hold the iPad steady and make sure the page is well lit.", 'fr': "Prends une photo bien nette de ta page de devoirs. Tiens l'iPad bien droit et vérifie que la page est bien éclairée."},
+    'quest':    {'en': "This is Ink's Quest! Every time you finish your homework, a new friend or sea creature joins my crew. Find them all!",
+                 'fr': "C'est la quête d'Ink ! À chaque fois que tu finis tes devoirs, un nouvel ami ou une créature marine rejoint mon équipe. Trouve-les tous !"},
+}
+# Subject-button transitions are SINGLE-language (the button locks the lang).
+INK_TRANSITIONS_SINGLE = {
+    'subject-en': {'lang': 'en', 'text': "Alright! Let's do the English homework."},
+    'subject-fr': {'lang': 'fr', 'text': "Allez ! On fait les devoirs en français."},
+}
+for key, langs in INK_TRANSITIONS_BILINGUAL.items():
+    for lang, raw in langs.items():
+        clean = EMOJI_RE.sub('', raw).strip()
+        out = INK_OUT / f'{key}-{lang}.mp3'
+        if out.exists():
+            print(f'  ✓ {out.relative_to(ROOT)} (skipped)')
+            skipped += 1
+            continue
+        print(f'Generating {key}-{lang} ({len(clean)} chars)…', flush=True)
+        try:
+            data = generate(INK_VOICE_ID, clean)
+            out.write_bytes(data)
+            print(f'  → {out.relative_to(ROOT)} ({len(data):,} bytes)')
+            total_chars += len(clean)
+            generated += 1
+        except urllib.error.HTTPError as e:
+            err = e.read().decode('utf-8', 'replace')[:300]
+            print(f'  ✗ HTTP {e.code} {e.reason}: {err}')
+        except Exception as e:
+            print(f'  ✗ {e}')
+for key, info in INK_TRANSITIONS_SINGLE.items():
+    raw, lang = info['text'], info['lang']
+    clean = EMOJI_RE.sub('', raw).strip()
+    out = INK_OUT / f'{key}.mp3'
+    if out.exists():
+        print(f'  ✓ {out.relative_to(ROOT)} (skipped)')
+        skipped += 1
+        continue
+    print(f'Generating {key} ({len(clean)} chars)…', flush=True)
+    try:
+        data = generate(INK_VOICE_ID, clean)
+        out.write_bytes(data)
+        print(f'  → {out.relative_to(ROOT)} ({len(data):,} bytes)')
+        total_chars += len(clean)
+        generated += 1
+    except urllib.error.HTTPError as e:
+        err = e.read().decode('utf-8', 'replace')[:300]
+        print(f'  ✗ HTTP {e.code} {e.reason}: {err}')
+    except Exception as e:
+        print(f'  ✗ {e}')
+
 # Generate fact clips with random intros baked in (deterministic seed so
 # re-runs produce stable intro→fact pairings; new facts only affect new clips).
 random.seed(42)

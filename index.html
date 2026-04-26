@@ -442,7 +442,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       </div>
       <span class="mb-arrow">→</span>
     </button>
-    <button onclick="openGallery()" style="margin-top:6px;padding:10px 14px;background:rgba(16,36,72,.35);border:1px solid rgba(199,168,255,.25);border-radius:12px;color:rgba(224,240,248,.75);font-size:13px;font-weight:700;font-family:var(--font-mono);letter-spacing:1.5px;text-transform:uppercase;cursor:pointer">🎭 Ink's Moods</button>
   </div>
   </div><!-- /welcome-actions -->
 
@@ -1752,7 +1751,12 @@ You may include {{NAME}} in "childHeadline" once. Return ONLY valid JSON:
   catch { return {childHeadline:fr?'Super poésie aujourd\'hui !':'Great poem session today!',childNote:fr?'Tu progresses bien !':'You\'re making great progress!',shone:'Engaged with the poem',struggled:null,nextFocus:'Keep practicing'}; }
 }
 
-function openPoemList() { renderPoemList(); show('po'); }
+function openPoemList() {
+  renderPoemList();
+  show('po');
+  const lc = (S.lang === 'FR') ? 'fr' : 'en';
+  playInkClipSilentFallback(`audio/ink/poesie-${lc}.mp3`);
+}
 
 function renderParentPoems() {
   const el = document.getElementById('parPoems');
@@ -2434,14 +2438,22 @@ function greetOnWelcome() {
   _greetedThisLaunch = true;
   const name = getChildName();
   const fr = (S.lang === 'FR');
+  const lc = fr ? 'fr' : 'en';
   const line = fr ? `Salut ${name} !` : `Hi ${name}!`;
   // Pre-recorded Ink greeting only matches "Jules"; any other childName
   // falls through to live TTS so the personalisation still works.
   const usePrerecorded = (name === 'Jules');
   setTimeout(() => {
     try {
-      if (usePrerecorded) playInkClipOrFallback(inkGreetingClipUrl(fr ? 'FR' : 'EN'), line);
-      else speak(line);
+      if (usePrerecorded) {
+        // Chain: "Hi Jules!" then "Ready for some fun homework?"
+        playInkChain([
+          inkGreetingClipUrl(fr ? 'FR' : 'EN'),
+          `audio/ink/ready-${lc}.mp3`,
+        ]);
+      } else {
+        speak(line);
+      }
     } catch {}
   }, 450);
 }
@@ -2631,6 +2643,12 @@ function go(l) {
   document.getElementById('dzIcon').innerHTML = icon('camera', 32, 'currentColor', 2);
   renderPhotoThumbs();
   show('u');
+  // Chain: subject acknowledgement → upload-screen instructions
+  const lc = fr ? 'fr' : 'en';
+  playInkChain([
+    `audio/ink/subject-${lc}.mp3`,
+    `audio/ink/upload-${lc}.mp3`,
+  ]);
 }
 
 // ═══════════════════════════════════════
@@ -3296,7 +3314,18 @@ function renderCrewStripInto(el, profile) {
 }
 function renderCrewStrip(profile) { renderCrewStripInto(document.getElementById('crewStrip'), profile); }
 
-function openGallery() { renderGallery(); show('gallery'); }
+let _questIntroPlayedThisLaunch = false;
+function openGallery() {
+  renderGallery();
+  show('gallery');
+  // Quest intro fires only once per app launch so it explains the page on
+  // first visit without nagging on every subsequent tap.
+  if (!_questIntroPlayedThisLaunch) {
+    _questIntroPlayedThisLaunch = true;
+    const lc = (S.lang === 'FR') ? 'fr' : 'en';
+    setTimeout(() => playInkClipSilentFallback(`audio/ink/quest-${lc}.mp3`), 600);
+  }
+}
 function renderGallery() {
   const profile = getProfile();
   const fr = S.lang === 'FR';
@@ -3749,6 +3778,38 @@ function inkIdleClipUrl(idx, lang) {
 }
 function inkStaticClipUrl(key, lang) {
   return `audio/ink/${key}-${lang === 'FR' ? 'fr' : 'en'}.mp3`;
+}
+// Plays a pre-recorded clip directly by URL with no live-TTS fallback.
+// Used for transitions where there's no fallback text (it's just a "nice to
+// have" voice line, not critical content).
+function playInkClipSilentFallback(url) {
+  if (MUTED) return;
+  if (!audioUnlocked) return; // Pre-tap: just skip; don't queue (these are non-essential)
+  stopSpeaking();
+  const a = new Audio(url);
+  a.onerror = () => {};
+  a.onended = () => { if (currentAudio === a) currentAudio = null; };
+  currentAudio = a;
+  a.play().catch(() => {});
+}
+// Plays a sequence of MP3 URLs back-to-back with a small natural pause
+// between them. Skips silently if audio isn't unlocked yet, or if a clip 404s.
+function playInkChain(urls) {
+  if (MUTED || !audioUnlocked || !urls || !urls.length) return;
+  stopSpeaking();
+  let i = 0;
+  const playNext = () => {
+    if (i >= urls.length) return;
+    const a = new Audio(urls[i]); i++;
+    a.onerror = () => playNext();
+    a.onended = () => {
+      if (currentAudio === a) currentAudio = null;
+      setTimeout(playNext, 280);
+    };
+    currentAudio = a;
+    a.play().catch(playNext);
+  };
+  playNext();
 }
 
 // Welcome-screen idle fact timer: first fact at 15s, then every 45s while
