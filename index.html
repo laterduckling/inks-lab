@@ -445,6 +445,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       </div>
       <span class="mb-arrow" id="poArrow">→</span>
     </button>
+    <button onclick="testFactNow()" style="margin-top:4px;padding:8px 12px;background:rgba(255,209,102,.15);border:1px solid rgba(255,209,102,.4);border-radius:10px;color:#ffd166;font-size:11px;font-weight:700;cursor:pointer">🧪 TEST: play a fact now</button>
   </div>
   </div><!-- /welcome-actions -->
 
@@ -3955,6 +3956,17 @@ function hideFactBubble() {
   if (el) el.style.display = 'none';
   if (factBubbleHideTimer) { clearTimeout(factBubbleHideTimer); factBubbleHideTimer = null; }
 }
+// Diagnostic: trigger the fact branch immediately, ignoring the timer/state.
+// Used while debugging why the welcome timer isn't firing on iOS PWAs.
+function testFactNow() {
+  const lang = S.lang || 'EN';
+  const { idx, text } = pickNextFact(lang);
+  const line = wrapFactWithIntro(text, lang);
+  console.log('[Ink] TEST: forcing fact', idx, 'lang='+lang);
+  showFactBubble(line);
+  playInkClipOrFallback(inkFactClipUrl(idx, lang), line);
+}
+
 function startWelcomeIdleTimer() {
   clearWelcomeIdleTimer();
   if (welcomeStage === 'silent') return;
