@@ -892,6 +892,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <button onclick="updateParentEdits()" style="background:rgba(255,209,102,.15);border:1px solid rgba(255,209,102,.4);color:#ffd166;font-size:13px;font-weight:800;padding:8px 16px;border-radius:10px;cursor:pointer">💾 Save</button>
       <span id="coinSaved" style="font-size:13px;color:#06d6a0;display:none">✅ Saved!</span>
     </div>
+    <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(224,240,248,.08)">
+      <p style="font-size:11px;font-weight:800;color:rgba(224,240,248,.38);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">🔓 Manual Unlocks</p>
+      <div id="parUnlocks" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    </div>
   </div>
   <div class="card" id="parPoems" style="padding:18px 20px"></div>
   <div class="card" id="parCognitive" style="padding:18px 20px;display:none"></div>
@@ -2516,6 +2520,41 @@ function parentLongPressStart() {
 }
 function parentLongPressEnd() { clearTimeout(parentPressTimer); }
 
+// Manual Venom + Dragon unlock toggles for parent mode. Each click flips
+// the corresponding profile flag and re-renders so the button label updates.
+function renderParentUnlocks() {
+  const el = document.getElementById('parUnlocks');
+  if (!el) return;
+  const profile = getProfile();
+  const venomOn = !!profile.venomUnlockedThisWeek;
+  const dragonOn = !!profile.dragonUnlocked;
+  const btn = (label, on, fn) => {
+    const bg = on ? 'rgba(6,214,160,.15)' : 'rgba(224,240,248,.06)';
+    const border = on ? 'rgba(6,214,160,.5)' : 'rgba(224,240,248,.18)';
+    const color = on ? '#06d6a0' : '#e0f0f8';
+    return `<button onclick="${fn}" style="background:${bg};border:1px solid ${border};color:${color};font-size:12px;font-weight:800;padding:8px 12px;border-radius:10px;cursor:pointer">${label}</button>`;
+  };
+  el.innerHTML = [
+    btn(venomOn  ? '✅ Venom unlocked (tap to lock)' : '🔒 Unlock Venom',   venomOn,  'toggleVenomUnlock()'),
+    btn(dragonOn ? '✅ Dragon unlocked (tap to lock)' : '🔒 Unlock Dragon', dragonOn, 'toggleDragonUnlock()'),
+  ].join('');
+}
+function toggleVenomUnlock() {
+  const p = getProfile();
+  p.venomUnlockedThisWeek = !p.venomUnlockedThisWeek;
+  // Stamp the current week start so the unlock survives the weekly reset
+  // logic (which clears venomUnlockedThisWeek when venomWeekStart drifts).
+  if (p.venomUnlockedThisWeek) p.venomWeekStart = mondayOf(new Date());
+  saveProfile(p);
+  renderParentUnlocks();
+}
+function toggleDragonUnlock() {
+  const p = getProfile();
+  p.dragonUnlocked = !p.dragonUnlocked;
+  saveProfile(p);
+  renderParentUnlocks();
+}
+
 function updateParentEdits() {
   const coins = parseInt(document.getElementById('coinEdit').value) || 0;
   const blocks = parseInt(document.getElementById('blockEdit').value) || 0;
@@ -2534,6 +2573,7 @@ function renderParentMode() {
   renderWebhookUI();
   renderBackupUI();
   renderParentPoems();
+  renderParentUnlocks();
   const profile = getProfile();
   document.getElementById('coinEdit').value = profile.minecoins || 0;
   document.getElementById('blockEdit').value = profile.blocks || 0;
