@@ -1405,8 +1405,9 @@ function show(id) {
   // Show home button on all screens except welcome and API key
   const homeBtn = document.getElementById('homeBtn');
   homeBtn.style.display = (id === 'w' || id === 'k') ? 'none' : 'flex';
-  // Kick the welcome-page greeting + idle fact timer when we land on welcome
-  if (id === 'w') { greetOnWelcome(); startWelcomeIdleTimer(); }
+  // Kick the welcome-page greeting + idle fact timer when we land on welcome.
+  // Each visit resets the fact→nudge cycle so a return trip gets a fresh nudge.
+  if (id === 'w') { welcomeStage = 'fact'; greetOnWelcome(); startWelcomeIdleTimer(); }
 }
 
 // ═══════════════════════════════════════
@@ -3855,15 +3856,50 @@ function playInkChain(urls) {
   playNext();
 }
 
-// Welcome-screen idle fact timer: first fact at 15s, then every 45s while
-// sitting on the home screen. Capped at MAX_WELCOME_FACTS consecutive facts
-// to avoid burning OpenAI TTS credits if the iPad is forgotten on the
-// welcome screen. Counter resets on any tap within the welcome screen.
-const MAX_WELCOME_FACTS = 3;
+// Welcome-screen idle behaviour: 1 fun fact at 15s to delight, then a
+// state-aware engagement nudge ~45s later (e.g., "Shall we do the French
+// homework now?"). After the nudge, silent until Jules taps to reset.
+// 'fact' → 'nudge' → 'silent'. Tap on welcome resets back to 'fact'.
 let welcomeIdleTimer = null;
-let welcomeFactFirstShown = false;
-let welcomeFactCount = 0;
+let welcomeStage = 'fact';
 let factBubbleHideTimer = null;
+
+// Look at the day, today's sessions, weekend bonus state, and active poems
+// to pick the right nudge. On Fri/Sat/Sun (no homework), suggest the
+// weekend bonus mission instead of asking which homework to do.
+function detectHomeworkState(profile) {
+  const day = new Date().getDay(); // 0=Sun, 5=Fri, 6=Sat
+  const isWeekend = day === 0 || day === 5 || day === 6;
+  const hasActivePoem = (typeof activePoems === 'function') && activePoems().length > 0;
+
+  if (isWeekend) {
+    const weekStart = (typeof getWeekStart === 'function') ? getWeekStart() : 0;
+    const alreadyDone = profile.lastWeekendMission && profile.lastWeekendMission >= weekStart;
+    const hasSessions = (profile.sessions||[]).some(s => s.date >= weekStart);
+    const weekendBonusAvailable = hasSessions && !alreadyDone;
+    if (weekendBonusAvailable) return 'weekend-bonus';
+    if (hasActivePoem)         return 'poem-continue';
+    return null; // weekend, nothing to nudge about → stay silent
+  }
+
+  // Weekday: ask about homework based on what's already done today
+  const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+  const todays = (profile.sessions||[]).filter(s => s.date >= todayStart.getTime());
+  const doneEN = todays.some(s => s.lang === 'EN');
+  const doneFR = todays.some(s => s.lang === 'FR');
+  if (!doneEN && !doneFR) return 'pick';
+  if (doneEN && !doneFR)  return 'french';
+  if (doneFR && !doneEN)  return 'english';
+  return hasActivePoem ? 'poem-continue' : 'poem-new';
+}
+const ENGAGEMENT_PHRASES = {
+  pick:             { en: "So, what homework do you want to do first?",                                       fr: "Alors, quel devoir veux-tu faire en premier ?" },
+  french:           { en: "Looks like you finished the English. Shall we do the French homework now?",      fr: "On dirait que t'as fini l'anglais. On fait le français maintenant ?" },
+  english:          { en: "Looks like you finished the French. Shall we do the English homework now?",      fr: "On dirait que t'as fini le français. On fait l'anglais maintenant ?" },
+  'poem-new':       { en: "Both done! Is there a little poem to practice this week?",                        fr: "Tout est fait ! Est-ce qu'il y a une petite poésie cette semaine ?" },
+  'poem-continue':  { en: "What about your poem? Want to practice it now?",                                  fr: "Et ta poésie ? On peut s'entraîner maintenant ?" },
+  'weekend-bonus':  { en: "It's the weekend! Want to do a quick bonus quest for extra coins?",               fr: "C'est le week-end ! Tu veux faire une petite mission bonus pour gagner plus de pièces ?" },
+};
 function clearWelcomeIdleTimer() {
   if (welcomeIdleTimer) { clearTimeout(welcomeIdleTimer); welcomeIdleTimer = null; }
   hideFactBubble();
@@ -3884,35 +3920,42 @@ function hideFactBubble() {
 }
 function startWelcomeIdleTimer() {
   clearWelcomeIdleTimer();
-  if (welcomeFactCount >= MAX_WELCOME_FACTS) {
-    console.log('[Ink] Welcome fact cap hit; pausing until next interaction');
-    return;
-  }
-  const delay = welcomeFactFirstShown ? 45000 : 15000;
+  if (welcomeStage === 'silent') return;
+  // Fact fires at 15s; nudge fires 45s after the fact (so the fact has time
+  // to play and there's a natural pause before Ink redirects to homework).
+  const delay = welcomeStage === 'fact' ? 15000 : 45000;
   welcomeIdleTimer = setTimeout(() => {
-    welcomeFactFirstShown = true;
-    welcomeFactCount++;
-    const lang = S.lang || 'EN';
-    const { idx, text } = pickNextFact(lang);
-    const line = wrapFactWithIntro(text, lang);
-    showFactBubble(line);
-    // Prefer pre-recorded Ink clip for this fact; fall back to live TTS
-    playInkClipOrFallback(inkFactClipUrl(idx, lang), line);
+    if (welcomeStage === 'fact') {
+      const lang = S.lang || 'EN';
+      const { idx, text } = pickNextFact(lang);
+      const line = wrapFactWithIntro(text, lang);
+      showFactBubble(line);
+      playInkClipOrFallback(inkFactClipUrl(idx, lang), line);
+      welcomeStage = 'nudge';
+    } else if (welcomeStage === 'nudge') {
+      const profile = getProfile();
+      const state = detectHomeworkState(profile);
+      const fr = (S.lang === 'FR');
+      const phrase = ENGAGEMENT_PHRASES[state];
+      if (phrase) {
+        const text = fr ? phrase.fr : phrase.en;
+        showFactBubble(text);
+        playInkClipOrFallback(`audio/ink/engage-${state}-${fr ? 'fr' : 'en'}.mp3`, text);
+      }
+      welcomeStage = 'silent';
+    }
     startWelcomeIdleTimer();
   }, delay);
 }
-// Reset the welcome fact cap on any tap within the welcome screen so an
-// active user keeps getting facts, but a forgotten iPad eventually goes quiet.
+// Tap on welcome resets the cycle so an active user keeps getting fact +
+// nudge each time he comes back; a forgotten iPad goes silent after one round.
 (function(){
   const sw = document.getElementById('sw');
   if (!sw) return;
   sw.addEventListener('pointerdown', () => {
-    if (welcomeFactCount >= MAX_WELCOME_FACTS) {
-      welcomeFactCount = 0;
-      welcomeFactFirstShown = true; // use the 45s cadence on resume, not 15s
+    if (welcomeStage === 'silent') {
+      welcomeStage = 'fact';
       startWelcomeIdleTimer();
-    } else {
-      welcomeFactCount = 0;
     }
   }, {passive:true});
 })();

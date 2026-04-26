@@ -542,6 +542,55 @@ for key, info in INK_TRANSITIONS_SINGLE.items():
     except Exception as e:
         print(f'  ✗ {e}')
 
+# Welcome-screen engagement nudges — Ink prompts Jules toward homework
+# based on what's already been done today. One file per state per language.
+INK_ENGAGEMENT = {
+    'pick': {
+        'en': "So, what homework do you want to do first?",
+        'fr': "Alors, quel devoir veux-tu faire en premier ?",
+    },
+    'french': {
+        'en': "Looks like you finished the English. Shall we do the French homework now?",
+        'fr': "On dirait que t'as fini l'anglais. On fait le français maintenant ?",
+    },
+    'english': {
+        'en': "Looks like you finished the French. Shall we do the English homework now?",
+        'fr': "On dirait que t'as fini le français. On fait l'anglais maintenant ?",
+    },
+    'poem-new': {
+        'en': "Both done! Is there a little poem to practice this week?",
+        'fr': "Tout est fait ! Est-ce qu'il y a une petite poésie cette semaine ?",
+    },
+    'poem-continue': {
+        'en': "What about your poem? Want to practice it now?",
+        'fr': "Et ta poésie ? On peut s'entraîner maintenant ?",
+    },
+    'weekend-bonus': {
+        'en': "It's the weekend! Want to do a quick bonus quest for extra coins?",
+        'fr': "C'est le week-end ! Tu veux faire une petite mission bonus pour gagner plus de pièces ?",
+    },
+}
+for key, langs in INK_ENGAGEMENT.items():
+    for lang, raw in langs.items():
+        clean = EMOJI_RE.sub('', raw).strip()
+        out = INK_OUT / f'engage-{key}-{lang}.mp3'
+        if out.exists():
+            print(f'  ✓ {out.relative_to(ROOT)} (skipped)')
+            skipped += 1
+            continue
+        print(f'Generating engage-{key}-{lang} ({len(clean)} chars)…', flush=True)
+        try:
+            data = generate(INK_VOICE_ID, clean)
+            out.write_bytes(data)
+            print(f'  → {out.relative_to(ROOT)} ({len(data):,} bytes)')
+            total_chars += len(clean)
+            generated += 1
+        except urllib.error.HTTPError as e:
+            err = e.read().decode('utf-8', 'replace')[:300]
+            print(f'  ✗ HTTP {e.code} {e.reason}: {err}')
+        except Exception as e:
+            print(f'  ✗ {e}')
+
 # Generate fact clips with random intros baked in (deterministic seed so
 # re-runs produce stable intro→fact pairings; new facts only affect new clips).
 random.seed(42)
