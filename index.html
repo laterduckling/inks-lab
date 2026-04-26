@@ -2727,7 +2727,9 @@ function go(l) {
   if (S.isWeekendMission) {
     playInkClipOrFallback(
       `audio/ink/practice-${lc}.mp3`,
-      fr ? "Allez ! On va faire un peu d'entraînement supplémentaire pour gagner des pièces bonus. Prends une photo bien nette de ta feuille." : "Alright! Let's do some extra practice for those bonus coins. Take a clear picture of your practice sheet."
+      fr
+        ? "Allez ! On va faire un peu d'entraînement supplémentaire pour gagner des pièces bonus, et essayer de débloquer le légendaire poulpe Dragon de Feu ! Prends une photo bien nette de ta feuille."
+        : "Alright! Let's do some extra practice for those bonus coins, and try to unlock the legendary Dragon-Fire octopus! Take a clear picture of your practice sheet."
     );
   } else {
     playInkChain([
