@@ -445,7 +445,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       </div>
       <span class="mb-arrow" id="poArrow">→</span>
     </button>
-    <button onclick="testFactNow()" style="margin-top:4px;padding:8px 12px;background:rgba(255,209,102,.15);border:1px solid rgba(255,209,102,.4);border-radius:10px;color:#ffd166;font-size:11px;font-weight:700;cursor:pointer">🧪 TEST: play a fact now</button>
+    <button id="onDemandFactBtn" onclick="onDemandFact()" style="margin-top:4px;padding:10px 14px;background:rgba(45,224,198,.1);border:1px solid rgba(45,224,198,.35);border-radius:12px;color:#2de0c6;font-size:13px;font-weight:700;cursor:pointer">🐙 Tell me a fact!</button>
+    <div id="welcomeTimerDebug" style="margin-top:4px;padding:4px 8px;background:rgba(224,240,248,.04);border:1px solid rgba(224,240,248,.1);border-radius:6px;color:rgba(224,240,248,.4);font-size:9px;font-family:var(--font-mono);text-align:center;display:none"></div>
   </div>
   </div><!-- /welcome-actions -->
 
@@ -2500,6 +2501,7 @@ function renderWelcome() {
   const enArrow = document.getElementById('enArrow'); if (enArrow) enArrow.textContent = doneEN ? '✅' : '→';
   const frArrow = document.getElementById('frArrow'); if (frArrow) frArrow.textContent = doneFR ? '✅' : '→';
   const poArrow = document.getElementById('poArrow'); if (poArrow) poArrow.textContent = donePoem ? '✅' : '→';
+  updateFactButtonState();
   document.getElementById('muteBtn').style.display = 'flex';
   const poems = activePoems();
   const badge = document.getElementById('poesieBtnBadge');
@@ -3969,25 +3971,87 @@ function hideFactBubble() {
   if (el) el.style.display = 'none';
   if (factBubbleHideTimer) { clearTimeout(factBubbleHideTimer); factBubbleHideTimer = null; }
 }
-// Diagnostic: trigger the fact branch immediately, ignoring the timer/state.
-// Used while debugging why the welcome timer isn't firing on iOS PWAs.
-function testFactNow() {
+// On-demand "Tell me a fact!" button — Jules can request a fact anytime
+// from the welcome screen. Daily cap: 1 free, +2 more once any homework is
+// completed that day (3 total). Counter resets at midnight local time.
+const FACT_BUTTON_USAGE_KEY = 'ink_fact_button_usage';
+function _factBtnTodayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+}
+function factButtonState() {
+  const profile = getProfile();
+  const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+  const todays = (profile.sessions||[]).filter(s => s.date >= todayStart.getTime());
+  const homeworkDone = todays.some(s => s.subject !== 'poem' && s.subject !== 'weekend review');
+  const cap = homeworkDone ? 3 : 1;
+  let used = 0;
+  try {
+    const stored = JSON.parse(localStorage.getItem(FACT_BUTTON_USAGE_KEY) || '{}');
+    if (stored.date === _factBtnTodayKey()) used = stored.count || 0;
+  } catch {}
+  return { cap, used, remaining: Math.max(0, cap - used), homeworkDone };
+}
+function recordFactButtonUse() {
+  const stored = factButtonState();
+  try {
+    localStorage.setItem(FACT_BUTTON_USAGE_KEY, JSON.stringify({ date: _factBtnTodayKey(), count: stored.used + 1 }));
+  } catch {}
+}
+function updateFactButtonState() {
+  const btn = document.getElementById('onDemandFactBtn');
+  if (!btn) return;
+  const fr = (S.lang === 'FR');
+  const s = factButtonState();
+  if (s.remaining > 0) {
+    btn.disabled = false;
+    btn.style.opacity = '';
+    btn.style.cursor = 'pointer';
+    btn.textContent = fr ? '🐙 Raconte-moi un fait !' : '🐙 Tell me a fact!';
+  } else {
+    btn.disabled = true;
+    btn.style.opacity = '0.4';
+    btn.style.cursor = 'not-allowed';
+    if (s.homeworkDone) {
+      btn.textContent = fr ? '🐙 Reviens demain pour plus !' : '🐙 Come back tomorrow for more!';
+    } else {
+      btn.textContent = fr ? '🐙 Fais un devoir pour en débloquer plus !' : '🐙 Do a homework to unlock more!';
+    }
+  }
+}
+function onDemandFact() {
+  const s = factButtonState();
+  if (s.remaining <= 0) return;
+  recordFactButtonUse();
   const lang = S.lang || 'EN';
   const { idx, text } = pickNextFact(lang);
   const line = wrapFactWithIntro(text, lang);
-  console.log('[Ink] TEST: forcing fact', idx, 'lang='+lang);
   showFactBubble(line);
   playInkClipOrFallback(inkFactClipUrl(idx, lang), line);
+  updateFactButtonState();
 }
 
+function _setDbg(s) { const el = document.getElementById('welcomeTimerDebug'); if (el) el.textContent = s; }
+let _welcomeTimerArmedAt = 0;
+let _welcomeTimerTickInterval = null;
 function startWelcomeIdleTimer() {
   clearWelcomeIdleTimer();
-  if (welcomeStage === 'silent') return;
+  if (welcomeStage === 'silent') { _setDbg('stage=silent (waiting for tap)'); return; }
   // Fact fires at 15s; nudge fires 45s after the fact (so the fact has time
   // to play and there's a natural pause before Ink redirects to homework).
   const delay = welcomeStage === 'fact' ? 15000 : 45000;
   console.log('[Ink] welcome timer armed:', delay+'ms', 'stage='+welcomeStage);
+  _welcomeTimerArmedAt = Date.now();
+  _setDbg(`stage=${welcomeStage} · armed for ${delay/1000}s`);
+  if (_welcomeTimerTickInterval) clearInterval(_welcomeTimerTickInterval);
+  _welcomeTimerTickInterval = setInterval(() => {
+    const elapsed = Math.round((Date.now() - _welcomeTimerArmedAt)/1000);
+    _setDbg(`stage=${welcomeStage} · ${elapsed}/${delay/1000}s elapsed`);
+    if (elapsed >= delay/1000 + 3) { clearInterval(_welcomeTimerTickInterval); _welcomeTimerTickInterval = null; }
+  }, 1000);
   welcomeIdleTimer = setTimeout(() => {
+    if (_welcomeTimerTickInterval) { clearInterval(_welcomeTimerTickInterval); _welcomeTimerTickInterval = null; }
+    _setDbg(`stage=${welcomeStage} · TIMER FIRED ✓`);
     console.log('[Ink] welcome timer fired, stage='+welcomeStage);
     if (welcomeStage === 'fact') {
       const lang = S.lang || 'EN';
