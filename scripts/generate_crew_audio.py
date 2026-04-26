@@ -566,8 +566,8 @@ INK_ENGAGEMENT = {
         'fr': "Et ta poésie ? On peut s'entraîner maintenant ?",
     },
     'weekend-bonus': {
-        'en': "It's the weekend! Want to do a quick bonus quest for extra coins?",
-        'fr': "C'est le week-end ! Tu veux faire une petite mission bonus pour gagner plus de pièces ?",
+        'en': "It's the weekend! Want to do a bonus quest? You'll earn extra coins AND unlock the legendary Dragon-Fire octopus!",
+        'fr': "C'est le week-end ! Tu veux faire une mission bonus ? Tu gagneras des pièces en plus ET tu peux débloquer le légendaire poulpe Dragon de Feu !",
     },
 }
 
