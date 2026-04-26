@@ -447,6 +447,38 @@ for key, langs in INK_STATIC_LINES.items():
         except Exception as e:
             print(f'  ✗ {e}')
 
+# Mood gallery pose lines — Adam reads each mood line as Ink. Loses the
+# per-mood OpenAI styling but keeps Ink's voice consistent across moods.
+INK_POSE_LINES = {
+    'happy':    {'en': "That's my happy face!",                                                  'fr': "C'est ma tête contente !"},
+    'excited':  {'en': "WOOHOO! Excited mode activated!",                                        'fr': "WOUHOU ! Mode excité activé !"},
+    'thinking': {'en': "Hmm... let me think about it.",                                          'fr': "Hmm... laisse-moi réfléchir."},
+    'sleeping': {'en': "Shhh... I was just taking a nap.",                                       'fr': "Chut... je faisais juste une petite sieste."},
+    'victory':  {'en': "YES! We did it!",                                                        'fr': "OUI ! On a réussi !"},
+    'venk':     {'en': "Careful. This is my venom form. Do NOT touch.",                          'fr': "Attention. C'est ma forme venimeuse. Ne touche PAS."},
+    'dragon':   {'en': "Behold — the legendary dragon-fire form!",                               'fr': "Contemple — la forme légendaire du dragon de feu !"},
+}
+for mood, langs in INK_POSE_LINES.items():
+    for lang, raw in langs.items():
+        clean = EMOJI_RE.sub('', raw).strip()
+        out = INK_OUT / f'pose-{mood}-{lang}.mp3'
+        if out.exists():
+            print(f'  ✓ {out.relative_to(ROOT)} (skipped)')
+            skipped += 1
+            continue
+        print(f'Generating pose-{mood}-{lang} ({len(clean)} chars)…', flush=True)
+        try:
+            data = generate(INK_VOICE_ID, clean)
+            out.write_bytes(data)
+            print(f'  → {out.relative_to(ROOT)} ({len(data):,} bytes)')
+            total_chars += len(clean)
+            generated += 1
+        except urllib.error.HTTPError as e:
+            err = e.read().decode('utf-8', 'replace')[:300]
+            print(f'  ✗ HTTP {e.code} {e.reason}: {err}')
+        except Exception as e:
+            print(f'  ✗ {e}')
+
 # Generate fact clips with random intros baked in (deterministic seed so
 # re-runs produce stable intro→fact pairings; new facts only affect new clips).
 random.seed(42)

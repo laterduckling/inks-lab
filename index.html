@@ -3425,7 +3425,21 @@ function openPoseModal(key) {
   // Hide the fact panel — only crew cards have facts
   document.getElementById('poseModalFact').style.display = 'none';
   modal.style.display = 'flex';
-  try { speak(line, POSE_VOICE_STYLE[key] || null); } catch {}
+  // Try the pre-recorded Ink pose clip first; fall back to live OpenAI TTS
+  // with per-mood styling if the clip is missing.
+  const clipUrl = `audio/ink/pose-${key}-${fr ? 'fr' : 'en'}.mp3`;
+  if (!audioUnlocked) { pendingSpeak = { text: line, instructions: POSE_VOICE_STYLE[key] || null }; return; }
+  stopSpeaking();
+  const a = new Audio(clipUrl);
+  let fellBack = false;
+  const fallback = () => {
+    if (fellBack) return; fellBack = true;
+    try { speak(line, POSE_VOICE_STYLE[key] || null); } catch {}
+  };
+  a.onerror = fallback;
+  a.onended = () => { if (currentAudio === a) currentAudio = null; };
+  currentAudio = a;
+  a.play().catch(fallback);
 }
 function closePoseModal() {
   const modal = document.getElementById('poseModal');
