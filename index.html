@@ -3347,13 +3347,15 @@ function galleryCard({ imgSrc, name, hint, unlocked, onclick }) {
       ${hint ? `<div style="font-size:11px;color:rgba(224,240,248,.55);margin-top:3px;line-height:1.3">${escHtml(hint)}</div>` : ''}
     </div>`;
 }
-// Crew modal reuses the existing pose modal DOM. Speaks the fact with the
-// character's voice style; shows blurb as subtitle + fact as the main body.
+// Crew modal reuses the existing pose modal DOM. Tries the pre-recorded
+// ElevenLabs clip at audio/crew/<key>-<lang>.mp3 first; falls back to live
+// OpenAI TTS (with the character's voice style) if the clip is missing.
 function openCrewModal(key) {
   haptic([15]);
   const c = CREW.find(m => m.key === key);
   if (!c) return;
   const fr = S.lang === 'FR';
+  const lang = fr ? 'fr' : 'en';
   const name = fr ? c.nameFR : c.nameEN;
   const blurb = fr ? c.blurbFR : c.blurbEN;
   const fact = fr ? c.factFR : c.factEN;
@@ -3361,7 +3363,24 @@ function openCrewModal(key) {
   document.getElementById('poseModalName').textContent = name;
   document.getElementById('poseModalLine').textContent = blurb + ' — ' + fact;
   document.getElementById('poseModal').style.display = 'flex';
-  try { speak(fact, c.style); } catch {}
+  playCrewClipOrFallback(key, lang, fact, c.style);
+}
+function playCrewClipOrFallback(key, lang, fallbackText, style) {
+  if (MUTED) return;
+  // Pre-tap on iOS: queue the live-TTS fallback (existing pendingSpeak path)
+  if (!audioUnlocked) { pendingSpeak = { text: fallbackText, instructions: style }; return; }
+  stopSpeaking();
+  const url = `audio/crew/${key}-${lang}.mp3`;
+  const a = new Audio(url);
+  let fellBack = false;
+  const fallback = () => {
+    if (fellBack) return; fellBack = true;
+    try { if (OAIKEY) speakOpenAI(fallbackText, style); else speakBrowser(fallbackText); } catch {}
+  };
+  a.onerror = fallback;
+  a.onended = () => { if (currentAudio === a) currentAudio = null; };
+  currentAudio = a;
+  a.play().catch(fallback);
 }
 const POSE_VOICE_LINES = {
   happy:    { en: "That's my happy face!",                               fr: "C'est ma tête contente !" },
