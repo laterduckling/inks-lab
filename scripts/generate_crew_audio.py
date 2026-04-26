@@ -34,6 +34,7 @@ VOICES = {
     'baby':    'ocZQ262SsZb9RIxcQBOj',
     'mama':    'TDdaEMZGTCMRB4x8bVQ2',
     'papa':    'uju3wxzG5OhpWcoi3SMy',
+    'grandma': 'wGcFBfKz5yUQqhqr0mVy',
     'grandpa': 'MKlLqCItoCkvdhrxgtLv',
 }
 
@@ -50,6 +51,10 @@ FACTS = {
     'papa': {
         'en': "Most male octopuses live only 1 to 2 years, and many die shortly after mating. A wandering explorer-dad octopus is extremely rare.",
         'fr': "La plupart des poulpes mâles ne vivent que 1 à 2 ans, et beaucoup meurent peu après l'accouplement. Un papa poulpe explorateur qui voyage est extrêmement rare.",
+    },
+    'grandma': {
+        'en': "Blue-ringed octopuses typically live just 1 or 2 years. An octopus that lives long enough to have grandchildren is almost never seen by scientists.",
+        'fr': "Les poulpes aux anneaux bleus vivent en général seulement 1 ou 2 ans. Un poulpe qui vit assez longtemps pour avoir des petits-enfants, les scientifiques n'en voient presque jamais.",
     },
     'grandpa': {
         'en': "An octopus's brain rewires itself every time it learns something new. By the time you're a grandpa octopus, your brain has been reorganized thousands of times.",
