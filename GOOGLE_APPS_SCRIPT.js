@@ -137,7 +137,10 @@ function sendWeeklyDigest() {
       MailApp.sendEmail({
         to: email,
         subject: "\ud83d\udc19 Ink's World \u2014 Weekly Summary (no sessions this week)",
-        body: "No homework sessions were completed this week.\n\nKeep exploring, little astronaut! \ud83d\ude80"
+        body:
+          "No homework sessions were completed this week.\n\n"
+          + "If it's a holiday week, Jules can still earn crew unlocks via the \ud83d\udcf7 Practice Sheet path on weekends \u2014 a photo of any exercise book counts and unlocks the Dragon-Fire octopus on completion.\n\n"
+          + "Keep exploring! \ud83d\udc19"
       });
     });
     return;
