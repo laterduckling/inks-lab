@@ -4023,6 +4023,13 @@ function onDemandFact() {
   const s = factButtonState();
   if (s.remaining <= 0) return;
   recordFactButtonUse();
+  // Advance the welcome state machine PAST 'fact' so the auto-timer doesn't
+  // fire its own fact 15s later and cut this one off mid-sentence. Re-arm the
+  // timer fresh so the engagement nudge still fires (~45s from now).
+  if (welcomeStage === 'fact') {
+    welcomeStage = 'nudge';
+    startWelcomeIdleTimer();
+  }
   const lang = S.lang || 'EN';
   const { idx, text } = pickNextFact(lang);
   const line = wrapFactWithIntro(text, lang);
