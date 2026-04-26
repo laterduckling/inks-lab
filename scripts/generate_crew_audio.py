@@ -340,6 +340,73 @@ for lang, text in INK_GREETINGS.items():
     except Exception as e:
         print(f'  ✗ {e}')
 
+# Reward celebrations — Ink's reaction after every completed task. One file
+# per line, indexed 1-based to match JS pool order.
+INK_CELEBRATIONS = {
+    'en': [
+        "YESSSSS!! Tentacle #4 is doing the victory wiggle and it will NOT stop!!",
+        "BLOOPSNORK!! You did it!! Ink is crying ink-tears of joy right now!!",
+        "BY THE GREAT CORAL REEF!! You are a GENIUS EXPLORER!!",
+        "SQUIDZOOKS!! My entire space station just lit up!! ALL THE BUTTONS!!",
+        "Ink is SO proud he accidentally squirted ink on the telescope. WORTH IT!!",
+    ],
+    'fr': [
+        "OUIIIII!! Le tentacule numéro quatre fait la danse de la victoire et ne s'arrête PLUS!!",
+        "BLOOPSNORK!! Tu l'as fait!! Ink pleure des larmes d'encre de joie!!",
+        "PAR LE GRAND RÉCIF!! Tu es un GÉNIE EXPLORATEUR!!",
+        "CALMAZOUILLE!! Toute la station vient de s'allumer!! TOUS LES BOUTONS!!",
+        "Ink est tellement fier qu'il a accidentellement encré le télescope. ÇA VALAIT LE COUP!!",
+    ],
+}
+
+# Mission-idle humor lines (when Jules pauses mid-homework). Indexed to match
+# JS pool order so playback can locate the right clip.
+INK_IDLE_LINES = {
+    'en': [
+        "🦑 ...hello? Is anyone there? One of my tentacles fell asleep waiting...",
+        "💭 Ink is counting his tentacles to pass the time. 1... 2... wait, did that one move?",
+        "🌊 BLOOP. That was just a bubble. Ink is fine. Very fine. Not bored at all.",
+        "👀 Ink is still here. Ink has been here for 47 years apparently.",
+        "🐙 Tentacle #3 just submitted a formal complaint about the waiting. HR is involved.",
+        "☄️ A comet just flew past the space station. It waved. Ink waved back. With 8 tentacles. It was a lot.",
+    ],
+    'fr': [
+        "🦑 ...allô ? Il y a quelqu'un ? Un de mes tentacules s'est endormi en attendant...",
+        "💭 Ink compte ses tentacules pour passer le temps. 1... 2... attends, celui-là a bougé ?",
+        "🌊 BLOOP. C'était juste une bulle. Ink va bien. Très bien. Pas du tout ennuyé.",
+        "👀 Ink est toujours là. Ink a apparemment attendu 47 ans.",
+        "🐙 Le tentacule numéro 3 vient de déposer une plainte officielle. Les RH sont impliqués.",
+        "☄️ Une comète vient de passer. Elle a fait signe. Ink a fait signe avec 8 tentacules. C'était beaucoup.",
+    ],
+}
+
+def _gen_indexed(prefix, pool):
+    """Generate one clip per (lang, idx) pair into audio/ink/."""
+    global total_chars, generated, skipped
+    for lang in ('en', 'fr'):
+        for idx, raw in enumerate(pool[lang], start=1):
+            clean = EMOJI_RE.sub('', raw).strip()
+            out = INK_OUT / f'{prefix}-{idx:02d}-{lang}.mp3'
+            if out.exists():
+                print(f'  ✓ {out.relative_to(ROOT)} (skipped)')
+                skipped += 1
+                continue
+            print(f'Generating {prefix}-{idx:02d}-{lang} ({len(clean)} chars)…', flush=True)
+            try:
+                data = generate(INK_VOICE_ID, clean)
+                out.write_bytes(data)
+                print(f'  → {out.relative_to(ROOT)} ({len(data):,} bytes)')
+                total_chars += len(clean)
+                generated += 1
+            except urllib.error.HTTPError as e:
+                err = e.read().decode('utf-8', 'replace')[:300]
+                print(f'  ✗ HTTP {e.code} {e.reason}: {err}')
+            except Exception as e:
+                print(f'  ✗ {e}')
+
+_gen_indexed('celebration', INK_CELEBRATIONS)
+_gen_indexed('idle', INK_IDLE_LINES)
+
 # Generate fact clips with random intros baked in (deterministic seed so
 # re-runs produce stable intro→fact pairings; new facts only affect new clips).
 random.seed(42)

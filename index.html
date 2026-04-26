@@ -3724,6 +3724,14 @@ function inkFactClipUrl(idx, lang) {
 function inkGreetingClipUrl(lang) {
   return `audio/ink/greeting-${lang === 'FR' ? 'fr' : 'en'}.mp3`;
 }
+function inkCelebrationClipUrl(idx, lang) {
+  const lc = (lang === 'FR' ? 'fr' : 'en');
+  return `audio/ink/celebration-${String(idx).padStart(2,'0')}-${lc}.mp3`;
+}
+function inkIdleClipUrl(idx, lang) {
+  const lc = (lang === 'FR' ? 'fr' : 'en');
+  return `audio/ink/idle-${String(idx).padStart(2,'0')}-${lc}.mp3`;
+}
 
 // Welcome-screen idle fact timer: first fact at 15s, then every 45s while
 // sitting on the home screen. Capped at MAX_WELCOME_FACTS consecutive facts
@@ -3797,19 +3805,21 @@ function startIdleTimer() {
     missionIdleCount++;
     // 60% fact, 40% humor line
     const useFact = Math.random() < 0.6;
-    let line, factIdx = null;
+    let line, factIdx = null, humorIdx = null;
     if (useFact) {
       const picked = pickNextFact(S.lang);
       factIdx = picked.idx;
       line = wrapFactWithIntro(picked.text, S.lang);
     } else {
       const lines = S.lang==='FR' ? IDLE_LINES_FR : IDLE_LINES_EN;
+      humorIdx = (idleIdx % lines.length) + 1; // 1-based for clip filename
       line = lines[idleIdx % lines.length]; idleIdx++;
     }
     const isVenk = S.hintCount >= 2;
     addMsg('a', line, isVenk);
-    if (factIdx) playInkClipOrFallback(inkFactClipUrl(factIdx, S.lang), line);
-    else speak(line);
+    if (factIdx)        playInkClipOrFallback(inkFactClipUrl(factIdx, S.lang), line);
+    else if (humorIdx)  playInkClipOrFallback(inkIdleClipUrl(humorIdx, S.lang), line);
+    else                speak(line);
     startIdleTimer(); // schedule next (will self-abort when cap is hit)
   }, 55000);
 }
@@ -3990,9 +4000,9 @@ function taskDone() {
     "CALMAZOUILLE!! Toute la station vient de s'allumer!! TOUS LES BOUTONS!!",
     "Ink est tellement fier qu'il a accidentellement encré le télescope. ÇA VALAIT LE COUP!!",
   ];
-  const celeb = S.lang==='FR'
-    ? CELEBRATIONS_FR[Math.floor(Math.random()*CELEBRATIONS_FR.length)]
-    : CELEBRATIONS_EN[Math.floor(Math.random()*CELEBRATIONS_EN.length)];
+  const celebPool = S.lang==='FR' ? CELEBRATIONS_FR : CELEBRATIONS_EN;
+  const celebIdx = Math.floor(Math.random() * celebPool.length);
+  const celeb = celebPool[celebIdx];
 
   // Render reward screen
   const newCrew = newCrewUnlocks(wasBlocks, profile.blocks);
@@ -4028,7 +4038,7 @@ function taskDone() {
     ruEl.style.display = 'none';
     ruEl.innerHTML = '';
   }
-  setTimeout(() => speak(celeb), 400);
+  setTimeout(() => playInkClipOrFallback(inkCelebrationClipUrl(celebIdx + 1, S.lang), celeb), 400);
 
   const isLast = S.tIdx + 1 >= S.hw.tasks.length;
   document.getElementById('rewNext').textContent = isLast
