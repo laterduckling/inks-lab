@@ -68,7 +68,7 @@ function doGet(e) {
       return ContentService.createTextOutput(raw)
         .setMimeType(ContentService.MimeType.JSON);
     }
-    return ContentService.createTextOutput(JSON.stringify({ ok: true, status: 'Ink\'s Lab webhook live' }))
+    return ContentService.createTextOutput(JSON.stringify({ ok: true, status: "Ink's World webhook live" }))
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ error: err.message }))
@@ -108,8 +108,7 @@ ${data.struggled ? `\ud83d\udd04 Needs work: ${data.struggled}` : ''}
 ${data.tip ? `\ud83d\udca1 Tip: ${data.tip}` : ''}
 ${data.insight ? `\ud83e\udde0 Insight: ${data.insight}` : ''}
 
-\ud83e\uddf1 Station: ${data.blocks || 0} / 30 blocks
-\ud83c\udccf Cards collected: ${data.cardsCount || 0}
+\ud83d\udc19 Crew progress: ${data.blocks || 0} verified session${(data.blocks || 0) === 1 ? '' : 's'} (Colossal Squid unlocks at 120)
 ${'='.repeat(40)}
 Sent automatically from Ink's World
 `.trim();
@@ -175,8 +174,7 @@ ${subjectList}
 
 ${hardestEntry ? `\u26a0\ufe0f Needs extra support: ${hardestEntry[0]} (${hardestEntry[1]} hard session${hardestEntry[1] > 1 ? 's' : ''})` : '\u2705 No major difficulty patterns this week!'}
 
-\ud83e\uddf1 Station progress: ${lastSession.blocks || 0} / 30 blocks
-\ud83c\udccf Cards collected: ${lastSession.cardsCount || 0}
+\ud83d\udc19 Crew progress: ${lastSession.blocks || 0} verified session${(lastSession.blocks || 0) === 1 ? '' : 's'} (Colossal Squid unlocks at 120)
 ${'='.repeat(40)}
 Sent automatically from Ink's World
 `.trim();
@@ -238,8 +236,7 @@ Minecoins earned: +${totalCoins} (balance: ${lastSession.minecoins || '?'})
 
 ${sessionDetails}
 
-\ud83e\uddf1 Station: ${lastSession.blocks || 0} / 30 blocks
-\ud83c\udccf Cards: ${lastSession.cardsCount || 0}
+\ud83d\udc19 Crew progress: ${lastSession.blocks || 0} verified session${(lastSession.blocks || 0) === 1 ? '' : 's'} (Colossal Squid unlocks at 120)
 ${'='.repeat(40)}
 Sent automatically from Ink's World
 `.trim();
