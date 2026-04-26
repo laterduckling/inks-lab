@@ -1026,12 +1026,20 @@ let OAIKEY = '';
 let OAIVOICE = 'ash';
 let OAIVOICE_FR = 'fable';
 let MUTED = false;
-let S = {
-  lang: null, hw: null, tIdx: 0, done: [], conv: [], t0: null,
-  hintCount: 0, isReading: false, transcript: '', newCard: null,
-  verifyImgB64: null, taskStartTime: null, taskHints: [],
-};
-let aiv, parentTimer, currentSpeech = null;
+function freshS() {
+  return {
+    lang: null, hw: null, tIdx: 0, done: [], conv: [], t0: null,
+    hintCount: 0, isReading: false, transcript: '', newCard: null,
+    verifyImgB64: null, taskStartTime: null, taskHints: [],
+    // Mission/session flags — initialised explicitly so callers can rely on
+    // boolean checks instead of `undefined` semantics.
+    isWeekendMission: false, autoDetectLang: false,
+    weekendBonusAwarded: false, dragonJustUnlocked: false,
+    venomJustUnlocked: false, streakBonus: 0, newCrewUnlocks: [],
+  };
+}
+let S = freshS();
+let aiv = null, currentSpeech = null;
 
 function saveSession() {
   try { localStorage.setItem('ink_session', JSON.stringify({lang:S.lang,hw:S.hw,tIdx:S.tIdx,done:S.done,conv:S.conv,t0:S.t0,hintCount:S.hintCount,taskHints:S.taskHints,taskStartTime:S.taskStartTime})); } catch {}
@@ -1907,15 +1915,15 @@ function renderPoemThumbs() {
 
 async function submitNewPoem() {
   const deadlineStr = document.getElementById('poemDeadline').value;
-  if (!deadlineStr) { alert('Pick a recitation deadline first'); return; }
-  if (!newPoem.photos.length) { alert('Add at least one photo of the poem'); return; }
+  if (!deadlineStr) { alert(S.lang==='FR' ? "Choisis d'abord une date de récitation" : 'Pick a recitation deadline first'); return; }
+  if (!newPoem.photos.length) { alert(S.lang==='FR' ? 'Ajoute au moins une photo du poème' : 'Add at least one photo of the poem'); return; }
   const deadline = new Date(deadlineStr + 'T18:00:00').getTime();
-  if (deadline < Date.now()) { alert('Deadline must be in the future'); return; }
+  if (deadline < Date.now()) { alert(S.lang==='FR' ? 'La date doit être dans le futur' : 'Deadline must be in the future'); return; }
   document.getElementById('panMsg').textContent = newPoem.lang==='FR' ? 'Ink lit la poésie... 📜' : 'Ink is reading the poem... 📜';
   show('pan');
   try {
     const parsed = await analyzePoemPhoto(newPoem.photos, newPoem.lang);
-    if (!parsed || !parsed.text) { alert('Ink could not read the poem — try a clearer photo.'); show('pu'); return; }
+    if (!parsed || !parsed.text) { alert(S.lang==='FR' ? "Ink n'a pas pu lire le poème — essaie une photo plus claire." : 'Ink could not read the poem — try a clearer photo.'); show('pu'); return; }
     const poem = {
       id: 'poem-' + Date.now(),
       title: parsed.title || 'Untitled',
@@ -1934,7 +1942,7 @@ async function submitNewPoem() {
     newPoem = null;
     startPoemSession(poem.id);
   } catch(e) {
-    console.error(e); alert('Error analyzing poem: ' + (e.message||e)); show('pu');
+    console.error(e); alert((S.lang==='FR'?'Erreur d\'analyse du poème : ':'Error analyzing poem: ') + (e.message||e)); show('pu');
   }
 }
 
@@ -2241,7 +2249,7 @@ async function endPoemSession() {
     }, 400);
   } catch(e) {
     console.error(e);
-    alert('Error ending session — your progress was saved.');
+    alert(S.lang==='FR' ? 'Erreur — tes progrès ont été sauvegardés.' : 'Error ending session — your progress was saved.');
     PS = null;
     show('po');
   }
@@ -2725,7 +2733,7 @@ function statCard(label, value) {
 document.getElementById('apikey').addEventListener('keydown', e => { if(e.key==='Enter') setKey(); });
 function setKey() {
   const k = document.getElementById('apikey').value.trim();
-  if (!k.startsWith('sk-')) { alert('Please enter a valid Anthropic API key (starts with sk-)'); return; }
+  if (!k.startsWith('sk-')) { alert(S.lang==='FR' ? 'Entre une clé API Anthropic valide (commence par sk-)' : 'Please enter a valid Anthropic API key (starts with sk-)'); return; }
   KEY = k;
   localStorage.setItem('ink_api_key', k);
   renderWelcome();
@@ -4258,7 +4266,12 @@ async function submitReading() {
 // ═══════════════════════════════════════
 // TASK DONE → REWARD
 // ═══════════════════════════════════════
+let _taskDoneInProgress = false;
 function taskDone() {
+  // Re-entrance guard: a fast double-tap on the Done button can otherwise
+  // award coins and push to S.taskHints twice for the same task.
+  if (_taskDoneInProgress) return;
+  _taskDoneInProgress = true;
   clearIdleTimer();
   haptic([30,20,60,20,100]);
   fireConfetti();
@@ -4328,6 +4341,8 @@ function taskDone() {
 }
 
 async function afterReward() {
+  // Allow the next task's Done button to be tappable again
+  _taskDoneInProgress = false;
   const isLast = S.tIdx + 1 >= S.hw.tasks.length;
   if (isLast) {
     showWriteItDown();
@@ -4576,7 +4591,7 @@ function forgetKey() {
 }
 
 function resetApp() {
-  S = {lang:null,hw:null,tIdx:0,done:[],conv:[],t0:null,hintCount:0,isReading:false,transcript:'',newCard:null,verifyImgB64:null,taskStartTime:null,taskHints:[],isWeekendMission:false};
+  S = freshS();
   clearSession();
   renderWelcome(); show('w');
 }
@@ -4600,7 +4615,7 @@ function resumeFromHome() {
 
 function abandonMission() {
   clearSession();
-  S = {lang:null,hw:null,tIdx:0,done:[],conv:[],t0:null,hintCount:0,isReading:false,transcript:'',newCard:null,verifyImgB64:null,taskStartTime:null,taskHints:[],isWeekendMission:false};
+  S = freshS();
   renderWelcome();
   show('w');
 }
@@ -4729,15 +4744,18 @@ function renderWebhookUI() {
 }
 function saveOaiKey() {
   const k = document.getElementById('oaiKeyInput').value.trim();
-  if (!k.startsWith('sk-')) { alert('Please enter a valid OpenAI API key (starts with sk-)'); return; }
+  const fr = S.lang === 'FR';
+  if (!k.startsWith('sk-')) {
+    alert(fr ? 'Entre une clé API OpenAI valide (commence par sk-)' : 'Please enter a valid OpenAI API key (starts with sk-)');
+    return;
+  }
   OAIKEY = k;
   localStorage.setItem('ink_oai_key', k);
-  // Reset welcome greeting/fact one-shots so they replay with the new voice
+  // Reset the welcome greeting/nudge one-shots so they replay with the new voice
   _greetedThisLaunch = false;
-  welcomeFactFirstShown = false;
-  welcomeFactCount = 0;
+  welcomeStage = 'nudge';
   renderWebhookUI();
-  alert('Voice key saved! Ink will now speak with a human-like voice.');
+  alert(fr ? 'Clé enregistrée ! Ink va parler avec une vraie voix.' : 'Voice key saved! Ink will now speak with a human-like voice.');
 }
 function forgetOaiKey() {
   if (confirm('Remove OpenAI voice key? Ink will use the default robot voice.')) {
@@ -4805,12 +4823,12 @@ function pwdSubmit() {
   const errorEl = document.getElementById('pwdError');
   const pwd = input.value;
   if (!pwd || pwd.length < 4) {
-    errorEl.textContent = 'Password must be at least 4 characters.';
+    errorEl.textContent = S.lang==='FR' ? 'Le mot de passe doit contenir au moins 4 caractères.' : 'Password must be at least 4 characters.';
     errorEl.style.display = 'block';
     return;
   }
   if (_pwdExpectsConfirm && pwd !== confirmInput.value) {
-    errorEl.textContent = 'Passwords do not match.';
+    errorEl.textContent = S.lang==='FR' ? 'Les mots de passe ne correspondent pas.' : 'Passwords do not match.';
     errorEl.style.display = 'block';
     return;
   }
