@@ -2718,12 +2718,23 @@ function go(l) {
   document.getElementById('dzIcon').innerHTML = icon('camera', 32, 'currentColor', 2);
   renderPhotoThumbs();
   show('u');
-  // Chain: subject acknowledgement → upload-screen instructions
+  // Voice flow:
+  // - Regular homework: "Let's do the English homework" → upload instructions
+  // - Weekend practice sheet: skip the language-specific homework ack (it's
+  //   not English/French homework, it's a free-form practice page) and just
+  //   play the upload instructions.
   const lc = fr ? 'fr' : 'en';
-  playInkChain([
-    `audio/ink/subject-${lc}.mp3`,
-    `audio/ink/upload-${lc}.mp3`,
-  ]);
+  if (S.isWeekendMission) {
+    playInkClipOrFallback(
+      `audio/ink/upload-${lc}.mp3`,
+      fr ? "Prends une photo bien nette de ta feuille d'entraînement." : "Take a clear picture of your practice sheet."
+    );
+  } else {
+    playInkChain([
+      `audio/ink/subject-${lc}.mp3`,
+      `audio/ink/upload-${lc}.mp3`,
+    ]);
+  }
 }
 
 // ═══════════════════════════════════════
