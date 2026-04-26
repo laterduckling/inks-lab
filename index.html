@@ -446,7 +446,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       <span class="mb-arrow" id="poArrow">→</span>
     </button>
     <button id="onDemandFactBtn" onclick="onDemandFact()" style="margin-top:4px;padding:10px 14px;background:rgba(45,224,198,.1);border:1px solid rgba(45,224,198,.35);border-radius:12px;color:#2de0c6;font-size:13px;font-weight:700;cursor:pointer">🐙 Tell me a fact!</button>
-    <div id="welcomeTimerDebug" style="margin-top:2px;padding:4px 8px;background:rgba(224,240,248,.04);border:1px solid rgba(224,240,248,.1);border-radius:6px;color:rgba(224,240,248,.45);font-size:10px;font-family:var(--font-mono);text-align:center"></div>
   </div>
   </div><!-- /welcome-actions -->
 
@@ -1425,9 +1424,9 @@ function show(id) {
   // Show home button on all screens except welcome and API key
   const homeBtn = document.getElementById('homeBtn');
   homeBtn.style.display = (id === 'w' || id === 'k') ? 'none' : 'flex';
-  // Kick the welcome-page greeting + idle fact timer when we land on welcome.
-  // Each visit resets the fact→nudge cycle so a return trip gets a fresh nudge.
-  if (id === 'w') { welcomeStage = 'fact'; greetOnWelcome(); startWelcomeIdleTimer(); }
+  // Kick the welcome-page greeting + idle nudge timer when we land on welcome.
+  // Each visit resets the nudge so a return trip gets a fresh prompt.
+  if (id === 'w') { welcomeStage = 'nudge'; greetOnWelcome(); startWelcomeIdleTimer(); }
 }
 
 // ═══════════════════════════════════════
@@ -3910,12 +3909,14 @@ function playInkChain(urls) {
   playNext();
 }
 
-// Welcome-screen idle behaviour: 1 fun fact at 15s to delight, then a
-// state-aware engagement nudge ~45s later (e.g., "Shall we do the French
-// homework now?"). After the nudge, silent until Jules taps to reset.
-// 'fact' → 'nudge' → 'silent'. Tap on welcome resets back to 'fact'.
+// Welcome-screen idle behaviour: a state-aware engagement nudge fires ~25s
+// after Jules lands on welcome (e.g. "Shall we do the French homework now?").
+// Audio may not play in iOS standalone PWAs (gesture-token expiry) but the
+// visible speech bubble carries the message regardless.
+// Stages: 'nudge' → 'silent'. Tap on welcome resets back to 'nudge'.
+// (The auto-fact stage was removed — facts are on-demand via the 🐙 button.)
 let welcomeIdleTimer = null;
-let welcomeStage = 'fact';
+let welcomeStage = 'nudge';
 let factBubbleHideTimer = null;
 
 // Look at the day, today's sessions, weekend bonus state, and active poems
@@ -4027,13 +4028,6 @@ function onDemandFact() {
   const s = factButtonState();
   if (s.remaining <= 0) return;
   recordFactButtonUse();
-  // Advance the welcome state machine PAST 'fact' so the auto-timer doesn't
-  // fire its own fact 15s later and cut this one off mid-sentence. Re-arm the
-  // timer fresh so the engagement nudge still fires (~45s from now).
-  if (welcomeStage === 'fact') {
-    welcomeStage = 'nudge';
-    startWelcomeIdleTimer();
-  }
   const lang = S.lang || 'EN';
   const { idx, text } = pickNextFact(lang);
   const line = wrapFactWithIntro(text, lang);
@@ -4042,59 +4036,32 @@ function onDemandFact() {
   updateFactButtonState();
 }
 
-function _setDbg(s) { const el = document.getElementById('welcomeTimerDebug'); if (el) el.textContent = s; }
-let _welcomeTimerArmedAt = 0;
-let _welcomeTimerTickInterval = null;
 function startWelcomeIdleTimer() {
   clearWelcomeIdleTimer();
-  if (welcomeStage === 'silent') { _setDbg('stage=silent (waiting for tap)'); return; }
-  // Fact fires at 15s; nudge fires 45s after the fact (so the fact has time
-  // to play and there's a natural pause before Ink redirects to homework).
-  const delay = welcomeStage === 'fact' ? 15000 : 45000;
-  console.log('[Ink] welcome timer armed:', delay+'ms', 'stage='+welcomeStage);
-  _welcomeTimerArmedAt = Date.now();
-  _setDbg(`stage=${welcomeStage} · armed for ${delay/1000}s`);
-  if (_welcomeTimerTickInterval) clearInterval(_welcomeTimerTickInterval);
-  _welcomeTimerTickInterval = setInterval(() => {
-    const elapsed = Math.round((Date.now() - _welcomeTimerArmedAt)/1000);
-    _setDbg(`stage=${welcomeStage} · ${elapsed}/${delay/1000}s elapsed`);
-    if (elapsed >= delay/1000 + 3) { clearInterval(_welcomeTimerTickInterval); _welcomeTimerTickInterval = null; }
-  }, 1000);
+  if (welcomeStage === 'silent') return;
+  // Single nudge fires ~25s after landing on welcome (long enough for the
+  // greeting chain to finish, short enough that Jules sees the prompt).
   welcomeIdleTimer = setTimeout(() => {
-    if (_welcomeTimerTickInterval) { clearInterval(_welcomeTimerTickInterval); _welcomeTimerTickInterval = null; }
-    _setDbg(`stage=${welcomeStage} · TIMER FIRED ✓`);
-    console.log('[Ink] welcome timer fired, stage='+welcomeStage);
-    if (welcomeStage === 'fact') {
-      const lang = S.lang || 'EN';
-      const { idx, text } = pickNextFact(lang);
-      const line = wrapFactWithIntro(text, lang);
-      console.log('[Ink] playing fact', idx, 'text:', line.slice(0, 60));
-      showFactBubble(line);
-      playInkClipOrFallback(inkFactClipUrl(idx, lang), line);
-      welcomeStage = 'nudge';
-    } else if (welcomeStage === 'nudge') {
-      const profile = getProfile();
-      const state = detectHomeworkState(profile);
-      const fr = (S.lang === 'FR');
-      const phrase = ENGAGEMENT_PHRASES[state];
-      if (phrase) {
-        const text = fr ? phrase.fr : phrase.en;
-        showFactBubble(text);
-        playInkClipOrFallback(`audio/ink/engage-${state}-${fr ? 'fr' : 'en'}.mp3`, text);
-      }
-      welcomeStage = 'silent';
+    const profile = getProfile();
+    const state = detectHomeworkState(profile);
+    const fr = (S.lang === 'FR');
+    const phrase = ENGAGEMENT_PHRASES[state];
+    if (phrase) {
+      const text = fr ? phrase.fr : phrase.en;
+      showFactBubble(text);
+      playInkClipOrFallback(`audio/ink/engage-${state}-${fr ? 'fr' : 'en'}.mp3`, text);
     }
-    startWelcomeIdleTimer();
-  }, delay);
+    welcomeStage = 'silent';
+  }, 25000);
 }
-// Tap on welcome resets the cycle so an active user keeps getting fact +
-// nudge each time he comes back; a forgotten iPad goes silent after one round.
+// Tap on welcome resets the cycle so an active user gets a fresh nudge each
+// time he comes back; a forgotten iPad goes silent after one round.
 (function(){
   const sw = document.getElementById('sw');
   if (!sw) return;
   sw.addEventListener('pointerdown', () => {
     if (welcomeStage === 'silent') {
-      welcomeStage = 'fact';
+      welcomeStage = 'nudge';
       startWelcomeIdleTimer();
     }
   }, {passive:true});
