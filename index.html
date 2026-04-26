@@ -4259,6 +4259,14 @@ async function afterReward() {
     return;
   }
   S.tIdx++; S.conv = []; S.hintCount = 0;
+  // Per-task language switching: bilingual weekend recap can have tasks in
+  // different languages, so flip S.lang to match the next task's language
+  // before rendering. Regular homework tasks don't set this field, so this
+  // is a no-op for normal sessions.
+  const nextTask = S.hw.tasks[S.tIdx];
+  if (nextTask && (nextTask.language === 'EN' || nextTask.language === 'FR')) {
+    S.lang = nextTask.language;
+  }
   renderMission(); show('m');
   {
     const nextMissionText = S.lang==='FR' ? 'Super ! Prochaine mission !' : 'Great! Next mission!';
@@ -4522,35 +4530,59 @@ async function startWeekendMission() {
   const weekSessions = (profile.sessions||[]).filter(s => s.date >= weekStart);
   if (!weekSessions.length) return;
 
-  // Build context about the week
-  const subjects = weekSessions.map(s => s.subject).filter(Boolean);
-  const hardOnes = weekSessions.filter(s => (s.avgHints||0) > 1).map(s => s.subject).filter(Boolean);
+  // Build context grouped by language so the AI can mix EN/FR tasks meaningfully.
+  const enSubjects = [...new Set(weekSessions.filter(s => s.lang === 'EN').map(s => s.subject).filter(Boolean))];
+  const frSubjects = [...new Set(weekSessions.filter(s => s.lang === 'FR').map(s => s.subject).filter(Boolean))];
+  const hardEN = [...new Set(weekSessions.filter(s => s.lang === 'EN' && (s.avgHints||0) > 1).map(s => s.subject).filter(Boolean))];
+  const hardFR = [...new Set(weekSessions.filter(s => s.lang === 'FR' && (s.avgHints||0) > 1).map(s => s.subject).filter(Boolean))];
+  const hasBoth = enSubjects.length > 0 && frSubjects.length > 0;
 
-  // Show analyzing screen
-  const fr = false; // weekend mission always bilingual fun
+  // Determine the dominant language so scaffolding text (idle nudges, ambient
+  // celebrations) defaults to the language Jules used most this week.
+  const enCount = weekSessions.filter(s => s.lang === 'EN').length;
+  const frCount = weekSessions.filter(s => s.lang === 'FR').length;
+  const dominantLang = (frCount > enCount) ? 'FR' : 'EN';
+
   const msgs = ['Ink is preparing your weekend challenge... 🎮','Loading bonus mission... ⛏️','Almost ready... 🚀'];
   let mi = 0; const el = document.getElementById('am'); el.textContent = msgs[0];
   clearInterval(aiv); aiv = setInterval(() => { mi=(mi+1)%msgs.length; el.textContent=msgs[mi]; }, 1700);
   show('a');
 
   try {
-    const prompt = `Create a fun weekend review quiz for a 6-year-old who did these homework subjects this week: ${subjects.join(', ')}. ${hardOnes.length ? 'He found these harder: '+hardOnes.join(', ')+'. Focus more on those.' : ''} This is a GAME not homework — make it fun!
+    const enLine = enSubjects.length ? `In English he covered: ${enSubjects.join(', ')}.${hardEN.length ? ' Harder ones: '+hardEN.join(', ')+'.' : ''}` : '';
+    const frLine = frSubjects.length ? `In French he covered: ${frSubjects.join(', ')}.${hardFR.length ? ' Harder ones: '+hardFR.join(', ')+'.' : ''}` : '';
+    const bilingualInstruction = hasBoth
+      ? 'Generate at least one task in English and at least one in French — alternate languages so each task has a "language":"EN" or "language":"FR" field, and ALL child-facing text in that task (label, instruction, socraticPrompt, hints) is written in that exact language.'
+      : `All tasks should be in ${enSubjects.length ? 'English' : 'French'} — set "language":"${enSubjects.length ? 'EN' : 'FR'}" on every task.`;
+    const briefingLang = hasBoth ? 'English' : (enSubjects.length ? 'English' : 'French');
+
+    const prompt = `Create a fun weekend review quiz for a 6-year-old (Jules). ${enLine} ${frLine} This is a GAME, not homework — frame everything as a fun challenge.
+
+${bilingualInstruction}
+
+The "missionBriefing" should be in ${briefingLang} (max 18 words, mention the +25 Minecoin bonus and the Dragon-Fire reward, enthusiastic).
+
+Create 2 to 3 short tasks. Mix the subjects. Frame as games/challenges. Each task field is described below.
 
 Return ONLY valid JSON, no markdown:
-{"subject":"weekend review","subjectEmoji":"⛏️","totalEstimatedMinutes":8,"missionBriefing":"Ink's exciting weekend mission briefing, max 18 words, mention Minecoins bonus, enthusiastic","tasks":[{"id":1,"emoji":"1 emoji","type":"oral","label":"short fun label, max 5 words","instruction":"fun review question/challenge, max 15 words","socraticPrompt":"Ink's playful opening, max 20 words, game-framed not homework-framed","hints":["hint1","hint2","hint3"],"verifiable":false}]}
-
-Create 2-3 short, fun review tasks. Mix the subjects. Frame as games/challenges, NOT homework. Use both English and French if he did both.`;
+{"subject":"weekend review","subjectEmoji":"⛏️","totalEstimatedMinutes":8,"missionBriefing":"...","tasks":[{"id":1,"emoji":"1 emoji","type":"oral","language":"EN"|"FR","label":"short fun label in the task's language, max 5 words","instruction":"fun review question/challenge in the task's language, max 15 words","socraticPrompt":"Ink's playful opening in the task's language, max 20 words, game-framed","hints":["hint1 in task's language","hint2 in task's language","hint3 in task's language"],"verifiable":false}]}`;
 
     const t = await api([{role:'user',content:prompt}], null, 1500);
     let hw;
     try { hw = JSON.parse(t.replace(/```json|```/g,'').trim()); }
     catch { hw = {subject:'weekend review',subjectEmoji:'⛏️',totalEstimatedMinutes:8,
-      missionBriefing:'WEEKEND BONUS MISSION! Ink has a special challenge for 25 Minecoins!',
-      tasks:[{id:1,emoji:'🎮',type:'oral',label:'Quick Review',instruction:'Tell Ink what you learned this week!',
+      missionBriefing:'WEEKEND BONUS MISSION! +25 Minecoins and Dragon-Fire form!',
+      tasks:[{id:1,emoji:'🎮',type:'oral',language:dominantLang,label:'Quick Review',instruction:'Tell Ink what you learned this week!',
         socraticPrompt:'Hey explorer! What was the coolest thing you learned this week?',
         hints:['Think about your homework...','Any math or reading?','What do you remember?'],verifiable:false}]}; }
 
-    S.lang = 'EN'; S.hw = hw; S.t0 = Date.now(); S.tIdx = 0; S.done = []; S.taskHints = [];
+    // Defensive: ensure every task has a language field (fallback to dominant)
+    (hw.tasks||[]).forEach(t => { if (t.language !== 'FR' && t.language !== 'EN') t.language = dominantLang; });
+
+    // Start in the first task's language; the mission flow will switch S.lang
+    // per-task as it advances (see renderMission and afterReward).
+    S.lang = (hw.tasks?.[0]?.language) || dominantLang;
+    S.hw = hw; S.t0 = Date.now(); S.tIdx = 0; S.done = []; S.taskHints = [];
     S.isWeekendMission = true;
     saveSession();
     clearInterval(aiv); renderMission(); show('m');
