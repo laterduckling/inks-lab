@@ -3906,11 +3906,11 @@ function detectHomeworkState(profile) {
   if (isWeekend) {
     const weekStart = (typeof getWeekStart === 'function') ? getWeekStart() : 0;
     const alreadyDone = profile.lastWeekendMission && profile.lastWeekendMission >= weekStart;
-    const hasSessions = (profile.sessions||[]).some(s => s.date >= weekStart);
-    const weekendBonusAvailable = hasSessions && !alreadyDone;
-    if (weekendBonusAvailable) return 'weekend-bonus';
-    if (hasActivePoem)         return 'poem-continue';
-    return null; // weekend, nothing to nudge about → stay silent
+    // Weekend bonus is now available even on holiday weeks (Practice Sheet path),
+    // so the nudge fires whenever the weekend bonus hasn't been claimed yet.
+    if (!alreadyDone)  return 'weekend-bonus';
+    if (hasActivePoem) return 'poem-continue';
+    return null; // weekend bonus already done + no active poem → stay silent
   }
 
   // Weekday: ask about homework based on what's already done today
