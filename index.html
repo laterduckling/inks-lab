@@ -3504,7 +3504,8 @@ async function sendMsg() {
   } catch(e) {
     const ty=document.getElementById('ty'); if(ty) ty.remove(); console.error(e);
     const errMsg = S.lang==='FR' ? '🌊 Oups, une bulle a bloqué le signal ! Réessaie...' : '🌊 Oops, a bubble blocked the signal! Try again...';
-    addMsg('a', errMsg); speak(errMsg);
+    addMsg('a', errMsg);
+    playInkClipOrFallback(inkStaticClipUrl('net-error', S.lang), errMsg);
   }
   finally { sb.disabled = false; startIdleTimer(); }
 }
@@ -3524,7 +3525,7 @@ async function getHint() {
       ? "⚠️ OH NON. Ce problème est TROP difficile. Ink se transforme en... VENK ! 😈"
       : "⚠️ OH NO. This problem is TOO hard. Ink is transforming into... VENK! 😈";
     addMsg('a', venkAnnounce, false);
-    speak(venkAnnounce);
+    playInkClipOrFallback(inkStaticClipUrl('venk', S.lang), venkAnnounce);
     haptic([50,30,50,30,100]);
     SFX.venk();
     await new Promise(r => setTimeout(r, 1200));
@@ -3731,6 +3732,9 @@ function inkCelebrationClipUrl(idx, lang) {
 function inkIdleClipUrl(idx, lang) {
   const lc = (lang === 'FR' ? 'fr' : 'en');
   return `audio/ink/idle-${String(idx).padStart(2,'0')}-${lc}.mp3`;
+}
+function inkStaticClipUrl(key, lang) {
+  return `audio/ink/${key}-${lang === 'FR' ? 'fr' : 'en'}.mp3`;
 }
 
 // Welcome-screen idle fact timer: first fact at 15s, then every 45s while
@@ -4118,7 +4122,10 @@ async function afterReward() {
   } else {
     S.tIdx++; S.conv = []; S.hintCount = 0;
     renderMission(); show('m');
-    speak(S.lang==='FR' ? 'Super ! Prochaine mission !' : 'Great! Next mission!');
+    {
+      const nextMissionText = S.lang==='FR' ? 'Super ! Prochaine mission !' : 'Great! Next mission!';
+      playInkClipOrFallback(inkStaticClipUrl('next-mission', S.lang), nextMissionText);
+    }
   }
 }
 
@@ -4690,7 +4697,7 @@ function resumeSession(saved) {
   renderMission(); show('m');
   const fr = S.lang==='FR';
   const msg = fr ? 'Ink est de retour ! On continue la mission !' : 'Ink is back! Let\'s continue the mission!';
-  speak(msg);
+  playInkClipOrFallback(inkStaticClipUrl('resume', fr ? 'FR' : 'EN'), msg);
 }
 
 // Auto-load saved keys on startup

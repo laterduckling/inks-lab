@@ -407,6 +407,46 @@ def _gen_indexed(prefix, pool):
 _gen_indexed('celebration', INK_CELEBRATIONS)
 _gen_indexed('idle', INK_IDLE_LINES)
 
+# Misc static lines (no list, one clip per language).
+INK_STATIC_LINES = {
+    'venk': {
+        'en': "⚠️ OH NO. This problem is TOO hard. Ink is transforming into... VENK! 😈",
+        'fr': "⚠️ OH NON. Ce problème est TROP difficile. Ink se transforme en... VENK ! 😈",
+    },
+    'next-mission': {
+        'en': "Great! Next mission!",
+        'fr': "Super ! Prochaine mission !",
+    },
+    'net-error': {
+        'en': "🌊 Oops, a bubble blocked the signal! Try again...",
+        'fr': "🌊 Oups, une bulle a bloqué le signal ! Réessaie...",
+    },
+    'resume': {
+        'en': "Ink is back! Let's continue the mission!",
+        'fr': "Ink est de retour ! On continue la mission !",
+    },
+}
+for key, langs in INK_STATIC_LINES.items():
+    for lang, raw in langs.items():
+        clean = EMOJI_RE.sub('', raw).strip()
+        out = INK_OUT / f'{key}-{lang}.mp3'
+        if out.exists():
+            print(f'  ✓ {out.relative_to(ROOT)} (skipped)')
+            skipped += 1
+            continue
+        print(f'Generating {key}-{lang} ({len(clean)} chars)…', flush=True)
+        try:
+            data = generate(INK_VOICE_ID, clean)
+            out.write_bytes(data)
+            print(f'  → {out.relative_to(ROOT)} ({len(data):,} bytes)')
+            total_chars += len(clean)
+            generated += 1
+        except urllib.error.HTTPError as e:
+            err = e.read().decode('utf-8', 'replace')[:300]
+            print(f'  ✗ HTTP {e.code} {e.reason}: {err}')
+        except Exception as e:
+            print(f'  ✗ {e}')
+
 # Generate fact clips with random intros baked in (deterministic seed so
 # re-runs produce stable intro→fact pairings; new facts only affect new clips).
 random.seed(42)
