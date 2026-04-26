@@ -3856,7 +3856,7 @@ function playInkChain(urls) {
 // sitting on the home screen. Capped at MAX_WELCOME_FACTS consecutive facts
 // to avoid burning OpenAI TTS credits if the iPad is forgotten on the
 // welcome screen. Counter resets on any tap within the welcome screen.
-const MAX_WELCOME_FACTS = 1;
+const MAX_WELCOME_FACTS = 3;
 let welcomeIdleTimer = null;
 let welcomeFactFirstShown = false;
 let welcomeFactCount = 0;
@@ -3922,25 +3922,17 @@ function startIdleTimer() {
   if (missionIdleCount >= MAX_MISSION_IDLE_TICKLES) return; // pause until user acts
   idleTimer = setTimeout(() => {
     missionIdleCount++;
-    // 60% fact, 40% humor line
-    const useFact = Math.random() < 0.6;
-    let line, factIdx = null, humorIdx = null;
-    if (useFact) {
-      const picked = pickNextFact(S.lang);
-      factIdx = picked.idx;
-      line = wrapFactWithIntro(picked.text, S.lang);
-    } else {
-      const lines = S.lang==='FR' ? IDLE_LINES_FR : IDLE_LINES_EN;
-      humorIdx = (idleIdx % lines.length) + 1; // 1-based for clip filename
-      line = lines[idleIdx % lines.length]; idleIdx++;
-    }
+    // Only humor nudges during homework — facts stay on the welcome screen
+    // so Jules isn't distracted from active tasks. Longer delay gives him
+    // think-time before any prompt at all.
+    const lines = S.lang==='FR' ? IDLE_LINES_FR : IDLE_LINES_EN;
+    const humorIdx = (idleIdx % lines.length) + 1;
+    const line = lines[idleIdx % lines.length]; idleIdx++;
     const isVenk = S.hintCount >= 2;
     addMsg('a', line, isVenk);
-    if (factIdx)        playInkClipOrFallback(inkFactClipUrl(factIdx, S.lang), line);
-    else if (humorIdx)  playInkClipOrFallback(inkIdleClipUrl(humorIdx, S.lang), line);
-    else                speak(line);
+    playInkClipOrFallback(inkIdleClipUrl(humorIdx, S.lang), line);
     startIdleTimer(); // schedule next (will self-abort when cap is hit)
-  }, 55000);
+  }, 120000);
 }
 // Any user-triggered clear resets the idle cap — they're clearly present
 function clearIdleTimer() {
