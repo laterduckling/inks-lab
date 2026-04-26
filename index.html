@@ -804,9 +804,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <img src="icon-180.png" class="ink-img-xl mood-bounce" alt="Ink" id="writeInk" style="margin-top:6px">
   <h2 id="writeTitle" style="font-size:28px;font-weight:900;text-align:center;font-family:var(--font-display)"></h2>
   <p id="writeMsg" style="font-size:17px;line-height:1.6;color:rgba(224,240,248,.85);text-align:center;max-width:480px;padding:0 20px"></p>
-  <button id="writeDoneBtn" class="btn bp" onclick="completeSession()" style="margin-top:8px;max-width:340px"></button>
-  <button id="writeShowBtn" onclick="document.getElementById('writeFile').click()" style="background:rgba(45,224,198,.08);border:1px solid rgba(45,224,198,.3);color:#00dcc6;font-size:14px;font-weight:700;padding:10px 18px;border-radius:12px;cursor:pointer"></button>
+  <!-- Photo verification = primary CTA. Verified work earns the crew unlock. -->
+  <button id="writeShowBtn" class="btn bp" onclick="document.getElementById('writeFile').click()" style="margin-top:8px;max-width:340px;font-size:16px"></button>
   <input id="writeFile" type="file" accept="image/*" capture="environment" style="display:none" onchange="onWritePhoto(event)">
+  <!-- Skip = secondary, smaller. No crew unlock; coins are already earned. -->
+  <button id="writeDoneBtn" onclick="completeSession(false)" style="background:none;border:none;color:rgba(224,240,248,.45);font-size:13px;font-weight:600;padding:6px 12px;cursor:pointer;text-decoration:underline"></button>
   <div id="writeFeedback" style="display:none;font-size:15px;color:rgba(224,240,248,.85);text-align:center;max-width:480px;line-height:1.5;padding:14px 18px;background:rgba(16,36,72,.5);border:1px solid rgba(45,224,198,.18);border-radius:14px;margin-top:6px"></div>
 </div>
 
@@ -973,7 +975,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 // CONSTANTS
 // ═══════════════════════════════════════
 const MODEL = "claude-sonnet-4-20250514";
-const STATION_TOTAL = 120; // ceiling for profile.blocks (one per task completed). Sized above the highest crew unlock threshold so all 18 are reachable.
+const STATION_TOTAL = 150; // ceiling for profile.blocks (now incremented once per VERIFIED session). Sized above the highest crew unlock threshold (120) so all 18 are reachable.
 const STATION_ROOMS = [
   {id:'observe',  at:3,  icon:'🔭', en:'Observation Deck', fr:"Poste d'observation"},
   {id:'creature', at:8,  icon:'🧪', en:'Creature Lab',     fr:'Labo des créatures'},
@@ -2571,10 +2573,31 @@ function renderParentUnlocks() {
     const color = on ? '#06d6a0' : '#e0f0f8';
     return `<button onclick="${fn}" style="background:${bg};border:1px solid ${border};color:${color};font-size:12px;font-weight:800;padding:8px 12px;border-radius:10px;cursor:pointer">${label}</button>`;
   };
+  const blocks = profile.blocks || 0;
+  const taskBtn = `<button onclick="awardSessionProgress()" style="background:rgba(255,209,102,.12);border:1px solid rgba(255,209,102,.4);color:#ffd166;font-size:12px;font-weight:800;padding:8px 12px;border-radius:10px;cursor:pointer">🐙 +1 Crew progress (now ${blocks})</button>`;
   el.innerHTML = [
     btn(venomOn  ? '✅ Venom unlocked (tap to lock)' : '🔒 Unlock Venom',   venomOn,  'toggleVenomUnlock()'),
     btn(dragonOn ? '✅ Dragon unlocked (tap to lock)' : '🔒 Unlock Dragon', dragonOn, 'toggleDragonUnlock()'),
+    taskBtn,
   ].join('');
+}
+function awardSessionProgress() {
+  // Parent override: manually grant +1 crew progress (e.g. when Jules did the
+  // homework but couldn't snap a photo, or AI verification mis-judged).
+  const p = getProfile();
+  const wasBlocks = p.blocks || 0;
+  p.blocks = Math.min(STATION_TOTAL, wasBlocks + 1);
+  const newCrew = newCrewUnlocks(wasBlocks, p.blocks);
+  saveProfile(p);
+  renderParentUnlocks();
+  if (newCrew.length) {
+    const c = newCrew[0];
+    alert(`🐙 ${c.nameEN} just joined Ink's crew!`);
+  } else {
+    const next = CREW.filter(c => c.unlockAt > p.blocks).sort((a,b) => a.unlockAt - b.unlockAt)[0];
+    const remaining = next ? (next.unlockAt - p.blocks) : 0;
+    alert(`+1 progress (now ${p.blocks}). ${next ? `Next unlock: ${next.nameEN} at ${next.unlockAt} (${remaining} to go).` : 'All crew already unlocked!'}`);
+  }
 }
 function toggleVenomUnlock() {
   const p = getProfile();
@@ -3224,35 +3247,35 @@ function inkSrc(moodWord) {
 // Missing PNGs fall back to a silhouette placeholder on image error.
 const CREW = [
   // ─── Family ───────────────────────────────────────────────────
-  { key:'baby',         file:'images/baby.png',         unlockAt:3,
+  { key:'baby',         file:'images/baby.png',         unlockAt:1,
     nameEN:'Baby Octopus', nameFR:'Bébé Poulpe',
     blurbEN:'Tiny, curious, and full of bubbles.',
     blurbFR:'Minuscule, curieux, et plein de bulles.',
     factEN:'Baby octopuses are about the size of a grain of rice when they hatch. They drift as plankton near the surface for weeks before they\'re big enough to settle to the seafloor.',
     factFR:'Les bébés poulpes ont à peu près la taille d\'un grain de riz quand ils éclosent. Ils dérivent en plancton près de la surface pendant des semaines avant de descendre au fond.',
     style:'Very high-pitched baby voice, breathy and giggly. Small and cute.' },
-  { key:'mama',         file:'images/mama.png',         unlockAt:12,
+  { key:'mama',         file:'images/mama.png',         unlockAt:5,
     nameEN:'Mama Ink', nameFR:'Maman Ink',
     blurbEN:'Warm, wise, the heart of the family.',
     blurbFR:'Chaleureuse, sage, le cœur de la famille.',
     factEN:'Mother octopuses guard their eggs for months without eating. A blue-ringed octopus mom will literally starve to keep her babies safe until they hatch.',
     factFR:'Les mamans poulpes gardent leurs œufs pendant des mois sans manger. Une maman poulpe aux anneaux bleus se laisse littéralement mourir de faim pour protéger ses bébés jusqu\'à l\'éclosion.',
     style:'Warm, soft, motherly voice. Calm and loving. Slight smile in the tone.' },
-  { key:'papa',         file:'images/papa.png',         unlockAt:27,
+  { key:'papa',         file:'images/papa.png',         unlockAt:17,
     nameEN:'Papa Ink', nameFR:'Papa Ink',
     blurbEN:'Adventurer. Compass in one tentacle, map in another.',
     blurbFR:'Aventurier. Boussole dans un tentacule, carte dans l\'autre.',
     factEN:'Most male octopuses live only 1 to 2 years, and many die shortly after mating. A wandering explorer-dad octopus is extremely rare.',
     factFR:'La plupart des poulpes mâles ne vivent que 1 à 2 ans, et beaucoup meurent peu après l\'accouplement. Un papa poulpe explorateur qui voyage est extrêmement rare.',
     style:'Confident, warm, dad-adventurer voice. Slightly rugged. Like an explorer who\'s excited to share.' },
-  { key:'grandma',      file:'images/grandma.png',      unlockAt:42,
+  { key:'grandma',      file:'images/grandma.png',      unlockAt:33,
     nameEN:'Grandma Ink', nameFR:'Mamie Ink',
     blurbEN:'Knitting tentacles. Infinite snacks. Best stories.',
     blurbFR:'Tentacules qui tricotent. Plein de goûters. Meilleures histoires.',
     factEN:'Blue-ringed octopuses typically live just 1 or 2 years. An octopus that lives long enough to have grandchildren is almost never seen by scientists.',
     factFR:'Les poulpes aux anneaux bleus vivent en général seulement 1 ou 2 ans. Un poulpe qui vit assez longtemps pour avoir des petits-enfants, les scientifiques n\'en voient presque jamais.',
     style:'Kind elderly grandmother voice. Soft, slightly frail, very warm. Laughter lines in the voice.' },
-  { key:'grandpa',      file:'images/grandpa.png',      unlockAt:66,
+  { key:'grandpa',      file:'images/grandpa.png',      unlockAt:67,
     nameEN:'Grandpa Ink', nameFR:'Papi Ink',
     blurbEN:'Old sea-captain. Has seen things. Will tell you about them.',
     blurbFR:'Vieux capitaine. Il a tout vu. Et il va te le raconter.',
@@ -3260,42 +3283,42 @@ const CREW = [
     factFR:'Le cerveau du poulpe se réorganise à chaque fois qu\'il apprend quelque chose de nouveau. Quand tu es devenu un papi poulpe, ton cerveau a été réécrit des milliers de fois.',
     style:'Old sea-captain voice. Gruff but warm, slightly hoarse, mischievous. Like a grandfather telling an exaggerated story.' },
   // ─── Other octopus species ────────────────────────────────────
-  { key:'giant-pacific',file:'images/giant-pacific.png',unlockAt:6,
+  { key:'giant-pacific',file:'images/giant-pacific.png',unlockAt:2,
     nameEN:'Giant Pacific', nameFR:'Poulpe Géant du Pacifique',
     blurbEN:'The largest octopus species — 5m arm-span.',
     blurbFR:'La plus grande espèce de poulpe — 5 m d\'envergure.',
     factEN:'The giant Pacific octopus is the biggest octopus on Earth. A single one has about 2,200 suckers across its eight arms — every sucker can taste, smell, AND grip on its own.',
     factFR:'Le poulpe géant du Pacifique est le plus grand poulpe du monde. Un seul a environ 2 200 ventouses sur ses huit bras — chacune peut goûter, sentir et saisir toute seule.',
     style:'Deep, slow, old wise giant voice. Calm but powerful. Like a benevolent kraken.' },
-  { key:'mimic',        file:'images/mimic.png',        unlockAt:18,
+  { key:'mimic',        file:'images/mimic.png',        unlockAt:10,
     nameEN:'Mimic Octopus', nameFR:'Poulpe Mime',
     blurbEN:'Can impersonate 15+ different sea creatures.',
     blurbFR:'Peut imiter plus de 15 créatures marines.',
     factEN:'The mimic octopus can impersonate over 15 different sea creatures — flatfish, lionfish, sea snakes — by changing its shape, color, AND movement to match.',
     factFR:'Le poulpe mime peut imiter plus de 15 créatures marines — poissons plats, rascasses, serpents de mer — en changeant sa forme, sa couleur ET ses mouvements.',
     style:'Sly, clever, trickster voice. Slightly theatrical, shifting tone mid-sentence.' },
-  { key:'coconut',      file:'images/coconut.png',      unlockAt:30,
+  { key:'coconut',      file:'images/coconut.png',      unlockAt:22,
     nameEN:'Coconut Octopus', nameFR:'Poulpe Noix de Coco',
     blurbEN:'Carries half a coconut as portable armor.',
     blurbFR:'Transporte une moitié de noix de coco comme armure.',
     factEN:'The coconut octopus carries halves of coconut shells along the seafloor and snaps them shut around itself for shelter. It\'s one of the only invertebrates known to use tools.',
     factFR:'Le poulpe noix de coco transporte des moitiés de noix de coco sur le fond marin et les referme autour de lui pour se cacher. C\'est un des seuls invertébrés connus à utiliser des outils.',
     style:'Small, tough, slightly paranoid little hustler voice. Protective of its stuff.' },
-  { key:'flapjack',     file:'images/flapjack.png',     unlockAt:54,
+  { key:'flapjack',     file:'images/flapjack.png',     unlockAt:48,
     nameEN:'Flapjack Octopus', nameFR:'Poulpe Crêpe',
     blurbEN:'Flat pink pancake of the deep sea. Somehow real.',
     blurbFR:'Crêpe rose plate des abysses. Vraiment vraie.',
     factEN:'Flapjack octopuses live thousands of meters deep where there\'s almost no food. Their flat pancake shape lets them drift slowly and save energy in the near-freezing dark.',
     factFR:'Les poulpes crêpes vivent à des milliers de mètres de profondeur où il n\'y a presque rien à manger. Leur forme plate leur permet de dériver lentement et d\'économiser de l\'énergie dans le noir glacé.',
     style:'Bubbly, innocent, squeaky-happy voice. Permanently delighted.' },
-  { key:'argonaut',     file:'images/argonaut.png',     unlockAt:75,
+  { key:'argonaut',     file:'images/argonaut.png',     unlockAt:80,
     nameEN:'Argonaut', nameFR:'Argonaute',
     blurbEN:'Grows her own translucent shell in the open sea.',
     blurbFR:'Fabrique sa propre coquille translucide en pleine mer.',
     factEN:'Argonauts are the only octopuses that live in the open ocean. Females secrete their own thin paper-like white shell to carry their eggs, and sometimes they hitch rides on jellyfish.',
     factFR:'Les argonautes sont les seuls poulpes qui vivent en pleine mer. Les femelles fabriquent elles-mêmes une fine coquille blanche et s\'accrochent parfois à des méduses pour voyager.',
     style:'Ethereal, soft, dreamy female voice. Breathy and poetic, like someone half-asleep.' },
-  { key:'wunderpus',    file:'images/wunderpus.png',    unlockAt:90,
+  { key:'wunderpus',    file:'images/wunderpus.png',    unlockAt:95,
     nameEN:'Wunderpus', nameFR:'Wunderpus',
     blurbEN:'Flamboyant orange-striped cousin of the mimic octopus.',
     blurbFR:'Cousin flamboyant du poulpe mime, rayé orange et blanc.',
@@ -3303,49 +3326,49 @@ const CREW = [
     factFR:'Chaque wunderpus a un motif unique de rayures orange et blanches, comme une empreinte digitale. Les scientifiques peuvent identifier chaque individu juste en regardant ses rayures.',
     style:'Flamboyant, theatrical, show-off voice. Every sentence is a dramatic reveal.' },
   // ─── Other sea creatures ──────────────────────────────────────
-  { key:'hammerhead',   file:'images/hammerhead.png',   unlockAt:9,
+  { key:'hammerhead',   file:'images/hammerhead.png',   unlockAt:3,
     nameEN:'Hammerhead Shark', nameFR:'Requin Marteau',
     blurbEN:'Eyes on the ends of a hammer. 360° vision.',
     blurbFR:'Yeux aux extrémités d\'un marteau. Vision 360°.',
     factEN:'Hammerhead sharks have eyes on the ends of their hammer, giving them almost 360-degree vision. They can see above AND below themselves at the same time.',
     factFR:'Les requins marteaux ont les yeux aux extrémités du marteau, ce qui leur donne une vision presque à 360 degrés. Ils peuvent voir au-dessus et en dessous d\'eux en même temps.',
     style:'Cool, measured, watchful predator voice. Like a sniper giving advice.' },
-  { key:'cuttlefish',   file:'images/cuttlefish.png',   unlockAt:15,
+  { key:'cuttlefish',   file:'images/cuttlefish.png',   unlockAt:7,
     nameEN:'Cuttlefish', nameFR:'Seiche',
     blurbEN:'Skin flashes hypnotic color patterns in real time.',
     blurbFR:'La peau clignote en motifs colorés hypnotiques.',
     factEN:'A cuttlefish can put a rival to sleep with a hypnotic light-show on its skin. Some cuttlefish even show male colors on one side and female colors on the other at the same time.',
     factFR:'Une seiche peut endormir un rival avec un spectacle hypnotique de couleurs. Certaines seiches montrent même des couleurs de mâle d\'un côté et de femelle de l\'autre en même temps.',
     style:'Smooth, hypnotic, slightly mysterious voice. Drawing you in.' },
-  { key:'whale-shark',  file:'images/whale-shark.png',  unlockAt:21,
+  { key:'whale-shark',  file:'images/whale-shark.png',  unlockAt:13,
     nameEN:'Whale Shark', nameFR:'Requin-Baleine',
     blurbEN:'The biggest fish in the ocean. Eats tiny plankton. Gentle giant.',
     blurbFR:'Le plus grand poisson de l\'océan. Mange du plancton. Gentil géant.',
     factEN:'The whale shark is the biggest fish in the ocean — up to 18 meters long, about the length of a school bus — but it only eats plankton and tiny fish. Each one\'s spot pattern is unique, like a fingerprint.',
     factFR:'Le requin-baleine est le plus grand poisson de l\'océan — jusqu\'à 18 mètres, à peu près la taille d\'un bus scolaire — mais il ne mange que du plancton et de tout petits poissons. Chaque individu a un motif de taches unique, comme une empreinte digitale.',
     style:'Huge, deep, slow, very friendly voice. Like an enormous but peaceful old friend.' },
-  { key:'dumbo',        file:'images/dumbo.png',        unlockAt:36,
+  { key:'dumbo',        file:'images/dumbo.png',        unlockAt:27,
     nameEN:'Dumbo Octopus', nameFR:'Poulpe Dumbo',
     blurbEN:'Ear-like fins flap through pitch-black deep sea.',
     blurbFR:'De petites ailerons en oreilles battent dans les abysses.',
     factEN:'The dumbo octopus lives deeper than any other octopus — over 4 kilometers down — where the water pressure would crush a human. It "flies" by flapping its ear-like fins.',
     factFR:'Le poulpe Dumbo vit plus profondément que tous les autres poulpes — à plus de 4 kilomètres de profondeur — là où la pression de l\'eau écraserait un humain. Il « vole » en battant ses nageoires qui ressemblent à des oreilles.',
     style:'Soft, dreamy, innocent voice — almost whispering. Peaceful and otherworldly.' },
-  { key:'giant-squid',  file:'images/giant-squid.png',  unlockAt:48,
+  { key:'giant-squid',  file:'images/giant-squid.png',  unlockAt:40,
     nameEN:'Giant Squid', nameFR:'Calmar Géant',
     blurbEN:'13 meters long. Eyes the size of dinner plates.',
     blurbFR:'13 mètres de long. Yeux grands comme des assiettes.',
     factEN:'The giant squid has the largest eye of any animal — about the size of a basketball — to catch faint flashes of bioluminescent light in the pitch-black deep sea.',
     factFR:'Le calmar géant a le plus grand œil du règne animal — environ la taille d\'un ballon de basket — pour capter les faibles flashs de lumière bioluminescente dans les abysses noirs.',
     style:'Deep, mysterious, ancient voice. Like something speaking up from the abyss.' },
-  { key:'nautilus',     file:'images/nautilus.png',     unlockAt:60,
+  { key:'nautilus',     file:'images/nautilus.png',     unlockAt:57,
     nameEN:'Nautilus', nameFR:'Nautile',
     blurbEN:'A living fossil. Older than the dinosaurs.',
     blurbFR:'Un fossile vivant. Plus vieux que les dinosaures.',
     factEN:'The nautilus is a living fossil. Its relatives have been swimming in Earth\'s oceans for over 500 million years — older than dinosaurs, older than trees, older than almost anything still alive today.',
     factFR:'Le nautile est un fossile vivant. Ses cousins nagent dans les océans de la Terre depuis plus de 500 millions d\'années — plus vieux que les dinosaures, plus vieux que les arbres, plus vieux que presque tout ce qui vit encore.',
     style:'Extremely slow, dusty, archaic voice. Each word feels carved from stone.' },
-  { key:'colossal-squid',file:'images/colossal-squid.png',unlockAt:100,
+  { key:'colossal-squid',file:'images/colossal-squid.png',unlockAt:120,
     nameEN:'Colossal Squid', nameFR:'Calmar Colossal',
     blurbEN:'Largest eyes of any animal ever. Hooks on its tentacles.',
     blurbFR:'Les plus grands yeux de tout le règne animal. Crochets aux tentacules.',
@@ -4244,11 +4267,10 @@ function taskDone() {
   S.taskHints.push(S.hintCount);
   const fr = S.lang==='FR';
 
-  // Save block + maybe card + minecoins
+  // Save minecoins. profile.blocks is now incremented once per SESSION
+  // (in completeSession), not per task — so the crew progression rewards
+  // completed homework rather than how the AI happened to split it.
   const profile = getProfile();
-  const wasBlocks = profile.blocks;
-  profile.blocks = Math.min(STATION_TOTAL, profile.blocks + 1);
-  const unlockedRoom = STATION_ROOMS.find(r => wasBlocks < r.at && profile.blocks >= r.at);
   const isBonus = S.hw.tasks[S.tIdx]?.bonus;
   const baseCoins = S.hintCount === 0 ? 15 : S.hintCount === 1 ? 10 : 5;
   const coinsEarned = isBonus ? baseCoins + 10 : baseCoins;
@@ -4273,11 +4295,12 @@ function taskDone() {
   const celebIdx = Math.floor(Math.random() * celebPool.length);
   const celeb = celebPool[celebIdx];
 
-  // Render reward screen
-  const newCrew = newCrewUnlocks(wasBlocks, profile.blocks);
+  // Render reward screen (per-task: just coin reward + celebration; crew
+  // unlocks now happen at the end of the whole homework session, not per task)
   document.getElementById('rewSub').textContent = fr ? `EXPÉRIENCE ${S.tIdx+1} VALIDÉE` : `EXPERIMENT ${S.tIdx+1} LOGGED`;
   document.getElementById('rewTitle').textContent = fr ? 'Bravo, explorateur !' : 'Brilliant work!';
-  // Crew progress line replaces the old "+1 module" block emoji line
+  // Crew progress line — fixed display of current count (changes only at
+  // session end). Reassures Jules he's making progress without overpromising.
   const unlockedCrew = crewUnlockedCount(profile);
   document.getElementById('rewBlocks').textContent = '🐙';
   document.getElementById('rewBlockLabel').textContent = fr
@@ -4288,33 +4311,10 @@ function taskDone() {
   document.getElementById('rewCoinsAmount').textContent = `⛏️ +${coinsEarned} ${coinBonus}`;
   document.getElementById('rewCoinsLabel').textContent = fr ? 'Minecoins gagnés !' : 'Minecoins earned!';
   document.getElementById('rewCoinsTotal').textContent = `Total: ${profile.minecoins} ⛏️`;
-  // Crew unlock banner (takes precedence over the legacy station-room unlock)
+  // Crew unlock banner element exists in the DOM but is unused on per-task
+  // reward (unlocks fire at session end via renderSummary).
   const ruEl = document.getElementById('rewRoomUnlock');
-  if (newCrew.length > 0) {
-    const c = newCrew[0]; // celebrate the first one if multiple crossed at once
-    const name = fr ? c.nameFR : c.nameEN;
-    const blurb = fr ? c.blurbFR : c.blurbEN;
-    ruEl.style.display = 'block';
-    ruEl.innerHTML = `<div class="room-unlock-banner" style="display:flex;align-items:center;gap:14px;padding:14px"><img src="${c.file}" alt="" style="width:80px;height:80px;object-fit:contain;flex-shrink:0" onerror="this.onerror=null;this.src='${CREW_SILHOUETTE_SRC}'"><div style="text-align:left;flex:1"><div class="ru-title">${fr?'🐙 A rejoint la quête d\'Ink':'🐙 Joined Ink\'s quest'}</div><div class="ru-name">${escHtml(name)}</div><div style="font-size:12px;color:rgba(224,240,248,.65);margin-top:3px">${escHtml(blurb)}</div></div></div>`;
-    // Ink announces ("A new friend just joined! Listen…") then hands off to
-    // the creature's own voice clip — chained for a clean two-voice reveal.
-    setTimeout(() => {
-      SFX.success();
-      playInkChain([
-        `audio/ink/announce-${fr ? 'fr' : 'en'}.mp3`,
-        `audio/crew/${c.key}-${fr ? 'fr' : 'en'}.mp3`,
-      ]);
-    }, 1200);
-  } else if (unlockedRoom) {
-    // Legacy station-room unlock — kept for backward compat until fully deprecated
-    const roomName = fr ? unlockedRoom.fr : unlockedRoom.en;
-    ruEl.style.display = 'block';
-    ruEl.innerHTML = `<div class="room-unlock-banner"><span class="ru-icon">${unlockedRoom.icon}</span><span class="ru-title">${fr?'🔓 Nouvelle salle débloquée':'🔓 New room unlocked'}</span><div class="ru-name">${roomName}</div></div>`;
-    setTimeout(() => { SFX.success(); speak(fr ? `Nouvelle salle débloquée : ${roomName} !` : `New room unlocked: ${roomName}!`); }, 1200);
-  } else {
-    ruEl.style.display = 'none';
-    ruEl.innerHTML = '';
-  }
+  if (ruEl) { ruEl.style.display = 'none'; ruEl.innerHTML = ''; }
   setTimeout(() => playInkClipOrFallback(inkCelebrationClipUrl(celebIdx + 1, S.lang), celeb), 400);
 
   const isLast = S.tIdx + 1 >= S.hw.tasks.length;
@@ -4357,10 +4357,10 @@ function showWriteItDown() {
   document.getElementById('writeEyebrow').textContent = fr ? 'DERNIÈRE ÉTAPE' : 'FINAL STEP';
   document.getElementById('writeTitle').textContent = fr ? 'Tout est fini !' : 'All done!';
   document.getElementById('writeMsg').textContent = fr
-    ? 'Maintenant écris tes réponses sur ta feuille de devoirs, puis appuie sur Terminé.'
-    : 'Now write your answers on your homework sheet, then tap Done.';
-  document.getElementById('writeDoneBtn').textContent = fr ? "✅ C'est fait !" : "✅ Done!";
+    ? "Écris tes réponses sur ta feuille, puis montre-la à Ink pour débloquer un membre du crew !"
+    : "Write your answers on your homework sheet, then show it to Ink to unlock a crew member!";
   document.getElementById('writeShowBtn').textContent = fr ? '📷 Montrer la feuille à Ink' : '📷 Show Ink the sheet';
+  document.getElementById('writeDoneBtn').textContent = fr ? 'Passer pour aujourd\'hui' : 'Skip for today';
   document.getElementById('writeFeedback').style.display = 'none';
   show('write');
   const text = fr
@@ -4384,10 +4384,13 @@ async function onWritePhoto(event) {
     const compressed = await compressImage(file);
     const result = await verifyWrittenWork(compressed);
     fbEl.textContent = result.comment || (fr ? 'Bien joué !' : 'Looking good!');
-    setTimeout(() => completeSession(), 2400);
+    // result.written === true means AI saw real work on the sheet → unlock.
+    // false means the sheet looked blank/incomplete → no unlock (coins still
+    // earned per task; parent can manually award via Parent Mode if AI got it wrong).
+    setTimeout(() => completeSession(result.written === true), 2400);
   } catch (e) {
     fbEl.textContent = fr ? 'On continue !' : 'Moving on!';
-    setTimeout(() => completeSession(), 1400);
+    setTimeout(() => completeSession(false), 1400);
   }
 }
 
@@ -4402,7 +4405,7 @@ async function verifyWrittenWork(imageB64) {
   catch { return { written: true, comment: '' }; }
 }
 
-async function completeSession() {
+async function completeSession(verified = false) {
   // Re-enable buttons in case onWritePhoto disabled them
   const dB = document.getElementById('writeDoneBtn'); if (dB) dB.disabled = false;
   const sB = document.getElementById('writeShowBtn'); if (sB) sB.disabled = false;
@@ -4410,6 +4413,16 @@ async function completeSession() {
   show('a'); document.getElementById('am').textContent = S.lang==='FR' ? 'Ink rédige le rapport... 📝' : 'Ink is writing the report... 📝';
   // Save session
   const profile = getProfile();
+  // Crew progression: increment profile.blocks ONLY if the homework was
+  // verified (photo + AI confirmation OR parent override). Skipping the
+  // verification step still earns coins per task, but no crew unlock —
+  // that incentivises actually finishing + writing the work.
+  S.newCrewUnlocks = [];
+  if (verified) {
+    const wasBlocks = profile.blocks || 0;
+    profile.blocks = Math.min(STATION_TOTAL, wasBlocks + 1);
+    S.newCrewUnlocks = newCrewUnlocks(wasBlocks, profile.blocks);
+  }
   const avgHints = S.taskHints.length ? S.taskHints.reduce((a,b)=>a+b,0)/S.taskHints.length : 0;
   profile.sessions = profile.sessions || [];
   profile.sessions.push({date:Date.now(),lang:S.lang,subject:S.hw.subject,minutes:mins,tasksCount:S.hw.tasks.length,totalHints:S.taskHints.reduce((a,b)=>a+b,0),avgHints:Math.round(avgHints*10)/10});
@@ -4518,6 +4531,25 @@ function renderSummary(s, profile) {
     funMessages.push(fr
       ? `🔥 Nouvelle forme légendaire débloquée : Dragon de Feu ! Va voir les moods d'Ink !`
       : `🔥 Legendary new form unlocked: Dragon-Fire! Check out Ink's Moods!`);
+  }
+  // Crew unlock(s) from this verified session — show a dedicated message
+  // per new creature so Jules sees exactly who joined.
+  if (Array.isArray(S.newCrewUnlocks) && S.newCrewUnlocks.length > 0) {
+    S.newCrewUnlocks.forEach(c => {
+      const name = fr ? c.nameFR : c.nameEN;
+      funMessages.push(fr
+        ? `🐙 ${escHtml(name)} a rejoint la quête d'Ink !`
+        : `🐙 ${escHtml(name)} joined Ink's quest!`);
+    });
+    // Audio celebration: Ink announces, then the first new creature speaks
+    setTimeout(() => {
+      const c = S.newCrewUnlocks[0];
+      SFX.success();
+      playInkChain([
+        `audio/ink/announce-${fr ? 'fr' : 'en'}.mp3`,
+        `audio/crew/${c.key}-${fr ? 'fr' : 'en'}.mp3`,
+      ]);
+    }, 1400);
   }
 
   recap.innerHTML = `
