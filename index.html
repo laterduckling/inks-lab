@@ -411,8 +411,12 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <!-- Weekend bonus mission (Fri-Sun only) -->
   <div id="weekendMission" class="card" style="padding:22px;width:100%;max-width:420px;display:none;background:linear-gradient(135deg,rgba(255,201,77,.08),rgba(255,154,61,.08));border:2px solid rgba(255,201,77,.35);box-shadow:var(--glow-gold-sm)">
     <p style="font-size:14px;font-weight:900;color:var(--gold);margin-bottom:6px;font-family:var(--font-display)">⛏️ Weekend Bonus Mission!</p>
-    <p style="font-size:13px;color:var(--text-mid);margin-bottom:14px;line-height:1.5">Review this week's homework with Ink and earn <strong style="color:var(--gold)">25 bonus Minecoins</strong>!</p>
-    <button class="bl" onclick="startWeekendMission()" style="border-color:rgba(255,201,77,.4);color:var(--gold)">⛏️ Start Weekend Mission!</button>
+    <p style="font-size:13px;color:var(--text-mid);margin-bottom:14px;line-height:1.5">Earn <strong style="color:var(--gold)">25 bonus Minecoins</strong> + unlock the Dragon-Fire form!</p>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button id="weekendRecapBtn" class="bl" onclick="startWeekendMission()" style="border-color:rgba(255,201,77,.4);color:var(--gold)">📚 Week Recap</button>
+      <button class="bl" onclick="startWeekendPractice('EN')" style="border-color:rgba(255,201,77,.4);color:var(--gold)">📷 English Practice Sheet</button>
+      <button class="bl" onclick="startWeekendPractice('FR')" style="border-color:rgba(255,201,77,.4);color:var(--gold)">📷 French Practice Sheet</button>
+    </div>
   </div>
 
   <!-- Mission selector -->
@@ -2513,18 +2517,22 @@ function renderWelcome() {
   // Show resume banner if there's an active session
   const sess = loadSession();
   document.getElementById('resumeBanner').style.display = sess ? 'block' : 'none';
-  // Show weekend mission on Fri(5), Sat(6), Sun(0)
+  // Show weekend mission on Fri(5), Sat(6), Sun(0). Always available — even
+  // during a holiday week with no homework — via the practice-sheet path.
   const day = new Date().getDay();
   const isWeekend = day === 0 || day === 5 || day === 6;
   const weekStart = getWeekStart();
   const alreadyDone = profile.lastWeekendMission && profile.lastWeekendMission >= weekStart;
   const hasSessions = (profile.sessions||[]).some(s => s.date >= weekStart);
   const wm = document.getElementById('weekendMission');
-  if (isWeekend && hasSessions && !alreadyDone) {
-    wm.style.display = 'block';
-  } else if (isWeekend && alreadyDone) {
+  if (isWeekend && alreadyDone) {
     wm.style.display = 'block';
     wm.innerHTML = '<p style="font-size:14px;font-weight:900;color:#06d6a0;text-align:center">✅ Weekend mission completed! +25 ⛏️</p>';
+  } else if (isWeekend) {
+    wm.style.display = 'block';
+    // Toggle the Week Recap button: only meaningful if there were sessions
+    const recapBtn = document.getElementById('weekendRecapBtn');
+    if (recapBtn) recapBtn.style.display = hasSessions ? '' : 'none';
   } else {
     wm.style.display = 'none';
   }
@@ -4479,6 +4487,14 @@ function abandonMission() {
 // ═══════════════════════════════════════
 // WEEKEND BONUS MISSION
 // ═══════════════════════════════════════
+// Weekend bonus path 2: take a picture of any practice sheet (e.g. holiday
+// exercise book) — runs the regular homework flow but flagged as a weekend
+// mission so completion still earns +25 coins and unlocks the Dragon-Fire form.
+function startWeekendPractice(lang) {
+  S.isWeekendMission = true;
+  go(lang); // existing upload flow — sets language, opens upload screen
+}
+
 async function startWeekendMission() {
   const profile = getProfile();
   const weekStart = getWeekStart();
