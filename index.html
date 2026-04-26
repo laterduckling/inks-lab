@@ -922,11 +922,12 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <!-- Welcome fact toast — visible speech bubble that accompanies (or replaces) TTS -->
 <div id="factBubble" onclick="hideFactBubble()" style="display:none;cursor:pointer;position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:9997;max-width:min(540px,92vw);padding:16px 20px;background:linear-gradient(180deg,rgba(12,26,52,.96),rgba(6,14,32,.96));border:1.5px solid rgba(45,224,198,.35);border-radius:18px;box-shadow:0 14px 40px rgba(0,0,0,.55),0 0 24px rgba(45,224,198,.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#e0f0f8;font-size:14px;line-height:1.5"></div>
 
-<!-- Pose modal — full-screen view when Jules taps a gallery pose -->
-<div id="poseModal" onclick="closePoseModal()" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(2,8,20,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);align-items:center;justify-content:center;flex-direction:column;padding:20px;gap:14px;cursor:pointer">
-  <img id="poseModalImg" src="" alt="" style="max-width:92%;max-height:60vh;object-fit:contain;filter:drop-shadow(0 10px 30px rgba(0,0,0,.6))">
+<!-- Pose / Crew modal — full-screen view when Jules taps a gallery card -->
+<div id="poseModal" onclick="closePoseModal()" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(2,8,20,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);align-items:center;justify-content:center;flex-direction:column;padding:20px;gap:12px;cursor:pointer;overflow-y:auto">
+  <img id="poseModalImg" src="" alt="" style="max-width:92%;max-height:50vh;object-fit:contain;filter:drop-shadow(0 10px 30px rgba(0,0,0,.6))">
   <div id="poseModalName" style="font-family:var(--font-display);font-size:28px;font-weight:900;color:#e0f0f8;text-align:center"></div>
-  <div id="poseModalLine" style="font-size:16px;color:rgba(224,240,248,.75);text-align:center;max-width:420px;line-height:1.5;font-style:italic"></div>
+  <div id="poseModalLine" style="font-size:14px;color:rgba(224,240,248,.6);text-align:center;max-width:480px;line-height:1.5;font-style:italic"></div>
+  <div id="poseModalFact" style="display:none;font-size:18px;color:#e0f0f8;text-align:center;max-width:560px;line-height:1.55;padding:14px 18px;background:rgba(16,36,72,.5);border:1px solid rgba(45,224,198,.18);border-radius:14px"></div>
   <div style="font-size:11px;color:rgba(224,240,248,.4);margin-top:4px;letter-spacing:1px;text-transform:uppercase">Tap anywhere to close</div>
 </div>
 
@@ -3361,7 +3362,10 @@ function openCrewModal(key) {
   const fact = fr ? c.factFR : c.factEN;
   document.getElementById('poseModalImg').src = c.file;
   document.getElementById('poseModalName').textContent = name;
-  document.getElementById('poseModalLine').textContent = blurb + ' — ' + fact;
+  document.getElementById('poseModalLine').textContent = blurb;
+  const factEl = document.getElementById('poseModalFact');
+  factEl.textContent = fact;
+  factEl.style.display = 'block';
   document.getElementById('poseModal').style.display = 'flex';
   playCrewClipOrFallback(key, lang, fact, c.style);
 }
@@ -3411,6 +3415,8 @@ function openPoseModal(key) {
   document.getElementById('poseModalImg').src = INK_POSE_FILE[key];
   document.getElementById('poseModalName').textContent = name;
   document.getElementById('poseModalLine').textContent = line;
+  // Hide the fact panel — only crew cards have facts
+  document.getElementById('poseModalFact').style.display = 'none';
   modal.style.display = 'flex';
   try { speak(line, POSE_VOICE_STYLE[key] || null); } catch {}
 }
