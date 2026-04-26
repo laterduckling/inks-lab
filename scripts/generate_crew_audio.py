@@ -578,6 +578,8 @@ INK_MISC_LINES = {
     'write-fr':    "Tout est fini ! Maintenant écris tes réponses sur ta feuille de devoirs, puis appuie sur Terminé.",
     'announce-en': "A new friend just joined the crew! Listen — they want to introduce themselves!",
     'announce-fr': "Un nouvel ami vient de rejoindre l'équipe ! Écoute, il a quelque chose à te dire !",
+    'practice-en': "Alright! Let's do some extra practice for those bonus coins. Take a clear picture of your practice sheet — hold the iPad steady, and make sure the page is well lit.",
+    'practice-fr': "Allez ! On va faire un peu d'entraînement supplémentaire pour gagner des pièces bonus. Prends une photo bien nette de ta feuille d'entraînement — tiens l'iPad bien droit, et vérifie que la page est bien éclairée.",
 }
 for fname, raw in INK_MISC_LINES.items():
     clean = EMOJI_RE.sub('', raw).strip()
