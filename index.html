@@ -414,8 +414,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <p style="font-size:13px;color:var(--text-mid);margin-bottom:14px;line-height:1.5">Earn <strong style="color:var(--gold)">25 bonus Minecoins</strong> + unlock the Dragon-Fire form!</p>
     <div style="display:flex;flex-direction:column;gap:8px">
       <button id="weekendRecapBtn" class="bl" onclick="startWeekendMission()" style="border-color:rgba(255,201,77,.4);color:var(--gold)">📚 Week Recap</button>
-      <button class="bl" onclick="startWeekendPractice('EN')" style="border-color:rgba(255,201,77,.4);color:var(--gold)">📷 English Practice Sheet</button>
-      <button class="bl" onclick="startWeekendPractice('FR')" style="border-color:rgba(255,201,77,.4);color:var(--gold)">📷 French Practice Sheet</button>
+      <button class="bl" onclick="startWeekendPractice()" style="border-color:rgba(255,201,77,.4);color:var(--gold)">📷 Practice Sheet</button>
     </div>
   </div>
 
@@ -2803,6 +2802,13 @@ function analyzeAllPhotos() {
   show('a');
   (async () => {
     try {
+      // Weekend Practice path: auto-detect language from the page itself
+      // before running the regular analysis (so all task text comes out in
+      // the right language without Jules having to pick).
+      if (S.autoDetectLang && uploadedPhotos.length) {
+        S.lang = await detectLanguageFromPhoto(uploadedPhotos[0]);
+        S.autoDetectLang = false;
+      }
       S.hw = await analyzeHomework(uploadedPhotos);
       // If day is ambiguous, ask user which day
       if (S.hw.dayAmbiguous && S.hw.daysFound && S.hw.daysFound.length > 1) {
@@ -4488,11 +4494,26 @@ function abandonMission() {
 // WEEKEND BONUS MISSION
 // ═══════════════════════════════════════
 // Weekend bonus path 2: take a picture of any practice sheet (e.g. holiday
-// exercise book) — runs the regular homework flow but flagged as a weekend
-// mission so completion still earns +25 coins and unlocks the Dragon-Fire form.
-function startWeekendPractice(lang) {
+// exercise book). Language is auto-detected from the photo after upload, so
+// Jules just taps one button and snaps a page — Ink figures the rest out.
+function startWeekendPractice() {
   S.isWeekendMission = true;
-  go(lang); // existing upload flow — sets language, opens upload screen
+  S.autoDetectLang = true;
+  // Default UI language to whatever S.lang is already (or EN if unset). The
+  // upload-screen labels use this; actual homework language is overridden
+  // below in the upload-to-analyze flow once we've seen the page.
+  go(S.lang || 'EN');
+}
+async function detectLanguageFromPhoto(imageB64) {
+  try {
+    const r = await api([{role:'user',content:[
+      {type:'image',source:{type:'base64',media_type:'image/jpeg',data:imageB64}},
+      {type:'text',text:'What language is this homework page written in? Reply with ONLY one word: "EN" for English or "FR" for French. If unclear, default to EN.'}
+    ]}], null, 20);
+    const t = (r||'').trim().toUpperCase();
+    if (t.includes('FR')) return 'FR';
+    return 'EN';
+  } catch { return 'EN'; }
 }
 
 async function startWeekendMission() {
