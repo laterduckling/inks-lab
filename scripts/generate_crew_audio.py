@@ -447,8 +447,8 @@ for key, langs in INK_STATIC_LINES.items():
         except Exception as e:
             print(f'  ✗ {e}')
 
-# Mood gallery pose lines — Adam reads each mood line as Ink. Loses the
-# per-mood OpenAI styling but keeps Ink's voice consistent across moods.
+# Mood gallery pose lines — Adam voices most moods (since he IS Ink), but
+# Venk and Dragon get distinct voices that match their transformation drama.
 INK_POSE_LINES = {
     'happy':    {'en': "That's my happy face!",                                                  'fr': "C'est ma tête contente !"},
     'excited':  {'en': "WOOHOO! Excited mode activated!",                                        'fr': "WOUHOU ! Mode excité activé !"},
@@ -458,7 +458,14 @@ INK_POSE_LINES = {
     'venk':     {'en': "Careful. This is my venom form. Do NOT touch.",                          'fr': "Attention. C'est ma forme venimeuse. Ne touche PAS."},
     'dragon':   {'en': "Behold — the legendary dragon-fire form!",                               'fr': "Contemple — la forme légendaire du dragon de feu !"},
 }
+# Per-mood voice override: Venk = menacing demon, Dragon = epic boss monster.
+# All other moods use Ink's main narration voice (Adam) below.
+INK_POSE_VOICES = {
+    'venk':   'vfaqCOvlrKi4Zp7C2IAm',  # Malyx — Echoey, Menacing and Deep Demon
+    'dragon': 'QzD8JR9v8A4kqCDL8XD4',  # Gorex — Vicious & Hungry boss monster
+}
 for mood, langs in INK_POSE_LINES.items():
+    voice = INK_POSE_VOICES.get(mood, INK_VOICE_ID)
     for lang, raw in langs.items():
         clean = EMOJI_RE.sub('', raw).strip()
         out = INK_OUT / f'pose-{mood}-{lang}.mp3'
@@ -468,7 +475,7 @@ for mood, langs in INK_POSE_LINES.items():
             continue
         print(f'Generating pose-{mood}-{lang} ({len(clean)} chars)…', flush=True)
         try:
-            data = generate(INK_VOICE_ID, clean)
+            data = generate(voice, clean)
             out.write_bytes(data)
             print(f'  → {out.relative_to(ROOT)} ({len(data):,} bytes)')
             total_chars += len(clean)
