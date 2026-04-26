@@ -2435,8 +2435,15 @@ function greetOnWelcome() {
   const name = getChildName();
   const fr = (S.lang === 'FR');
   const line = fr ? `Salut ${name} !` : `Hi ${name}!`;
-  // Small delay lets the welcome screen mount before TTS fires
-  setTimeout(() => { try { speak(line); } catch {} }, 450);
+  // Pre-recorded Ink greeting only matches "Jules"; any other childName
+  // falls through to live TTS so the personalisation still works.
+  const usePrerecorded = (name === 'Jules');
+  setTimeout(() => {
+    try {
+      if (usePrerecorded) playInkClipOrFallback(inkGreetingClipUrl(fr ? 'FR' : 'EN'), line);
+      else speak(line);
+    } catch {}
+  }, 450);
 }
 
 function renderWelcome() {
@@ -3678,6 +3685,8 @@ function wrapFactWithIntro(fact, lang) {
   return `${intro} ${fact}`;
 }
 
+// Returns {idx, text} where idx is the 1-based index in the OCT_FACTS array,
+// matching the audio/ink/fact-NN-<lang>.mp3 file naming convention.
 function pickNextFact(lang) {
   const key = lang === 'FR' ? 'ink_shown_facts_fr' : 'ink_shown_facts_en';
   const pool = lang === 'FR' ? OCT_FACTS_FR : OCT_FACTS_EN;
@@ -3688,7 +3697,32 @@ function pickNextFact(lang) {
   const idx = available[Math.floor(Math.random() * available.length)];
   shown.push(idx);
   try { localStorage.setItem(key, JSON.stringify(shown)); } catch {}
-  return pool[idx];
+  return { idx: idx + 1, text: pool[idx] };
+}
+
+// Plays a pre-recorded Ink narration clip if it exists; falls back to live
+// TTS otherwise. Index is 1-based and must be 2-digit zero-padded for files.
+function playInkClipOrFallback(url, fallbackText) {
+  if (MUTED) return;
+  if (!audioUnlocked) { pendingSpeak = { text: fallbackText, instructions: null }; return; }
+  stopSpeaking();
+  const a = new Audio(url);
+  let fellBack = false;
+  const fallback = () => {
+    if (fellBack) return; fellBack = true;
+    try { if (OAIKEY) speakOpenAI(fallbackText); else speakBrowser(fallbackText); } catch {}
+  };
+  a.onerror = fallback;
+  a.onended = () => { if (currentAudio === a) currentAudio = null; };
+  currentAudio = a;
+  a.play().catch(fallback);
+}
+function inkFactClipUrl(idx, lang) {
+  const lc = (lang === 'FR' ? 'fr' : 'en');
+  return `audio/ink/fact-${String(idx).padStart(2,'0')}-${lc}.mp3`;
+}
+function inkGreetingClipUrl(lang) {
+  return `audio/ink/greeting-${lang === 'FR' ? 'fr' : 'en'}.mp3`;
 }
 
 // Welcome-screen idle fact timer: first fact at 15s, then every 45s while
@@ -3728,10 +3762,12 @@ function startWelcomeIdleTimer() {
   welcomeIdleTimer = setTimeout(() => {
     welcomeFactFirstShown = true;
     welcomeFactCount++;
-    const fact = pickNextFact(S.lang || 'EN');
-    const line = wrapFactWithIntro(fact, S.lang || 'EN');
+    const lang = S.lang || 'EN';
+    const { idx, text } = pickNextFact(lang);
+    const line = wrapFactWithIntro(text, lang);
     showFactBubble(line);
-    try { speak(line); } catch (e) { console.warn('[Ink] speak failed:', e); }
+    // Prefer pre-recorded Ink clip for this fact; fall back to live TTS
+    playInkClipOrFallback(inkFactClipUrl(idx, lang), line);
     startWelcomeIdleTimer();
   }, delay);
 }
@@ -3761,16 +3797,19 @@ function startIdleTimer() {
     missionIdleCount++;
     // 60% fact, 40% humor line
     const useFact = Math.random() < 0.6;
-    let line;
+    let line, factIdx = null;
     if (useFact) {
-      line = wrapFactWithIntro(pickNextFact(S.lang), S.lang);
+      const picked = pickNextFact(S.lang);
+      factIdx = picked.idx;
+      line = wrapFactWithIntro(picked.text, S.lang);
     } else {
       const lines = S.lang==='FR' ? IDLE_LINES_FR : IDLE_LINES_EN;
       line = lines[idleIdx % lines.length]; idleIdx++;
     }
     const isVenk = S.hintCount >= 2;
     addMsg('a', line, isVenk);
-    speak(line);
+    if (factIdx) playInkClipOrFallback(inkFactClipUrl(factIdx, S.lang), line);
+    else speak(line);
     startIdleTimer(); // schedule next (will self-abort when cap is hit)
   }, 55000);
 }
