@@ -31,11 +31,27 @@ MODEL = 'eleven_multilingual_v2'
 # Map character key → ElevenLabs voice ID.
 # Add more entries as Mathieu collects more voices.
 VOICES = {
-    'baby':    'ocZQ262SsZb9RIxcQBOj',
-    'mama':    'TDdaEMZGTCMRB4x8bVQ2',
-    'papa':    'uju3wxzG5OhpWcoi3SMy',
-    'grandma': 'wGcFBfKz5yUQqhqr0mVy',
-    'grandpa': 'MKlLqCItoCkvdhrxgtLv',
+    # Family
+    'baby':           'ocZQ262SsZb9RIxcQBOj',
+    'mama':           'TDdaEMZGTCMRB4x8bVQ2',
+    'papa':           'uju3wxzG5OhpWcoi3SMy',
+    'grandma':        'wGcFBfKz5yUQqhqr0mVy',
+    'grandpa':        'MKlLqCItoCkvdhrxgtLv',
+    # Other octopus species
+    'giant-pacific':  'WV1q3LPagg6vb034LpdG',
+    'mimic':          'OTMqA7lryJHXgAnPIQYt',
+    'coconut':        'av1BMOR1GPgThz9p4fLo',
+    'flapjack':       'XJ2fW4ybq7HouelYYGcL',
+    'argonaut':       'mqyRCI8OeJTogXjYUGZ5',
+    'wunderpus':      '4HvexEZMAmq2M66Ae0nD',
+    # Other sea creatures
+    'hammerhead':     'A921zklid24OpyVy1Elb',
+    'cuttlefish':     'YgzytRZyVmEux6PCtJYB',
+    'whale-shark':    'lAqElvydqyTzitpwAdj6',
+    'dumbo':          'oQeBs2hQbwq5LlUV8TtR',
+    'giant-squid':    '5egO01tkUjEzu7xSSE8M',
+    'nautilus':       'bD9maNcCuQQS75DGuteM',
+    'colossal-squid': '2tTjAGX0n5ajDmazDcWk',
 }
 
 # Must stay in sync with CREW.factEN / factFR in index.html.
@@ -59,6 +75,58 @@ FACTS = {
     'grandpa': {
         'en': "An octopus's brain rewires itself every time it learns something new. By the time you're a grandpa octopus, your brain has been reorganized thousands of times.",
         'fr': "Le cerveau du poulpe se réorganise à chaque fois qu'il apprend quelque chose de nouveau. Quand tu es devenu un papi poulpe, ton cerveau a été réécrit des milliers de fois.",
+    },
+    'giant-pacific': {
+        'en': "The giant Pacific octopus is the biggest octopus on Earth. A single one has about 2,200 suckers across its eight arms — every sucker can taste, smell, AND grip on its own.",
+        'fr': "Le poulpe géant du Pacifique est le plus grand poulpe du monde. Un seul a environ 2 200 ventouses sur ses huit bras — chacune peut goûter, sentir et saisir toute seule.",
+    },
+    'mimic': {
+        'en': "The mimic octopus can impersonate over 15 different sea creatures — flatfish, lionfish, sea snakes — by changing its shape, color, AND movement to match.",
+        'fr': "Le poulpe mime peut imiter plus de 15 créatures marines — poissons plats, rascasses, serpents de mer — en changeant sa forme, sa couleur ET ses mouvements.",
+    },
+    'coconut': {
+        'en': "The coconut octopus carries halves of coconut shells along the seafloor and snaps them shut around itself for shelter. It's one of the only invertebrates known to use tools.",
+        'fr': "Le poulpe noix de coco transporte des moitiés de noix de coco sur le fond marin et les referme autour de lui pour se cacher. C'est un des seuls invertébrés connus à utiliser des outils.",
+    },
+    'flapjack': {
+        'en': "Flapjack octopuses live thousands of meters deep where there's almost no food. Their flat pancake shape lets them drift slowly and save energy in the near-freezing dark.",
+        'fr': "Les poulpes crêpes vivent à des milliers de mètres de profondeur où il n'y a presque rien à manger. Leur forme plate leur permet de dériver lentement et d'économiser de l'énergie dans le noir glacé.",
+    },
+    'argonaut': {
+        'en': "Argonauts are the only octopuses that live in the open ocean. Females secrete their own thin paper-like white shell to carry their eggs, and sometimes they hitch rides on jellyfish.",
+        'fr': "Les argonautes sont les seuls poulpes qui vivent en pleine mer. Les femelles fabriquent elles-mêmes une fine coquille blanche et s'accrochent parfois à des méduses pour voyager.",
+    },
+    'wunderpus': {
+        'en': "Every wunderpus has a unique pattern of orange and white stripes, like a fingerprint. Scientists can identify individual wunderpuses from photos just by matching the stripes.",
+        'fr': "Chaque wunderpus a un motif unique de rayures orange et blanches, comme une empreinte digitale. Les scientifiques peuvent identifier chaque individu juste en regardant ses rayures.",
+    },
+    'hammerhead': {
+        'en': "Hammerhead sharks have eyes on the ends of their hammer, giving them almost 360-degree vision. They can see above AND below themselves at the same time.",
+        'fr': "Les requins marteaux ont les yeux aux extrémités du marteau, ce qui leur donne une vision presque à 360 degrés. Ils peuvent voir au-dessus et en dessous d'eux en même temps.",
+    },
+    'cuttlefish': {
+        'en': "A cuttlefish can put a rival to sleep with a hypnotic light-show on its skin. Some cuttlefish even show male colors on one side and female colors on the other at the same time.",
+        'fr': "Une seiche peut endormir un rival avec un spectacle hypnotique de couleurs. Certaines seiches montrent même des couleurs de mâle d'un côté et de femelle de l'autre en même temps.",
+    },
+    'whale-shark': {
+        'en': "The whale shark is the biggest fish in the ocean — up to 18 meters long, about the length of a school bus — but it only eats plankton and tiny fish. Each one's spot pattern is unique, like a fingerprint.",
+        'fr': "Le requin-baleine est le plus grand poisson de l'océan — jusqu'à 18 mètres, à peu près la taille d'un bus scolaire — mais il ne mange que du plancton et de tout petits poissons. Chaque individu a un motif de taches unique, comme une empreinte digitale.",
+    },
+    'dumbo': {
+        'en': "The dumbo octopus lives deeper than any other octopus — over 4 kilometers down — where the water pressure would crush a human. It flies by flapping its ear-like fins.",
+        'fr': "Le poulpe Dumbo vit plus profondément que tous les autres poulpes — à plus de 4 kilomètres de profondeur — là où la pression de l'eau écraserait un humain. Il vole en battant ses nageoires qui ressemblent à des oreilles.",
+    },
+    'giant-squid': {
+        'en': "The giant squid has the largest eye of any animal — about the size of a basketball — to catch faint flashes of bioluminescent light in the pitch-black deep sea.",
+        'fr': "Le calmar géant a le plus grand œil du règne animal — environ la taille d'un ballon de basket — pour capter les faibles flashs de lumière bioluminescente dans les abysses noirs.",
+    },
+    'nautilus': {
+        'en': "The nautilus is a living fossil. Its relatives have been swimming in Earth's oceans for over 500 million years — older than dinosaurs, older than trees, older than almost anything still alive today.",
+        'fr': "Le nautile est un fossile vivant. Ses cousins nagent dans les océans de la Terre depuis plus de 500 millions d'années — plus vieux que les dinosaures, plus vieux que les arbres, plus vieux que presque tout ce qui vit encore.",
+    },
+    'colossal-squid': {
+        'en': "The colossal squid has the LARGEST eye ever measured in any animal — up to 30 centimeters across. And unlike other squids, its tentacles have sharp rotating hooks instead of just suction cups.",
+        'fr': "Le calmar colossal a le PLUS GRAND œil jamais mesuré chez un animal — jusqu'à 30 centimètres de diamètre. Et contrairement aux autres calmars, ses tentacules ont des crochets rotatifs tranchants au lieu de simples ventouses.",
     },
 }
 
