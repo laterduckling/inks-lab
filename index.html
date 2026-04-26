@@ -424,7 +424,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <div class="mb-title">English Homework</div>
         <div class="mb-sub">Reading · Spelling · Math</div>
       </div>
-      <span class="mb-arrow">→</span>
+      <span class="mb-arrow" id="enArrow">→</span>
     </button>
     <button class="mission-btn cyan" onclick="go('FR')">
       <span class="mb-icon">🇫🇷</span>
@@ -432,7 +432,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <div class="mb-title">Devoirs en français</div>
         <div class="mb-sub">Lecture · Dictée · Calcul</div>
       </div>
-      <span class="mb-arrow">→</span>
+      <span class="mb-arrow" id="frArrow">→</span>
     </button>
     <button class="mission-btn violet" onclick="openPoemList()" id="poesieBtn">
       <span class="mb-icon">📜</span>
@@ -440,7 +440,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <div class="mb-title">Poésie</div>
         <div class="mb-sub" id="poesieBtnBadge">Récite & apprends</div>
       </div>
-      <span class="mb-arrow">→</span>
+      <span class="mb-arrow" id="poArrow">→</span>
     </button>
   </div>
   </div><!-- /welcome-actions -->
@@ -790,6 +790,20 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <div style="display:flex;gap:8px">
     <button onclick="endPoemSession()" class="btn" style="background:rgba(6,214,160,.15);border:1.5px solid rgba(6,214,160,.4);color:#06d6a0;font-size:14px;padding:11px">✅ End session</button>
   </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: WRITE IT DOWN (post-tasks gate before summary)
+══════════════════════════════════════ -->
+<div id="swrite" class="screen center" style="gap:18px;padding-top:30px;padding-bottom:32px">
+  <p class="pane-eyebrow" id="writeEyebrow">FINAL STEP</p>
+  <img src="icon-180.png" class="ink-img-xl mood-bounce" alt="Ink" id="writeInk" style="margin-top:6px">
+  <h2 id="writeTitle" style="font-size:28px;font-weight:900;text-align:center;font-family:var(--font-display)"></h2>
+  <p id="writeMsg" style="font-size:17px;line-height:1.6;color:rgba(224,240,248,.85);text-align:center;max-width:480px;padding:0 20px"></p>
+  <button id="writeDoneBtn" class="btn bp" onclick="completeSession()" style="margin-top:8px;max-width:340px"></button>
+  <button id="writeShowBtn" onclick="document.getElementById('writeFile').click()" style="background:rgba(45,224,198,.08);border:1px solid rgba(45,224,198,.3);color:#00dcc6;font-size:14px;font-weight:700;padding:10px 18px;border-radius:12px;cursor:pointer"></button>
+  <input id="writeFile" type="file" accept="image/*" capture="environment" style="display:none" onchange="onWritePhoto(event)">
+  <div id="writeFeedback" style="display:none;font-size:15px;color:rgba(224,240,248,.85);text-align:center;max-width:480px;line-height:1.5;padding:14px 18px;background:rgba(16,36,72,.5);border:1px solid rgba(45,224,198,.18);border-radius:14px;margin-top:6px"></div>
 </div>
 
 <!-- ══════════════════════════════════════
@@ -2473,6 +2487,15 @@ function renderWelcome() {
   document.getElementById('blockCount').textContent = `${unlockedCrew} / ${totalCrew} found`;
   document.getElementById('coinCount').textContent = profile.minecoins || 0;
   renderCrewStrip(profile);
+  // Mark each subject button with ✅ when Jules has already done it today
+  const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+  const todays = (profile.sessions||[]).filter(s => s.date >= todayStart.getTime());
+  const doneEN   = todays.some(s => s.lang === 'EN' && s.subject !== 'poem');
+  const doneFR   = todays.some(s => s.lang === 'FR' && s.subject !== 'poem');
+  const donePoem = todays.some(s => s.subject === 'poem');
+  const enArrow = document.getElementById('enArrow'); if (enArrow) enArrow.textContent = doneEN ? '✅' : '→';
+  const frArrow = document.getElementById('frArrow'); if (frArrow) frArrow.textContent = doneFR ? '✅' : '→';
+  const poArrow = document.getElementById('poArrow'); if (poArrow) poArrow.textContent = donePoem ? '✅' : '→';
   document.getElementById('muteBtn').style.display = 'flex';
   const poems = activePoems();
   const badge = document.getElementById('poesieBtnBadge');
@@ -4184,7 +4207,15 @@ function taskDone() {
     const blurb = fr ? c.blurbFR : c.blurbEN;
     ruEl.style.display = 'block';
     ruEl.innerHTML = `<div class="room-unlock-banner" style="display:flex;align-items:center;gap:14px;padding:14px"><img src="${c.file}" alt="" style="width:80px;height:80px;object-fit:contain;flex-shrink:0" onerror="this.onerror=null;this.src='${CREW_SILHOUETTE_SRC}'"><div style="text-align:left;flex:1"><div class="ru-title">${fr?'🐙 A rejoint la quête d\'Ink':'🐙 Joined Ink\'s quest'}</div><div class="ru-name">${escHtml(name)}</div><div style="font-size:12px;color:rgba(224,240,248,.65);margin-top:3px">${escHtml(blurb)}</div></div></div>`;
-    setTimeout(() => { SFX.success(); speak(fr ? `${name} rejoint la quête d'Ink !` : `${name} joined Ink's quest!`, c.style); }, 1200);
+    // Ink announces ("A new friend just joined! Listen…") then hands off to
+    // the creature's own voice clip — chained for a clean two-voice reveal.
+    setTimeout(() => {
+      SFX.success();
+      playInkChain([
+        `audio/ink/announce-${fr ? 'fr' : 'en'}.mp3`,
+        `audio/crew/${c.key}-${fr ? 'fr' : 'en'}.mp3`,
+      ]);
+    }, 1200);
   } else if (unlockedRoom) {
     // Legacy station-room unlock — kept for backward compat until fully deprecated
     const roomName = fr ? unlockedRoom.fr : unlockedRoom.en;
@@ -4210,76 +4241,135 @@ function taskDone() {
 async function afterReward() {
   const isLast = S.tIdx + 1 >= S.hw.tasks.length;
   if (isLast) {
-    const mins = Math.max(1, Math.round((Date.now() - S.t0) / 60000));
-    show('a'); document.getElementById('am').textContent = S.lang==='FR' ? 'Ink rédige le rapport... 📝' : 'Ink is writing the report... 📝';
-    // Save session
-    const profile = getProfile();
-    const avgHints = S.taskHints.length ? S.taskHints.reduce((a,b)=>a+b,0)/S.taskHints.length : 0;
-    profile.sessions = profile.sessions || [];
-    profile.sessions.push({date:Date.now(),lang:S.lang,subject:S.hw.subject,minutes:mins,tasksCount:S.hw.tasks.length,totalHints:S.taskHints.reduce((a,b)=>a+b,0),avgHints:Math.round(avgHints*10)/10});
-    if (profile.sessions.length > 20) profile.sessions = profile.sessions.slice(-20);
-    // Weekend bonus
-    S.weekendBonusAwarded = false;
-    S.dragonJustUnlocked = false;
-    if (S.isWeekendMission) {
-      profile.minecoins = (profile.minecoins||0) + 25;
-      profile.lastWeekendMission = Date.now();
-      if (!profile.dragonUnlocked) { profile.dragonUnlocked = true; S.dragonJustUnlocked = true; }
-      S.weekendBonusAwarded = true;
-      S.isWeekendMission = false;
-    }
-    // Silent streak bonus (school nights only; child sees only the reward)
-    S.streakBonus = applyStreakUpdate(profile);
-    if (S.streakBonus > 0) profile.minecoins = (profile.minecoins||0) + S.streakBonus;
-    // Weekly Venom challenge: counts this school night or weekend catch-up
-    const venomBefore = !!profile.venomUnlockedThisWeek;
-    updateVenomWeekly(profile, new Date(), S.weekendBonusAwarded);
-    S.venomJustUnlocked = !venomBefore && !!profile.venomUnlockedThisWeek;
-    // Enrich the just-added session with shone/struggled from summary (for profile gen)
-    saveProfile(profile);
-    let summary = null;
-    try {
-      summary = await generateSummary(mins, profile.sessions);
-      renderSummary(summary, profile);
-    } catch { renderSummary(null, profile); }
-    // Regenerate cognitive profile every session (once we have 3+)
-    if (profile.sessions.length >= 3) {
-      // Attach summary details to the latest session so the profile generator can use them
-      if (summary) {
-        const last = profile.sessions[profile.sessions.length - 1];
-        last.shone = summary.shone || null;
-        last.struggled = summary.struggled || null;
-      }
-      try {
-        const cp = await generateCognitiveProfile(profile.sessions);
-        if (cp) { profile.cognitiveProfile = cp; profile.cognitiveProfileDate = Date.now(); }
-      } catch(e) { console.warn('cognitive profile update failed', e); }
-      saveProfile(profile);
-    }
-    clearSession();
-    // Send email report
-    const totalCoins = S.taskHints.reduce((h,c) => h + (c===0?15:c===1?10:5), 0);
-    sendReport({
-      date: Date.now(), lang: S.lang, subject: S.hw.subject, minutes: mins,
-      tasksCount: S.hw.tasks.length, totalHints: S.taskHints.reduce((a,b)=>a+b,0),
-      avgHints: Math.round((S.taskHints.reduce((a,b)=>a+b,0)/S.taskHints.length)*10)/10,
-      coinsEarned: totalCoins, minecoins: profile.minecoins||0,
-      blocks: profile.blocks||0, cardsCount: profile.cards?.length||0,
-      headline: summary?.childHeadline||null, completed: summary?.completed||null,
-      shone: summary?.shone||null, struggled: summary?.struggled||null,
-      tip: summary?.tip||null, insight: summary?.insight||null,
-      teacherTasks: summary?.teacherTasks||null
-    });
-    backupProfileToWebhook();
-    show('s');
-  } else {
-    S.tIdx++; S.conv = []; S.hintCount = 0;
-    renderMission(); show('m');
-    {
-      const nextMissionText = S.lang==='FR' ? 'Super ! Prochaine mission !' : 'Great! Next mission!';
-      playInkClipOrFallback(inkStaticClipUrl('next-mission', S.lang), nextMissionText);
-    }
+    showWriteItDown();
+    return;
   }
+  S.tIdx++; S.conv = []; S.hintCount = 0;
+  renderMission(); show('m');
+  {
+    const nextMissionText = S.lang==='FR' ? 'Super ! Prochaine mission !' : 'Great! Next mission!';
+    playInkClipOrFallback(inkStaticClipUrl('next-mission', S.lang), nextMissionText);
+  }
+}
+
+// Reminder screen between last task and summary: "Write it down on your sheet".
+// Two paths from here: (1) Done! → straight to summary, (2) 📷 Show Ink the
+// sheet → photo upload → AI confirms work was written → summary.
+function showWriteItDown() {
+  const fr = S.lang === 'FR';
+  document.getElementById('writeEyebrow').textContent = fr ? 'DERNIÈRE ÉTAPE' : 'FINAL STEP';
+  document.getElementById('writeTitle').textContent = fr ? 'Tout est fini !' : 'All done!';
+  document.getElementById('writeMsg').textContent = fr
+    ? 'Maintenant écris tes réponses sur ta feuille de devoirs, puis appuie sur Terminé.'
+    : 'Now write your answers on your homework sheet, then tap Done.';
+  document.getElementById('writeDoneBtn').textContent = fr ? "✅ C'est fait !" : "✅ Done!";
+  document.getElementById('writeShowBtn').textContent = fr ? '📷 Montrer la feuille à Ink' : '📷 Show Ink the sheet';
+  document.getElementById('writeFeedback').style.display = 'none';
+  show('write');
+  const text = fr
+    ? "Tout est fini ! Maintenant écris tes réponses sur ta feuille de devoirs, puis appuie sur Terminé."
+    : "All done! Now write your answers on your homework sheet, then tap Done.";
+  playInkClipOrFallback(`audio/ink/write-${fr ? 'fr' : 'en'}.mp3`, text);
+}
+
+async function onWritePhoto(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  event.target.value = ''; // allow re-pick
+  const fr = S.lang === 'FR';
+  const fbEl = document.getElementById('writeFeedback');
+  fbEl.style.display = 'block';
+  fbEl.textContent = fr ? '🔍 Ink regarde ta feuille…' : '🔍 Ink is looking at your sheet…';
+  // Disable buttons while we verify
+  document.getElementById('writeDoneBtn').disabled = true;
+  document.getElementById('writeShowBtn').disabled = true;
+  try {
+    const compressed = await compressImage(file);
+    const result = await verifyWrittenWork(compressed);
+    fbEl.textContent = result.comment || (fr ? 'Bien joué !' : 'Looking good!');
+    setTimeout(() => completeSession(), 2400);
+  } catch (e) {
+    fbEl.textContent = fr ? 'On continue !' : 'Moving on!';
+    setTimeout(() => completeSession(), 1400);
+  }
+}
+
+async function verifyWrittenWork(imageB64) {
+  const L = S.lang === 'FR' ? 'French' : 'English';
+  const tasksList = (S.hw?.tasks || []).map((t, i) => `${i+1}. ${t.instruction}`).join('\n');
+  const r = await api([{role:'user',content:[
+    {type:'image',source:{type:'base64',media_type:'image/jpeg',data:imageB64}},
+    {type:'text',text:`This is a photo of a 6-year-old's homework sheet after they finished a verbal session with their AI tutor Ink. Tasks they were supposed to write answers for:\n${tasksList}\n\nQuickly check: did the child write something on the sheet for the required tasks? Be encouraging and not strict — even rough handwriting counts. Reply in ${L}.\n\nReturn ONLY JSON: {"written":true|false,"comment":"<one short, warm sentence in ${L} — celebrate good work, or gently nudge if something looks missing>"}`}
+  ]}], null, 200);
+  try { return JSON.parse(r.replace(/```json|```/g,'').trim()); }
+  catch { return { written: true, comment: '' }; }
+}
+
+async function completeSession() {
+  // Re-enable buttons in case onWritePhoto disabled them
+  const dB = document.getElementById('writeDoneBtn'); if (dB) dB.disabled = false;
+  const sB = document.getElementById('writeShowBtn'); if (sB) sB.disabled = false;
+  const mins = Math.max(1, Math.round((Date.now() - S.t0) / 60000));
+  show('a'); document.getElementById('am').textContent = S.lang==='FR' ? 'Ink rédige le rapport... 📝' : 'Ink is writing the report... 📝';
+  // Save session
+  const profile = getProfile();
+  const avgHints = S.taskHints.length ? S.taskHints.reduce((a,b)=>a+b,0)/S.taskHints.length : 0;
+  profile.sessions = profile.sessions || [];
+  profile.sessions.push({date:Date.now(),lang:S.lang,subject:S.hw.subject,minutes:mins,tasksCount:S.hw.tasks.length,totalHints:S.taskHints.reduce((a,b)=>a+b,0),avgHints:Math.round(avgHints*10)/10});
+  if (profile.sessions.length > 20) profile.sessions = profile.sessions.slice(-20);
+  // Weekend bonus
+  S.weekendBonusAwarded = false;
+  S.dragonJustUnlocked = false;
+  if (S.isWeekendMission) {
+    profile.minecoins = (profile.minecoins||0) + 25;
+    profile.lastWeekendMission = Date.now();
+    if (!profile.dragonUnlocked) { profile.dragonUnlocked = true; S.dragonJustUnlocked = true; }
+    S.weekendBonusAwarded = true;
+    S.isWeekendMission = false;
+  }
+  // Silent streak bonus (school nights only; child sees only the reward)
+  S.streakBonus = applyStreakUpdate(profile);
+  if (S.streakBonus > 0) profile.minecoins = (profile.minecoins||0) + S.streakBonus;
+  // Weekly Venom challenge: counts this school night or weekend catch-up
+  const venomBefore = !!profile.venomUnlockedThisWeek;
+  updateVenomWeekly(profile, new Date(), S.weekendBonusAwarded);
+  S.venomJustUnlocked = !venomBefore && !!profile.venomUnlockedThisWeek;
+  // Enrich the just-added session with shone/struggled from summary (for profile gen)
+  saveProfile(profile);
+  let summary = null;
+  try {
+    summary = await generateSummary(mins, profile.sessions);
+    renderSummary(summary, profile);
+  } catch { renderSummary(null, profile); }
+  // Regenerate cognitive profile every session (once we have 3+)
+  if (profile.sessions.length >= 3) {
+    if (summary) {
+      const last = profile.sessions[profile.sessions.length - 1];
+      last.shone = summary.shone || null;
+      last.struggled = summary.struggled || null;
+    }
+    try {
+      const cp = await generateCognitiveProfile(profile.sessions);
+      if (cp) { profile.cognitiveProfile = cp; profile.cognitiveProfileDate = Date.now(); }
+    } catch(e) { console.warn('cognitive profile update failed', e); }
+    saveProfile(profile);
+  }
+  clearSession();
+  // Send email report
+  const totalCoins = S.taskHints.reduce((h,c) => h + (c===0?15:c===1?10:5), 0);
+  sendReport({
+    date: Date.now(), lang: S.lang, subject: S.hw.subject, minutes: mins,
+    tasksCount: S.hw.tasks.length, totalHints: S.taskHints.reduce((a,b)=>a+b,0),
+    avgHints: Math.round((S.taskHints.reduce((a,b)=>a+b,0)/S.taskHints.length)*10)/10,
+    coinsEarned: totalCoins, minecoins: profile.minecoins||0,
+    blocks: profile.blocks||0, cardsCount: profile.cards?.length||0,
+    headline: summary?.childHeadline||null, completed: summary?.completed||null,
+    shone: summary?.shone||null, struggled: summary?.struggled||null,
+    tip: summary?.tip||null, insight: summary?.insight||null,
+    teacherTasks: summary?.teacherTasks||null
+  });
+  backupProfileToWebhook();
+  show('s');
 }
 
 // ═══════════════════════════════════════

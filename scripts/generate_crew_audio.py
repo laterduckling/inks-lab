@@ -570,6 +570,34 @@ INK_ENGAGEMENT = {
         'fr': "C'est le week-end ! Tu veux faire une petite mission bonus pour gagner plus de pièces ?",
     },
 }
+
+# Write-it-down reminder shown after all required tasks are answered.
+# Plus the "announce" handoff Ink uses before a newly-unlocked crew member speaks.
+INK_MISC_LINES = {
+    'write-en':    "All done! Now write your answers on your homework sheet, then tap Done.",
+    'write-fr':    "Tout est fini ! Maintenant écris tes réponses sur ta feuille de devoirs, puis appuie sur Terminé.",
+    'announce-en': "A new friend just joined the crew! Listen — they want to introduce themselves!",
+    'announce-fr': "Un nouvel ami vient de rejoindre l'équipe ! Écoute, il a quelque chose à te dire !",
+}
+for fname, raw in INK_MISC_LINES.items():
+    clean = EMOJI_RE.sub('', raw).strip()
+    out = INK_OUT / f'{fname}.mp3'
+    if out.exists():
+        print(f'  ✓ {out.relative_to(ROOT)} (skipped)')
+        skipped += 1
+        continue
+    print(f'Generating {fname} ({len(clean)} chars)…', flush=True)
+    try:
+        data = generate(INK_VOICE_ID, clean)
+        out.write_bytes(data)
+        print(f'  → {out.relative_to(ROOT)} ({len(data):,} bytes)')
+        total_chars += len(clean)
+        generated += 1
+    except urllib.error.HTTPError as e:
+        err = e.read().decode('utf-8', 'replace')[:300]
+        print(f'  ✗ HTTP {e.code} {e.reason}: {err}')
+    except Exception as e:
+        print(f'  ✗ {e}')
 for key, langs in INK_ENGAGEMENT.items():
     for lang, raw in langs.items():
         clean = EMOJI_RE.sub('', raw).strip()
