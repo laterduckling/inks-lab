@@ -2712,21 +2712,26 @@ function setKey() {
 // ═══════════════════════════════════════
 // LANGUAGE SELECT → UPLOAD
 // ═══════════════════════════════════════
-function go(l) {
+// go(l, mode) — start the upload flow.
+// mode = 'homework' (default): regular EN/FR homework. Plays the
+//   subject ack + upload-instructions chain. Resets weekend flags.
+// mode = 'practice': weekend Practice Sheet path. Sets the weekend
+//   bonus + auto-detect-language flags so completion awards +25 coins
+//   and unlocks Dragon-Fire, and the language gets detected from the
+//   photo (button is language-agnostic). Plays the dedicated practice
+//   clip mentioning bonus coins + Dragon-Fire.
+function go(l, mode = 'homework') {
   S.lang = l; const fr = l==='FR';
+  S.isWeekendMission = (mode === 'practice');
+  S.autoDetectLang   = (mode === 'practice');
   uploadedPhotos = [];
   document.getElementById('ut').textContent = fr ? 'Scanne tes devoirs' : 'Scan your homework';
   document.getElementById('us').textContent = fr ? 'Une ou plusieurs photos — Ink analyse tout' : 'One or more photos — Ink analyzes it all';
   document.getElementById('dzIcon').innerHTML = icon('camera', 32, 'currentColor', 2);
   renderPhotoThumbs();
   show('u');
-  // Voice flow:
-  // - Regular homework: "Let's do the English homework" → upload instructions
-  // - Weekend practice sheet: skip the language-specific homework ack (it's
-  //   not English/French homework, it's a free-form practice page) and just
-  //   play the upload instructions.
   const lc = fr ? 'fr' : 'en';
-  if (S.isWeekendMission) {
+  if (mode === 'practice') {
     playInkClipOrFallback(
       `audio/ink/practice-${lc}.mp3`,
       fr
@@ -4575,12 +4580,9 @@ function abandonMission() {
 // exercise book). Language is auto-detected from the photo after upload, so
 // Jules just taps one button and snaps a page — Ink figures the rest out.
 function startWeekendPractice() {
-  S.isWeekendMission = true;
-  S.autoDetectLang = true;
-  // Default UI language to whatever S.lang is already (or EN if unset). The
-  // upload-screen labels use this; actual homework language is overridden
-  // below in the upload-to-analyze flow once we've seen the page.
-  go(S.lang || 'EN');
+  // 'practice' mode tells go() to set isWeekendMission + autoDetectLang and
+  // play the practice clip instead of the homework subject ack.
+  go(S.lang || 'EN', 'practice');
 }
 async function detectLanguageFromPhoto(imageB64) {
   try {
