@@ -1447,11 +1447,14 @@ ${forceDay ? `- The user has confirmed: focus ONLY on ${forceDay}'s tasks. Ignor
 - If you see multiple days and cannot clearly identify today's section, set "dayAmbiguous":true and list which days you see in "daysFound":["Monday","Wednesday"]`}
 - If there are no day labels, treat the entire page as today's homework
 
-After the required tasks, you MAY add 1-2 optional bonus tasks (review questions, extra practice) — mark these with "bonus":true. These earn the child extra reward coins.
+TASK STRUCTURE — important:
+- The FIRST task in the list MUST be an easy "warm-up" question that primes the child on the topic before the real exercises (e.g., a quick recall like "What sound does the letter S make?", a friendly spotting question, or "What do you think this story is about?"). It should take under 30 seconds and build confidence. Mark it with "warmup":true.
+- Then list the actual required exercises from the homework page in their natural order.
+- After the required tasks, you MAY add 1-2 optional bonus tasks (review questions, extra practice) — mark these with "bonus":true. These earn the child extra reward coins.
 
 You may include the placeholder {{NAME}} in "missionBriefing" and "socraticPrompt" fields to address the child warmly (use it at most once per field — write the literal text {{NAME}}, do NOT invent a name).
 
-Return ONLY valid JSON, no markdown:\n{"dayAmbiguous":false,"daysFound":[],"subject":"math|reading|writing|spelling|poem|other","subjectEmoji":"1 emoji","totalEstimatedMinutes":10,"missionBriefing":"Ink's exciting mission briefing in ${L}, max 18 words, space+ocean metaphors, enthusiastic","tasks":[{"id":1,"emoji":"1 emoji","type":"written|reading|oral","label":"short label in ${L}, max 5 words","instruction":"what child must do, max 15 words in ${L}","detailedInstruction":"precise description of the exercise for teacher reports, max 30 words in English","socraticPrompt":"Ink's opening question/invitation in ${L}, max 20 words, curious NOT the answer","hints":["hint1 guiding question in ${L}","hint2 more specific in ${L}","hint3 almost there in ${L}"],"verifiable":true,"bonus":false}]}`}
+Return ONLY valid JSON, no markdown:\n{"dayAmbiguous":false,"daysFound":[],"subject":"math|reading|writing|spelling|poem|other","subjectEmoji":"1 emoji","totalEstimatedMinutes":10,"missionBriefing":"Ink's exciting mission briefing in ${L}, max 18 words, space+ocean metaphors, enthusiastic","tasks":[{"id":1,"emoji":"1 emoji","type":"written|reading|oral","label":"short label in ${L}, max 5 words","instruction":"what child must do, max 15 words in ${L}","detailedInstruction":"precise description of the exercise for teacher reports, max 30 words in English","socraticPrompt":"Ink's opening question/invitation in ${L}, max 20 words, curious NOT the answer","hints":["hint1 guiding question in ${L}","hint2 more specific in ${L}","hint3 almost there in ${L}"],"verifiable":true,"warmup":false,"bonus":false}]}`}
   ]}],null,1500);
   try { return JSON.parse(t.replace(/```json|```/g,'').trim()); }
   catch { return fallbackHW(); }
