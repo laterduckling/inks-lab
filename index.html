@@ -408,6 +408,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <button onclick="abandonMission()" style="background:none;border:none;color:var(--text-lo);font-size:12px;margin-top:8px;cursor:pointer;padding:4px">Abandon mission</button>
   </div>
 
+  <!-- Venom quest chip — positive-framed only. Hidden when no progress, hidden when unlocked. -->
+  <div id="venomChip" onclick="openGallery()" style="display:none;width:100%;max-width:420px;padding:12px 16px;background:linear-gradient(135deg,rgba(199,125,255,.1),rgba(45,224,198,.06));border:1.5px solid rgba(199,125,255,.35);border-radius:14px;cursor:pointer;text-align:center">
+    <p style="font-size:13px;font-weight:800;color:#c7a8ff;line-height:1.4" id="venomChipText"></p>
+  </div>
+
   <!-- Weekend bonus mission (Fri-Sun only) -->
   <div id="weekendMission" class="card" style="padding:22px;width:100%;max-width:420px;display:none;background:linear-gradient(135deg,rgba(255,201,77,.08),rgba(255,154,61,.08));border:2px solid rgba(255,201,77,.35);box-shadow:var(--glow-gold-sm)">
     <p style="font-size:14px;font-weight:900;color:var(--gold);margin-bottom:6px;font-family:var(--font-display)">⛏️ Weekend Bonus Mission!</p>
@@ -933,7 +938,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <div id="sgallery" class="screen" style="gap:16px;padding-top:24px;padding-bottom:28px">
   <div style="display:flex;align-items:center;gap:12px">
     <button onclick="show('w')" style="background:rgba(16,36,72,.6);border:1px solid rgba(45,224,198,.2);border-radius:10px;padding:8px 12px;color:#e0f0f8;font-weight:700;cursor:pointer">← Back</button>
-    <h2 style="font-size:26px;font-weight:900;font-family:var(--font-display)">🌊 Ink's Quest</h2>
+    <h2 style="font-size:26px;font-weight:900;font-family:var(--font-display);flex:1">🌊 Ink's Quest</h2>
+    <button id="galleryLangBtn" onclick="toggleGalleryLang()" title="Toggle language" style="background:rgba(16,36,72,.6);border:1px solid rgba(45,224,198,.2);border-radius:10px;padding:6px 10px;font-size:18px;cursor:pointer;line-height:1"></button>
   </div>
   <p id="galleryIntro" style="font-size:13px;color:rgba(224,240,248,.55);line-height:1.5"></p>
   <h3 style="font-family:var(--font-mono);font-size:11px;color:var(--biolume);letter-spacing:2px;text-transform:uppercase;margin-top:6px">◈ Ink's Moods</h3>
@@ -1031,6 +1037,9 @@ function freshS() {
     lang: null, hw: null, tIdx: 0, done: [], conv: [], t0: null,
     hintCount: 0, isReading: false, transcript: '', newCard: null,
     verifyImgB64: null, taskStartTime: null, taskHints: [],
+    // 'tasks' = doing experiments, 'write' = on the write-it-down gate
+    // before summary. Persisted so resume lands on the correct screen.
+    phase: 'tasks',
     // Mission/session flags — initialised explicitly so callers can rely on
     // boolean checks instead of `undefined` semantics.
     isWeekendMission: false, autoDetectLang: false,
@@ -1042,7 +1051,7 @@ let S = freshS();
 let aiv = null, currentSpeech = null;
 
 function saveSession() {
-  try { localStorage.setItem('ink_session', JSON.stringify({lang:S.lang,hw:S.hw,tIdx:S.tIdx,done:S.done,conv:S.conv,t0:S.t0,hintCount:S.hintCount,taskHints:S.taskHints,taskStartTime:S.taskStartTime})); } catch {}
+  try { localStorage.setItem('ink_session', JSON.stringify({lang:S.lang,hw:S.hw,tIdx:S.tIdx,done:S.done,conv:S.conv,t0:S.t0,hintCount:S.hintCount,taskHints:S.taskHints,taskStartTime:S.taskStartTime,phase:S.phase||'tasks'})); } catch {}
 }
 function clearSession() { localStorage.removeItem('ink_session'); }
 function loadSession() {
@@ -1482,9 +1491,16 @@ TASK STRUCTURE — important:
 - Then list the actual required exercises from the homework page in their natural order.
 - After the required tasks, you MAY add 1-2 optional bonus tasks (review questions, extra practice) — mark these with "bonus":true. These earn the child extra reward coins.
 
+CRITICAL — preserve the homework's actual required action:
+- Mirror the homework's literal verb. If the page says "Read aloud" / "Lis à voix haute" / "Récite" / "Lecture" / "Dictée", your task MUST have the child READ the actual text aloud — NOT answer comprehension questions about it. Use "type":"reading" and put the exact text to read in "instruction".
+- For phonics / sound exercises (e.g., "ill", "il", "ou", "an" lists, syllable charts, word ladders): create a "type":"reading" task whose instruction is to read each item aloud, listing the actual syllables/words from the page (e.g., "Read these aloud: ville, fille, billet, papillon"). Do NOT replace the read-aloud drill with a Q&A about words containing those sounds.
+- For dictation / spelling-write exercises ("Dictée", "Spell these"): keep "type":"written" and have the child write the words. Do not turn it into oral Q&A.
+- For copying/handwriting exercises: "type":"written" with the actual text to copy.
+- Comprehension Q&A tasks ("type":"oral") are appropriate ONLY when the homework explicitly asks comprehension questions — never as a substitute for required reading practice.
+
 You may include the placeholder {{NAME}} in "missionBriefing" and "socraticPrompt" fields to address the child warmly (use it at most once per field — write the literal text {{NAME}}, do NOT invent a name).
 
-Return ONLY valid JSON, no markdown:\n{"dayAmbiguous":false,"daysFound":[],"subject":"math|reading|writing|spelling|poem|other","subjectEmoji":"1 emoji","totalEstimatedMinutes":10,"missionBriefing":"Ink's exciting mission briefing in ${L}, max 18 words, space+ocean metaphors, enthusiastic","tasks":[{"id":1,"emoji":"1 emoji","type":"written|reading|oral","label":"short label in ${L}, max 5 words","instruction":"what child must do, max 15 words in ${L}","detailedInstruction":"precise description of the exercise for teacher reports, max 30 words in English","socraticPrompt":"Ink's opening question/invitation in ${L}, max 20 words, curious NOT the answer","hints":["hint1 guiding question in ${L}","hint2 more specific in ${L}","hint3 almost there in ${L}"],"verifiable":true,"warmup":false,"bonus":false}]}`}
+Return ONLY valid JSON, no markdown:\n{"dayAmbiguous":false,"daysFound":[],"subject":"math|reading|writing|spelling|poem|other","subjectEmoji":"1 emoji","totalEstimatedMinutes":10,"missionBriefing":"Ink's exciting mission briefing in ${L}, max 18 words, space+ocean metaphors, enthusiastic","tasks":[{"id":1,"emoji":"1 emoji","type":"written|reading|oral","label":"short label in ${L}, max 5 words","instruction":"what child must do, max 15 words for oral/written tasks; reading tasks may go up to 40 words to include the full text/syllable list to be read aloud, in ${L}","detailedInstruction":"precise description of the exercise for teacher reports, max 30 words in English","socraticPrompt":"Ink's opening question/invitation in ${L}, max 20 words, curious NOT the answer","hints":["hint1 guiding question in ${L}","hint2 more specific in ${L}","hint3 almost there in ${L}"],"verifiable":true,"warmup":false,"bonus":false}]}`}
   ]}],null,1500);
   try { return JSON.parse(t.replace(/```json|```/g,'').trim()); }
   catch { return fallbackHW(); }
@@ -2529,6 +2545,23 @@ function renderWelcome() {
   // Show resume banner if there's an active session
   const sess = loadSession();
   document.getElementById('resumeBanner').style.display = sess ? 'block' : 'none';
+
+  // Venom quest chip — surfaces progress only when Jules has at least 1 night
+  // logged this week and Venom isn't unlocked yet. Strictly reward-framed:
+  // never says "don't lose it", never appears when count is 0.
+  const vChip = document.getElementById('venomChip');
+  const vText = document.getElementById('venomChipText');
+  if (vChip && vText) {
+    const vs = venomWeekState(profile);
+    const showChip = vs.count >= 1 && !vs.unlocked;
+    vChip.style.display = showChip ? 'block' : 'none';
+    if (showChip) {
+      const fr = S.lang === 'FR';
+      vText.textContent = fr
+        ? `🎯 Quête Venom : ${vs.count}/4 cette semaine — continue les soirs d'école !`
+        : `🎯 Venom Quest: ${vs.count}/4 this week — keep going on school nights!`;
+    }
+  }
   // Show weekend mission on Fri(5), Sat(6), Sun(0). Always available — even
   // during a holiday week with no homework — via the practice-sheet path.
   const day = new Date().getDay();
@@ -2563,7 +2596,12 @@ function getWeekStart() {
 // ═══════════════════════════════════════
 let parentPressTimer = null;
 function parentLongPressStart() {
-  parentPressTimer = setTimeout(() => { haptic([50,30,50]); renderParentMode(); show('par'); }, 1500);
+  // 3s + confirm gate so a 6yo can't trip into Parent View by accidentally
+  // holding the title. Jules opened it by mistake on his first session.
+  parentPressTimer = setTimeout(() => {
+    haptic([50,30,50]);
+    if (confirm('Enter Parent View?')) { renderParentMode(); show('par'); }
+  }, 3000);
 }
 function parentLongPressEnd() { clearTimeout(parentPressTimer); }
 
@@ -2878,7 +2916,7 @@ function analyzeAllPhotos() {
           S.hw = await analyzeHomework(uploadedPhotos, todayName);
         }
       }
-      S.t0 = Date.now(); S.tIdx = 0; S.done = []; S.taskHints = [];
+      S.t0 = Date.now(); S.tIdx = 0; S.done = []; S.taskHints = []; S.phase = 'tasks';
       saveSession();
       clearInterval(aiv); renderMission(); show('m');
       speak(S.hw.missionBriefing);
@@ -3448,6 +3486,10 @@ function renderCrewStripInto(el, profile) {
 function renderCrewStrip(profile) { renderCrewStripInto(document.getElementById('crewStrip'), profile); }
 
 let _questIntroPlayedThisLaunch = false;
+function toggleGalleryLang() {
+  S.lang = (S.lang === 'FR') ? 'EN' : 'FR';
+  renderGallery();
+}
 function openGallery() {
   renderGallery();
   show('gallery');
@@ -3462,6 +3504,9 @@ function openGallery() {
 function renderGallery() {
   const profile = getProfile();
   const fr = S.lang === 'FR';
+  // Flag toggle shows the *other* language so it's read as "switch to that".
+  const langBtn = document.getElementById('galleryLangBtn');
+  if (langBtn) langBtn.textContent = fr ? '🇬🇧' : '🇫🇷';
   // Intro line summarising progress
   const total = CREW.length;
   const unlockedCount = crewUnlockedCount(profile);
@@ -4310,8 +4355,18 @@ function taskDone() {
 
   // Render reward screen (per-task: just coin reward + celebration; crew
   // unlocks now happen at the end of the whole homework session, not per task)
-  document.getElementById('rewSub').textContent = fr ? `EXPÉRIENCE ${S.tIdx+1} VALIDÉE` : `EXPERIMENT ${S.tIdx+1} LOGGED`;
-  document.getElementById('rewTitle').textContent = fr ? 'Bravo, explorateur !' : 'Brilliant work!';
+  // Show progress as X/N + a "Y to go" so Jules knows whether more tasks are
+  // coming. Final task uses unambiguous "ALL EXPERIMENTS COMPLETE" framing.
+  const total = S.hw.tasks.length;
+  const doneNow = S.tIdx + 1; // current task is being completed
+  const remaining = Math.max(0, total - doneNow);
+  const isFinal = remaining === 0;
+  document.getElementById('rewSub').textContent = isFinal
+    ? (fr ? `MISSION ${S.hw.subject?.toUpperCase()||'TERMINÉE'} — TOUTES LES EXPÉRIENCES VALIDÉES` : `${S.hw.subject?.toUpperCase()||'MISSION'} COMPLETE — ALL EXPERIMENTS LOGGED`)
+    : (fr ? `EXPÉRIENCE ${doneNow}/${total} VALIDÉE — ENCORE ${remaining} À FAIRE` : `EXPERIMENT ${doneNow}/${total} LOGGED — ${remaining} TO GO`);
+  document.getElementById('rewTitle').textContent = isFinal
+    ? (fr ? 'Plus qu\'à écrire !' : 'Just the writing left!')
+    : (fr ? 'Bravo, explorateur !' : 'Brilliant work!');
   // Crew progress line — fixed display of current count (changes only at
   // session end). Reassures Jules he's making progress without overpromising.
   const unlockedCrew = crewUnlockedCount(profile);
@@ -4369,6 +4424,8 @@ async function afterReward() {
 // sheet → photo upload → AI confirms work was written → summary.
 function showWriteItDown() {
   const fr = S.lang === 'FR';
+  S.phase = 'write';
+  saveSession();
   document.getElementById('writeEyebrow').textContent = fr ? 'DERNIÈRE ÉTAPE' : 'FINAL STEP';
   document.getElementById('writeTitle').textContent = fr ? 'Tout est fini !' : 'All done!';
   document.getElementById('writeMsg').textContent = fr
@@ -4376,12 +4433,19 @@ function showWriteItDown() {
     : "Write your answers on your homework sheet, then show it to Ink to unlock a crew member!";
   document.getElementById('writeShowBtn').textContent = fr ? '📷 Montrer la feuille à Ink' : '📷 Show Ink the sheet';
   document.getElementById('writeDoneBtn').textContent = fr ? 'Passer pour aujourd\'hui' : 'Skip for today';
+  // Defensive: a previous attempt may have left these disabled if iOS
+  // suspended the verify call mid-flight.
+  document.getElementById('writeShowBtn').disabled = false;
+  document.getElementById('writeDoneBtn').disabled = false;
   document.getElementById('writeFeedback').style.display = 'none';
   show('write');
+  // Audio script matches the visible buttons: photo path is primary, skip is
+  // explicitly secondary. Renamed clip key so cached "tap Done" MP3s aren't
+  // played — TTS fallback speaks the new line until audio is regenerated.
   const text = fr
-    ? "Tout est fini ! Maintenant écris tes réponses sur ta feuille de devoirs, puis appuie sur Terminé."
-    : "All done! Now write your answers on your homework sheet, then tap Done.";
-  playInkClipOrFallback(`audio/ink/write-${fr ? 'fr' : 'en'}.mp3`, text);
+    ? "Tout est fini ! Montre ta feuille à Ink pour débloquer un membre du crew, ou passe pour aujourd'hui."
+    : "All done! Show Ink your sheet to unlock a crew member, or skip for today.";
+  playInkClipOrFallback(`audio/ink/write-v2-${fr ? 'fr' : 'en'}.mp3`, text);
 }
 
 async function onWritePhoto(event) {
@@ -4701,7 +4765,7 @@ Return ONLY valid JSON, no markdown:
     // Start in the first task's language; the mission flow will switch S.lang
     // per-task as it advances (see renderMission and afterReward).
     S.lang = (hw.tasks?.[0]?.language) || dominantLang;
-    S.hw = hw; S.t0 = Date.now(); S.tIdx = 0; S.done = []; S.taskHints = [];
+    S.hw = hw; S.t0 = Date.now(); S.tIdx = 0; S.done = []; S.taskHints = []; S.phase = 'tasks';
     S.isWeekendMission = true;
     saveSession();
     clearInterval(aiv); renderMission(); show('m');
@@ -5128,7 +5192,20 @@ function resumeSession(saved) {
   S.done = saved.done||[]; S.conv = saved.conv||[]; S.t0 = saved.t0;
   S.hintCount = saved.hintCount||0; S.taskHints = saved.taskHints||[];
   S.taskStartTime = saved.taskStartTime||Date.now();
-  renderMission(); show('m');
+  S.phase = saved.phase || 'tasks';
+  // If the saved phase is 'write', or if the cursor is past the last task, or
+  // every required task is already in done, we belong on the write-it-down
+  // gate — not the mission screen (which would be a dead end with no current
+  // task to act on). This was the "Continue Mission → stuck loop" bug.
+  const tasks = (saved.hw?.tasks) || [];
+  const cursorPast = saved.tIdx >= tasks.length;
+  const allRequiredDone = tasks.filter(t => !t.bonus).every(t => (saved.done||[]).includes(t.id));
+  const shouldWrite = S.phase === 'write' || cursorPast || (tasks.length > 0 && allRequiredDone);
+  if (shouldWrite) {
+    showWriteItDown();
+  } else {
+    renderMission(); show('m');
+  }
   const fr = S.lang==='FR';
   const msg = fr ? 'Ink est de retour ! On continue la mission !' : 'Ink is back! Let\'s continue the mission!';
   playInkClipOrFallback(inkStaticClipUrl('resume', fr ? 'FR' : 'EN'), msg);
