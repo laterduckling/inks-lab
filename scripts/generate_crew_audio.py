@@ -576,6 +576,11 @@ INK_ENGAGEMENT = {
 INK_MISC_LINES = {
     'write-en':    "All done! Now write your answers on your homework sheet, then tap Done.",
     'write-fr':    "Tout est fini ! Maintenant écris tes réponses sur ta feuille de devoirs, puis appuie sur Terminé.",
+    # v2: aligned with the visible "Show Ink the sheet" / "Skip for today"
+    # buttons (the original "tap Done" line referred to a button that doesn't
+    # exist as labelled). Filename bumped so the old MP3s aren't reused.
+    'write-v2-en': "All done! Show Ink your sheet to unlock a crew member, or skip for today.",
+    'write-v2-fr': "Tout est fini ! Montre ta feuille à Ink pour débloquer un membre du crew, ou passe pour aujourd'hui.",
     'announce-en': "A new friend just joined the crew! Listen — they want to introduce themselves!",
     'announce-fr': "Un nouvel ami vient de rejoindre l'équipe ! Écoute, il a quelque chose à te dire !",
     'practice-en': "Alright! Let's do some extra practice for those bonus coins, and try to unlock the legendary Dragon-Fire octopus! Take a clear picture of your practice sheet — hold the iPad steady, and make sure the page is well lit.",
