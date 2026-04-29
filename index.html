@@ -1476,15 +1476,29 @@ async function analyzeHomework(photos, forceDay) {
   const imageBlocks = photoArr.map(b64 => ({type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}}));
   const cp = getProfile().cognitiveProfile;
   const profileNote = cp ? `\nKnown about the child: ${cp.profile}${cp.strategies?.length?' Preferred scaffolding: '+cp.strategies.join('; '):''}${cp.watchFor?.length?' Watch for: '+cp.watchFor.join('; '):''}\nCalibrate the hints and task framing accordingly — lean into strengths, scaffold more carefully around struggles.\n` : '';
+  // Compute today's day name + the next school day (Mon-Fri). French homework
+  // labelled "Pour [day]" / "For [day]" is the work due that day, done the
+  // night before — so we tell the AI both today and tomorrow's school day.
+  const todayDow = new Date().getDay(); // 0=Sun..6=Sat
+  const dayNamesEN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const dayNamesFR = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+  const todayName = dayNamesEN[todayDow];
+  // Next school day = next Mon..Fri
+  let nd = todayDow;
+  for (let i = 0; i < 7; i++) { nd = (nd + 1) % 7; if (nd >= 1 && nd <= 5) break; }
+  const tomorrowSchoolEN = dayNamesEN[nd];
+  const tomorrowSchoolFR = dayNamesFR[nd];
   const t = await api([{role:'user',content:[
     ...imageBlocks,
-    {type:'text',text:`Analyze ${photoArr.length > 1 ? 'these '+photoArr.length+' photos of' : 'this'} ${L} 1st-grade homework for a 6yo child. Today is ${new Date().toLocaleDateString('en-US',{weekday:'long'})}.${profileNote} ${photoArr.length > 1 ? 'The photos may show guidelines/instructions on one page and exercises on others. Combine them into one mission.' : ''}
+    {type:'text',text:`Analyze ${photoArr.length > 1 ? 'these '+photoArr.length+' photos of' : 'this'} ${L} 1st-grade homework for a 6yo child. Today is ${todayName}. Tomorrow's school day is ${tomorrowSchoolEN} (${tomorrowSchoolFR} in French).${profileNote} ${photoArr.length > 1 ? 'The photos may show guidelines/instructions on one page and exercises on others. Combine them into one mission.' : ''}
 
-CRITICAL — day detection:
-- Look carefully for day labels (Monday/Lundi, Tuesday/Mardi, abbreviations like Mon/Mar, M/T/W/Th/F, etc.)
-${forceDay ? `- The user has confirmed: focus ONLY on ${forceDay}'s tasks. Ignore all other days. Set "dayAmbiguous":false.` : `- If the homework is organized by day, focus ONLY on today's (${new Date().toLocaleDateString('en-US',{weekday:'long'})}) tasks as the main mission
-- If you see multiple days and cannot clearly identify today's section, set "dayAmbiguous":true and list which days you see in "daysFound":["Monday","Wednesday"]`}
-- If there are no day labels, treat the entire page as today's homework
+CRITICAL — day detection (read carefully, French homework convention is tricky):
+- Look for day labels (Monday/Lundi, Tuesday/Mardi, abbreviations like Mon/Mar, M/T/W/Th/F, etc.)
+- The child does homework TONIGHT for the next school day. Two labelling conventions exist:
+  • "Pour [day]" / "For [day]" / "À faire pour [day]" → the section is the work DUE on that day, done the night before. Pick the section labelled with TOMORROW'S school day (today=${todayName} → look for "Pour ${tomorrowSchoolFR}" / "Pour ${tomorrowSchoolEN}").
+  • "[day] [date]" with no "Pour" prefix → usually the day the homework is assigned/done. Pick the section labelled with TODAY (${todayName}).
+${forceDay ? `- The user has confirmed: focus ONLY on ${forceDay}'s tasks. Ignore all other days. Set "dayAmbiguous":false.` : `- Apply the rule above to pick the right section. If the convention is unclear or both interpretations are plausible, set "dayAmbiguous":true and list which day-labelled sections you see in "daysFound":["Monday","Wednesday"].`}
+- If there are no day labels at all, treat the entire page as tonight's homework
 
 TASK STRUCTURE — important:
 - The FIRST task in the list MUST be an easy "warm-up" question that primes the child on the topic before the real exercises (e.g., a quick recall like "What sound does the letter S make?", a friendly spotting question, or "What do you think this story is about?"). It should take under 30 seconds and build confidence. Mark it with "warmup":true.
@@ -1673,15 +1687,16 @@ async function generateSummary(durationMins, sessions) {
     ? `Past session data (last ${Math.min(sessions.length,5)} sessions): ${JSON.stringify(sessions.slice(-5).map(s=>({subject:s.subject,avgHints:s.avgHints,minutes:s.minutes})))}.`
     : '';
   const taskDetails = (S.hw?.tasks||[]).map((t,i) => `Task ${i+1}: ${t.detailedInstruction||t.instruction} (hints: ${S.taskHints[i]||0}${t.bonus?' [bonus]':''})`).join('; ');
-  const t = await api([{role:'user',content:`Generate TWO reports for a homework session in ${L}.
+  const childName = getChildName();
+  const t = await api([{role:'user',content:`Generate TWO reports for a homework session in ${L}. The child's name is ${childName}.
 
 Session info: Subject: ${S.hw.subject}. Duration: ~${durationMins}min. Hints used: ${S.taskHints.reduce((a,b)=>a+b,0)}. Tasks: ${taskDetails}. ${historyContext}
 
-You may include the placeholder {{NAME}} once in "childHeadline" or "childShone" to make it personal (write the literal text {{NAME}}, do NOT invent a name). Do NOT put {{NAME}} in the parent/teacher fields.
+You may include the placeholder {{NAME}} once in "childHeadline" or "childShone" to make it personal (write the literal text {{NAME}}, do NOT invent a name). Do NOT put {{NAME}} in the parent/teacher fields — those go in emails to ${childName}'s parents and should refer to ${childName} by name in the third person ("${childName} did X", not "you did X").
 
-Return ONLY valid JSON:\n{"childHeadline":"exciting 1-sentence message TO the child (you/tu, not he/il) celebrating what they did, in ${L}","childShone":"specific thing the child did well, addressed to them (you/tu), in ${L}","completed":["item1","item2"],"struggled":"what was hardest or null","shone":"specific strength for parent report","tip":"practical parent tip or null","insight":"pattern from history or null","teacherTasks":[{"task":"precise exercise description in English","result":"how the student performed","hintsUsed":0}]}`}],null,500);
+Return ONLY valid JSON:\n{"parentHeadline":"1-sentence parent-facing summary in English referring to ${childName} in the third person (e.g., '${childName} nailed reading today — independent on every word.')","childHeadline":"exciting 1-sentence message TO the child (you/tu, not he/il) celebrating what they did, in ${L}","childShone":"specific thing the child did well, addressed to them (you/tu), in ${L}","completed":["item1","item2"],"struggled":"what was hardest or null","shone":"specific strength for parent report (third person, refer to ${childName} by name)","tip":"practical parent tip in English or null","insight":"pattern from history in English or null","teacherTasks":[{"task":"precise exercise description in English","result":"how the student performed","hintsUsed":0}]}`}],null,500);
   try { return JSON.parse(t.replace(/```json|```/g,'').trim()); }
-  catch { return {headline:L==='French'?'Super session aujourd\'hui !':'Great session today!',completed:[L==='French'?'Devoirs terminés':'Homework done'],struggled:null,shone:L==='French'?'Beaucoup de concentration':'Great focus',tip:null,insight:null}; }
+  catch { return {parentHeadline:`Great ${S.hw.subject||'homework'} session for ${childName}.`,headline:L==='French'?'Super session aujourd\'hui !':'Great session today!',completed:[L==='French'?'Devoirs terminés':'Homework done'],struggled:null,shone:L==='French'?'Beaucoup de concentration':'Great focus',tip:null,insight:null}; }
 }
 
 // ═══════════════════════════════════════
@@ -3014,6 +3029,10 @@ function startTask() {
   idleIdx = 0;
   startIdleTimer();
   show('t');
+  // Reading tasks — child has nothing to "type back" first; surface the
+  // 🎤 Read aloud button immediately so they can record straight away.
+  // (Other task types still gate buttons behind the first user reply.)
+  if (task.type === 'reading') showTaskButtons();
 }
 
 function showTaskButtons() {
@@ -4400,7 +4419,16 @@ async function afterReward() {
   _taskDoneInProgress = false;
   const isLast = S.tIdx + 1 >= S.hw.tasks.length;
   if (isLast) {
-    showWriteItDown();
+    // Reading/oral-only homework has nothing to photograph — skip the
+    // write-it-down gate and auto-verify so the crew unlock fires from
+    // task completion alone. Otherwise (any written task) keep the photo
+    // verification path so handwritten work earns the unlock as before.
+    const hasWrittenTask = (S.hw.tasks||[]).some(t => t.type === 'written');
+    if (!hasWrittenTask) {
+      completeSession(true);
+    } else {
+      showWriteItDown();
+    }
     return;
   }
   S.tIdx++; S.conv = []; S.hintCount = 0;
@@ -4544,18 +4572,30 @@ async function completeSession(verified = false) {
     saveProfile(profile);
   }
   clearSession();
-  // Send email report
+  // Send email report — uses the PARENT-facing headline (third person, by
+  // name). All string fields are run through personalize() so any stray
+  // {{NAME}} placeholders the AI may have left behind get substituted with
+  // the real child name before the payload leaves the device.
   const totalCoins = S.taskHints.reduce((h,c) => h + (c===0?15:c===1?10:5), 0);
+  const ptasks = (summary?.teacherTasks||[]).map(t => ({
+    task: personalize(t.task),
+    result: personalize(t.result),
+    hintsUsed: t.hintsUsed
+  }));
   sendReport({
     date: Date.now(), lang: S.lang, subject: S.hw.subject, minutes: mins,
+    childName: getChildName(),
     tasksCount: S.hw.tasks.length, totalHints: S.taskHints.reduce((a,b)=>a+b,0),
     avgHints: Math.round((S.taskHints.reduce((a,b)=>a+b,0)/S.taskHints.length)*10)/10,
     coinsEarned: totalCoins, minecoins: profile.minecoins||0,
     blocks: profile.blocks||0, cardsCount: profile.cards?.length||0,
-    headline: summary?.childHeadline||null, completed: summary?.completed||null,
-    shone: summary?.shone||null, struggled: summary?.struggled||null,
-    tip: summary?.tip||null, insight: summary?.insight||null,
-    teacherTasks: summary?.teacherTasks||null
+    headline: personalize(summary?.parentHeadline || summary?.childHeadline) || null,
+    completed: (summary?.completed||[]).map(personalize),
+    shone: personalize(summary?.shone) || null,
+    struggled: personalize(summary?.struggled) || null,
+    tip: personalize(summary?.tip) || null,
+    insight: personalize(summary?.insight) || null,
+    teacherTasks: ptasks
   });
   backupProfileToWebhook();
   show('s');
