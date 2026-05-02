@@ -83,7 +83,7 @@ function sendSessionEmail(data) {
   const dateStr = date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   const flag = data.lang === 'FR' ? '\ud83c\uddeb\ud83c\uddf7' : '\ud83c\uddfa\ud83c\uddf8';
 
-  const subject = `\ud83d\udc19 Ink's World \u2014 ${flag} ${data.subject || 'Homework'} (${dateStr})`;
+  const subject = `\ud83d\udc19 Ink's World \u00b7 Parents \u2014 ${flag} ${data.subject || 'Homework'} (${dateStr})`;
 
   const completed = (data.completed || []).map(c => `  \u2705 ${c}`).join('\n');
   const coinsLine = data.minecoins != null ? `\u26cf\ufe0f Minecoins earned: +${data.coinsEarned} (total: ${data.minecoins})` : '';
@@ -135,7 +135,7 @@ function sendWeeklyDigest() {
     EMAILS.forEach(email => {
       MailApp.sendEmail({
         to: email,
-        subject: "\ud83d\udc19 Ink's World \u2014 Weekly Summary (no sessions this week)",
+        subject: "\ud83d\udc19 Ink's World \u00b7 Parents \u2014 Weekly Summary (no sessions this week)",
         body:
           "No homework sessions were completed this week.\n\n"
           + "If it's a holiday week, Jules can still earn crew unlocks via the \ud83d\udcf7 Practice Sheet path on weekends \u2014 a photo of any exercise book counts and unlocks the Dragon-Fire octopus on completion.\n\n"
@@ -182,7 +182,7 @@ Sent automatically from Ink's World
   EMAILS.forEach(email => {
     MailApp.sendEmail({
       to: email,
-      subject: `\ud83d\udc19 Ink's World \u2014 Weekly Summary (${week.length} session${week.length > 1 ? 's' : ''})`,
+      subject: `\ud83d\udc19 Ink's World \u00b7 Parents \u2014 Weekly Summary (${week.length} session${week.length > 1 ? 's' : ''})`,
       body: body
     });
   });
@@ -208,7 +208,7 @@ function sendDailyDigest() {
     EMAILS.forEach(email => {
       MailApp.sendEmail({
         to: email,
-        subject: `\ud83d\udc19 Ink's World \u2014 ${dateStr} (no session today)`,
+        subject: `\ud83d\udc19 Ink's World \u00b7 Parents \u2014 ${dateStr} (no session today)`,
         body: `No homework session was completed today (${dateStr}).\n\nMaybe tomorrow! \ud83d\ude80`
       });
     });
@@ -244,7 +244,7 @@ Sent automatically from Ink's World
   EMAILS.forEach(email => {
     MailApp.sendEmail({
       to: email,
-      subject: `\ud83d\udc19 Ink's World \u2014 ${dateStr} (${todaySessions.length} session${todaySessions.length > 1 ? 's' : ''})`,
+      subject: `\ud83d\udc19 Ink's World \u00b7 Parents \u2014 ${dateStr} (${todaySessions.length} session${todaySessions.length > 1 ? 's' : ''})`,
       body: body
     });
   });
@@ -264,13 +264,16 @@ function sendTeacherDigest() {
   const enSessions = week.filter(s => s.lang === 'EN');
   const frSessions = week.filter(s => s.lang === 'FR');
 
+  // Send to teachers (if configured) AND to parents for visibility into
+  // exactly what the teacher receives. Subjects make the audience explicit
+  // (🎓 Teacher Report on these vs · Parents on the parent-only emails),
+  // so duplicates are easy to identify at a glance.
   if (TEACHER_EN && enSessions.length > 0) {
     sendTeacherEmail(TEACHER_EN, 'English', enSessions);
   }
   if (TEACHER_FR && frSessions.length > 0) {
     sendTeacherEmail(TEACHER_FR, 'French', frSessions);
   }
-  // Also send to parents for testing/visibility
   if (enSessions.length > 0 || frSessions.length > 0) {
     EMAILS.forEach(email => {
       if (enSessions.length > 0) sendTeacherEmail(email, 'English', enSessions);
@@ -343,7 +346,7 @@ For questions, please contact Jules's parents.
 
   MailApp.sendEmail({
     to: email,
-    subject: `${flag} Ink's World \u2014 Jules's ${language} Homework Report (week of ${new Date().toLocaleDateString('en-US', {month:'short',day:'numeric'})})`,
+    subject: `\ud83c\udf93 Teacher Report ${flag} \u2014 Jules's ${language} Homework (week of ${new Date().toLocaleDateString('en-US', {month:'short',day:'numeric'})})`,
     body: body
   });
 }
