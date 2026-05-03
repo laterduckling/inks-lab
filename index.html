@@ -825,6 +825,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <h2 style="font-size:22px;font-weight:900">🔒 Parent View</h2>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <button onclick="exportProfile()" style="background:rgba(0,220,200,.12);border:1px solid rgba(0,220,200,.3);color:#00dcc6;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer">💾 Export</button>
+      <button onclick="exportProfilePlain()" title="Unencrypted — use to migrate to the native iOS app" style="background:rgba(255,209,102,.12);border:1px solid rgba(255,209,102,.3);color:#ffd166;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer">📤 Plain</button>
       <button onclick="document.getElementById('importFile').click()" style="background:rgba(0,220,200,.12);border:1px solid rgba(0,220,200,.3);color:#00dcc6;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer">📥 Import</button>
       <input id="importFile" type="file" accept="application/json,.json" style="display:none" onchange="importProfile(this.files[0]);this.value=''">
       <button onclick="forgetKey()" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.3);color:#ff8080;font-size:12px;font-weight:800;padding:7px 12px;border-radius:10px;cursor:pointer">🗑 Forget key</button>
@@ -5038,6 +5039,24 @@ async function exportProfile() {
   const stamp = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   a.href = url;
   a.download = `inks-world-backup-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+// Unencrypted plain-text export of just the profile blob — used to migrate
+// progress to the native iOS app. The encrypted exportProfile() above is
+// the canonical backup; this is the migration helper.
+function exportProfilePlain() {
+  const raw = localStorage.getItem('ink_v2');
+  if (!raw) { alert('No profile data found in localStorage. If your data is in the cloud, restore it first via Parent View → 🔐 Restore from cloud.'); return; }
+  const blob = new Blob([raw], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const d = new Date();
+  const stamp = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  a.href = url;
+  a.download = `inks-world-profile-plain-${stamp}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
