@@ -3523,9 +3523,10 @@ function openGallery() {
 function renderGallery() {
   const profile = getProfile();
   const fr = S.lang === 'FR';
-  // Flag toggle shows the *other* language so it's read as "switch to that".
+  // Flag toggle shows the CURRENT language as a status badge, tap to flip.
+  // (Jules found the "shows target language" version confusing.)
   const langBtn = document.getElementById('galleryLangBtn');
-  if (langBtn) langBtn.textContent = fr ? '🇬🇧' : '🇫🇷';
+  if (langBtn) langBtn.textContent = fr ? '🇫🇷' : '🇺🇸';
   // Intro line summarising progress
   const total = CREW.length;
   const unlockedCount = crewUnlockedCount(profile);
